@@ -1,6 +1,6 @@
 import numpy as np
 from neural_contact_fields.vis import plot_points
-from neural_contact_fields.data.dataset import load_dataset_dict
+from neural_contact_fields.data.dataset_helpers import load_dataset_dict
 
 if __name__ == '__main__':
     dataset_file = "/home/markvdm/Documents/NCF/VIRDO/data/virdo_simul_dataset.pickle"
