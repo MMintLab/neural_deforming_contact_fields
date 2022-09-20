@@ -126,7 +126,6 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
             it += 1
 
             loss = trainer.train_step(batch, it)
-            logger.add_scalar('loss', loss, it)
 
             # Print output
             if print_every > 0 and (it % print_every) == 0:

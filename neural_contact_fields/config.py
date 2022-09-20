@@ -1,11 +1,13 @@
 import os
+
+from neural_contact_fields.data.single_tool_dataset import SingleToolDataset
 from torchvision import transforms
 
 import neural_contact_fields.data as data
-from neural_contact_fields import neural_contact_field
+from neural_contact_fields import single_neural_contact_field
 
 method_dict = {
-    'neural_contact_field': neural_contact_field,
+    'single_neural_contact_field': single_neural_contact_field,
 }
 
 
@@ -50,9 +52,11 @@ def get_dataset(mode, cfg):
     # Build dataset transforms.
     transforms_ = get_transforms(cfg)
 
-    dataset = None
-
-    raise Exception("Unknown requested dataset type: %s" % dataset_type)
+    if dataset_type == "SingleToolDataset":
+        dataset = SingleToolDataset(cfg["data"]["dataset_fn"], cfg["data"]["split"], cfg["data"]["tool_idx"],
+                                    cfg["data"]["deformation_idx"], transform=transforms_)
+    else:
+        raise Exception("Unknown requested dataset type: %s" % dataset_type)
 
     return dataset
 

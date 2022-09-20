@@ -39,9 +39,9 @@ class SingleToolDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         data_dict = {
-            "coord": self.coords[idx],
-            "sdf": self.sdf[idx],
-            "contact": self.contact[idx],
+            "coord": self.coords[idx].float(),
+            "sdf": self.sdf[idx].float(),
+            "contact": self.contact[idx].float(),
         }
 
         return data_dict

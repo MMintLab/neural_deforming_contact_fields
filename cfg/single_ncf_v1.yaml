@@ -1,0 +1,19 @@
+data:
+  dataset: SingleToolDataset
+  dataset_fn: /home/markvdm/Documents/NCF/VIRDO/data/virdo_simul_dataset.pickle
+  split: train
+  tool_idx: 0
+  deformation_idx: 0
+training:
+  out_dir: out/models/single_ncf_v1/
+  learning_rate: 0.0001
+  print_every: 100
+  epochs: 2000
+  min_epochs: 100
+  max_epochs_without_improving: 10
+  batch_size: 256
+  val_batch_size: 256
+  shuffle: true
+method: single_neural_contact_field
+model:
+  method: single_neural_contact_field
