@@ -103,7 +103,7 @@ class Trainer(BaseTrainer):
 
         contact_loss = F.binary_cross_entropy_with_logits(contact_logits_pred, contact_gt, reduction="mean")
 
-        loss = sdf_loss + contact_loss  # TODO: Add weighting.
+        loss = (10 * sdf_loss) + contact_loss  # TODO: Add weighting.
 
         # Construct out dicts.
         loss_dict["sdf"] = sdf_loss
