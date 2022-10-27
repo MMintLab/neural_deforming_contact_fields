@@ -9,9 +9,9 @@ if __name__ == '__main__':
 
     train_data = dataset_dict["train"]
 
-    for train_key in train_data.keys():
+    for train_key in [0]:  # train_data.keys():
         tool_data = train_data[train_key]
-        for deform_key in tool_data.keys():
+        for deform_key in [0]:  # tool_data.keys():
             data_dict = tool_data[deform_key]
 
             coords = data_dict["coords"][0]
