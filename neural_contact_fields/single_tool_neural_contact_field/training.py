@@ -2,7 +2,9 @@ from collections import defaultdict
 import numpy as np
 import torch
 from neural_contact_fields.training import BaseTrainer
+from neural_contact_fields.loss import sdf_loss_clamp
 from tqdm import tqdm
+import torch.nn.functional as F
 
 
 class Trainer(BaseTrainer):
@@ -87,5 +89,35 @@ class Trainer(BaseTrainer):
         device = self.device
         loss_dict = dict()
         out_dict = dict()
+
+        # Send data to torch/device.
+        trial_idx = torch.from_numpy(data["trial_idx"]).to(device)
+        query_point = torch.from_numpy(data["query_point"]).to(device)
+        sdf = torch.from_numpy(data["sdf"]).to(device)
+        in_contact = torch.from_numpy(data["in_contact"]).to(device)
+        force = torch.from_numpy(data["force"]).to(device)
+
+        pred_sdf, pred_in_contact_logits, pred_in_contact, pred_contact_force = self.model.forward(trial_idx,
+                                                                                                   query_point)
+
+        # Apply losses.
+
+        # We apply the SDF loss to every point in space.
+        sdf_loss = sdf_loss_clamp(pred_sdf, sdf, clamp=0.02, reduce="mean")
+        loss_dict["sdf_loss"] = sdf_loss
+
+        # Next, for all points *on the surface* we predict the contact probability.
+        surface_query_points = sdf == 0.0
+        contact_loss = F.binary_cross_entropy_with_logits(pred_in_contact_logits[surface_query_points],
+                                                          in_contact[surface_query_points], reduction="mean")
+        loss_dict["contact_loss"] = contact_loss
+
+        # Finally, for all points *in contact* we predict the contact forces.
+        force_loss = F.mse_loss(pred_contact_force[in_contact], force[in_contact], reduction="mean")
+        loss_dict["force_loss"] = force_loss
+
+        # Combined losses.
+        loss = sdf_loss + contact_loss + force_loss
+        loss_dict["loss"] = loss
 
         return loss_dict, out_dict

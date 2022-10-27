@@ -31,8 +31,6 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     lr = cfg['training']['learning_rate']
     print_every = cfg['training']['print_every']
     max_epochs = cfg['training']['epochs']
-    min_epochs = cfg['training']['min_epochs']
-    max_epochs_without_improving = cfg['training']['max_epochs_without_improving']
     vis_dir = os.path.join(out_dir, 'vis')
 
     # Output + vis directory
@@ -45,10 +43,6 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     # Dump config to output directory.
     utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), cfg)
 
-    # Create model:
-    model = config.get_model(cfg, device=device)
-    print(model)
-
     # Setup datasets.
     print('Loading train dataset:')
     train_dataset = config.get_dataset('train', cfg)
@@ -59,18 +53,14 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
         shuffle=cfg['training']['shuffle'],
         num_workers=16,
         drop_last=True,
-        # pin_memory=True
     )
-    print('Loading val dataset:')
-    validation_dataset = config.get_dataset('val', cfg)
-    val_dataloader = data.DataLoader(validation_dataset, batch_size=cfg['training']['val_batch_size'], shuffle=True,
-                                     num_workers=32, drop_last=True)
 
-    # For vis.
-    # vis_dataloader = data.DataLoader(validation_dataset, batch_size=10, shuffle=True)
-    # data_vis = next(iter(vis_dataloader))
+    # Create model:
+    model = config.get_model(cfg, train_dataset, device=device)
+    print(model)
 
     # Get optimizer (TODO: Parameterize?)
+    # TODO: Does this include the embedding parameters?
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     # Get trainer.
@@ -94,33 +84,22 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     load_dict = model_utils.load_model(model_dict, model_file)
     epoch_it = load_dict.get('epoch_it', -1)
     it = load_dict.get('it', -1)
-    metric_val_best = load_dict.get('val_loss_best', np.inf)
-    epoch_without_improving = 0
 
     # Training loop
     start_time = time.time()
     while True:
         epoch_it += 1
 
-        if epoch_it > max_epochs or (epoch_without_improving > max_epochs_without_improving and epoch_it > min_epochs):
-            print("%s Backing up and stopping training." % (
-                "Reached max epochs." if epoch_it > max_epochs
-                else "Went %d epochs without improving." % epoch_without_improving))
+        if epoch_it > max_epochs:
+            print("%s Backing up and stopping training. Reached max epochs.")
             save_dict = {
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'epoch_it': epoch_it,
                 'it': it,
-                'val_loss_best': metric_val_best
             }
             torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
             break
-
-        if epoch_it > 1:
-            end_time = time.time()
-            per_epoch_avg = (end_time - start_time) / (epoch_it - 1.0)
-            # print("Avg per epoch time: ", per_epoch_avg) TODO: Save this information somewhere? Along with total.
-            #  training time and runs information? Where should this go?
 
         for batch in train_dataloader:
             it += 1
@@ -132,42 +111,12 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
                 print('[Epoch %02d] it=%03d, loss=%.4f'
                       % (epoch_it, it, loss))
 
-            # TODO: Bring back visualization?
-            # if visualize_every > 0 and (it % visualize_every) == 0:
-            #     print('Visualizing.')
-            #     trainer.visualize(data_vis)
-
-        # Validate after each batch.
-        print('Validating.')
-        val_dict = trainer.validation(val_dataloader, it)
-
-        for k, v in val_dict.items():
-            if v is not None:
-                logger.add_scalar(k, v, epoch_it)
-
-        val_loss = val_dict['val_loss']
-        if val_loss < metric_val_best:
-            epoch_without_improving = 0
-            metric_val_best = val_loss
-            print('Saving new best model. Loss=%03f' % metric_val_best)
-            save_dict = {
-                'model': model.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'epoch_it': epoch_it,
-                'it': it,
-                'val_loss_best': metric_val_best
-            }
-            torch.save(save_dict, os.path.join(out_dir, 'model_best.pt'))
-        else:
-            epoch_without_improving += 1
-
         # Backup.
         save_dict = {
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
             'epoch_it': epoch_it,
             'it': it,
-            'val_loss_best': metric_val_best
         }
         torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
 

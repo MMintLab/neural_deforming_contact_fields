@@ -4,21 +4,24 @@ from neural_contact_fields.data.single_tool_dataset import SingleToolDataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from torchvision import transforms
 from neural_contact_fields import single_neural_contact_field
+from neural_contact_fields import single_tool_neural_contact_field
 
 method_dict = {
     'single_neural_contact_field': single_neural_contact_field,
+    'single_tool_neural_contact_field': single_tool_neural_contact_field,
 }
 
 
-def get_model(cfg, device=None):
+def get_model(cfg, dataset, device=None):
     """
     Args:
     - cfg (dict): training config.
+    - dataset (dataset): training dataset
     - device (device): pytorch device.
     """
     method = cfg['method']
     model = method_dict[method].config.get_model(
-        cfg, device=device)
+        cfg, dataset, device=device)
     return model
 
 

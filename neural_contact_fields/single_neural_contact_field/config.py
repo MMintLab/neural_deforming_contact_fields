@@ -3,7 +3,7 @@ from neural_contact_fields.single_neural_contact_field.models.single_neural_cont
 from neural_contact_fields.single_neural_contact_field.training import Trainer
 
 
-def get_model(cfg, device=None):
+def get_model(cfg, dataset, device=None):
     model = SingleNeuralContactField(device)
     return model
 
