@@ -1,3 +1,5 @@
+import pdb
+
 import numpy as np
 import os
 import argparse
@@ -86,7 +88,6 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     it = load_dict.get('it', -1)
 
     # Training loop
-    start_time = time.time()
     while True:
         epoch_it += 1
 
@@ -101,7 +102,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
             torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
             break
 
-        for batch in train_dataloader:
+        for batch in tqdm(train_dataloader):
             it += 1
 
             loss = trainer.train_step(batch, it)

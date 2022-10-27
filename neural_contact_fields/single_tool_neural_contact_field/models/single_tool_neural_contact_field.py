@@ -40,14 +40,14 @@ class SingleToolNeuralContactField(nn.Module):
 
         # Get contact prob/force.
         if self.forward_deformation:
-            cm_in = torch.cat([z, coords, delta_coords])
+            cm_in = torch.cat([z, coords, delta_coords], dim=1)
         else:
-            cm_in = torch.cat([z, coords])
+            cm_in = torch.cat([z, coords], dim=1)
         cm_out = self.contact_module(cm_in)
 
         # Get contact probability at each point.
         contact_logits = cm_out[:, 0]
-        contact_prob = F.sigmoid(contact_logits)
+        contact_prob = torch.sigmoid(contact_logits)
 
         # Get contact force at each point.
         contact_force = cm_out[:, 1:]
