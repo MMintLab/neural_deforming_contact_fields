@@ -102,15 +102,18 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
             torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
             break
 
+        loss = None
         for batch in tqdm(train_dataloader):
             it += 1
-
             loss = trainer.train_step(batch, it)
 
             # Print output
-            if print_every > 0 and (it % print_every) == 0:
-                print('[Epoch %02d] it=%03d, loss=%.4f'
-                      % (epoch_it, it, loss))
+            # if print_every > 0 and (it % print_every) == 0:
+            #     print('[Epoch %02d] it=%03d, loss=%.4f'
+            #           % (epoch_it, it, loss))
+
+        print('[Epoch %02d] it=%03d, loss=%.4f'
+              % (epoch_it, it, loss))
 
         # Backup.
         save_dict = {

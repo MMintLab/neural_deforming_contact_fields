@@ -13,6 +13,6 @@ def get_model(cfg, dataset: ToolDataset, device=None):
 
 
 def get_trainer(model, optimizer, cfg, logger, vis_dir, device=None):
-    trainer = Trainer(model, optimizer, logger, None, vis_dir, device)
+    trainer = Trainer(model, optimizer, logger, cfg["training"]["loss_weights"], vis_dir, device)
 
     return trainer

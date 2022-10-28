@@ -125,7 +125,9 @@ class Trainer(BaseTrainer):
             loss_dict["force_loss"] = 0.0
 
         # Combined losses.
-        loss = sdf_loss + loss_dict["contact_loss"] + loss_dict["force_loss"]
+        loss = (self.loss_weights["sdf_loss"] * sdf_loss) + \
+               (self.loss_weights["contact_loss"] * loss_dict["contact_loss"]) + \
+               (self.loss_weights["force_loss"] * loss_dict["force_loss"])
         loss_dict["loss"] = loss
 
         return loss_dict, out_dict
