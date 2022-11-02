@@ -1,3 +1,4 @@
+import mmint_utils
 import numpy as np
 from neural_contact_fields.inference import points_inference
 from neural_contact_fields.model_utils import load_model_and_dataset
@@ -36,14 +37,16 @@ def test_inference(args):
 
     print("Inference done.")
 
-    points = samples[samples[:, 3] <= 0.03]
-    colors = np.zeros([points.shape[0], 4], dtype=np.float32)
-    colors[:, 3] = 1.0
-    colors[:, 2] = 1.0
-    colors[points[:, 4] >= 0.5, :] = 0.0
-    colors[points[:, 4] >= 0.5, 0] = 1.0
-    colors[points[:, 4] >= 0.5, 3] = 1.0
-    vis.plot_points(points, colors=colors)
+    # points = samples[samples[:, 3] <= 0.03]
+    # colors = np.zeros([points.shape[0], 4], dtype=np.float32)
+    # colors[:, 3] = 1.0
+    # colors[:, 2] = 1.0
+    # colors[points[:, 4] >= 0.5, :] = 0.0
+    # colors[points[:, 4] >= 0.5, 0] = 1.0
+    # colors[points[:, 4] >= 0.5, 3] = 1.0
+    # vis.plot_points(points, colors=colors)
+
+    # mmint_utils.save_gzip_pickle(samples, "test_inference.pkl.gzip")
 
 
 if __name__ == '__main__':

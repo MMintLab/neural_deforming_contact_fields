@@ -92,7 +92,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
         epoch_it += 1
 
         if epoch_it > max_epochs:
-            print("%s Backing up and stopping training. Reached max epochs.")
+            print("Backing up and stopping training. Reached max epochs.")
             save_dict = {
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),

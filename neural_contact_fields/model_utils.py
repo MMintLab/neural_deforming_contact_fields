@@ -48,7 +48,7 @@ def load_dataset_from_config(dataset_config, dataset_mode="test"):
     return dataset
 
 
-def load_model_from_config(model_config, model_file="model_best.pt", cuda_id=0, no_cuda=False):
+def load_model_from_config(model_config, dataset, model_file="model_best.pt", cuda_id=0, no_cuda=False):
     # Read in configuration files.
     model_cfg = mmint_utils.load_cfg(model_config)
 
@@ -57,7 +57,7 @@ def load_model_from_config(model_config, model_file="model_best.pt", cuda_id=0, 
     cuda_device = torch.device("cuda:%d" % cuda_id if is_cuda else "cpu")
 
     # Create model:
-    model = config.get_model(model_cfg, device=cuda_device)
+    model = config.get_model(model_cfg, dataset, device=cuda_device)
 
     # Load model from file.
     model_dict = {
@@ -70,10 +70,10 @@ def load_model_from_config(model_config, model_file="model_best.pt", cuda_id=0, 
 
 def load_model_and_dataset(model_config, dataset_config=None, dataset_mode="test", model_file='model_best.pt',
                            cuda_id=0, no_cuda=False):
-    model_cfg, model, cuda_device = load_model_from_config(model_config, model_file=model_file, cuda_id=cuda_id,
-                                                           no_cuda=no_cuda)
-
     if dataset_config is None:
         dataset_config = model_config
     dataset = load_dataset_from_config(dataset_config, dataset_mode)
+
+    model_cfg, model, cuda_device = load_model_from_config(model_config, dataset, model_file=model_file,
+                                                           cuda_id=cuda_id, no_cuda=no_cuda)
     return model_cfg, model, dataset, cuda_device
