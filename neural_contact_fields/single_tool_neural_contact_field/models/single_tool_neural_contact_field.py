@@ -1,6 +1,5 @@
 import torch.nn as nn
 import torch
-import torch.nn.functional as F
 from neural_contact_fields.models.mlp import build_mlp
 
 
@@ -25,6 +24,9 @@ class SingleToolNeuralContactField(nn.Module):
         # Contact module - query point x trial code [x def at p] -> binary contact x force.
         self.contact_module = build_mlp(self.z + 3 + (3 if self.forward_deformation else 0), 4, [128, 64, 32],
                                         device=self.device)
+
+    def forward_object_module(self, query_points: torch.Tensor):
+        return self.object_module.forward(query_points)
 
     def forward(self, trial_idcs: torch.Tensor, coords: torch.Tensor):
         # Embed trials.

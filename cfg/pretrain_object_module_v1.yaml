@@ -1,0 +1,17 @@
+data:
+  dataset: PretrainObjectModuleDataset
+  dataset_fn: /home/markvdm/Documents/IsaacGym/ncf_envs/out/test_10_26_22/pretrain.pkl.gzip
+training:
+  out_dir: out/models/pretrain_object_module_v1/
+  learning_rate: 0.0001
+  print_every: 100
+  epochs: 2000
+  min_epochs: 100
+  batch_size: 2048
+  shuffle: true
+  loss_weights: {}
+method: pretrain_object_module
+model:
+  method: single_tool_neural_contact_field
+  z: 64
+  forward_deformation: False

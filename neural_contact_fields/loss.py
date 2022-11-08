@@ -6,8 +6,8 @@ def sdf_loss_clamp(sdf_pred: torch.Tensor, sdf_gt: torch.Tensor, clamp: float, r
     """
     SDF Loss clamped.
     """
-    sdf_pred_clamp = torch.clamp(sdf_pred, max=clamp)
-    sdf_gt_clamp = torch.clamp(sdf_gt, max=clamp)
+    sdf_pred_clamp = sdf_pred  # torch.clamp(sdf_pred, max=clamp)
+    sdf_gt_clamp = sdf_gt  # torch.clamp(sdf_gt, max=clamp)
 
     sdf_err = torch.abs(sdf_pred_clamp - sdf_gt_clamp)
 
