@@ -1,4 +1,5 @@
 import argparse
+import os.path
 
 import mmint_utils
 import torch
@@ -48,6 +49,7 @@ def test_object_module_inference(args):
 
     # Write prediction results to file.
     out_fn = args.out_fn
+    mmint_utils.make_dir(os.path.dirname(out_fn))
 
     out_dict = {
         "query_points": dataset.query_points,
