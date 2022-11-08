@@ -71,11 +71,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     # Load model pretrain weights, if exists.
     pretrain_file = cfg['training'].get("pretrain_file", None)
     if pretrain_file is not None:
-        print("Loading from pretraining file..")
-        model_dict = {
-            "model": model,
-        }
-        model_utils.load_model(model_dict, pretrain_file)
+        model_utils.load_pretrained_model(model, pretrain_file)
 
     # Load model + optimizer if exists.
     model_dict = {
