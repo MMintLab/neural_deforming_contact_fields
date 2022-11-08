@@ -26,7 +26,7 @@ class SingleToolNeuralContactField(nn.Module):
                                         device=self.device)
 
     def forward_object_module(self, query_points: torch.Tensor):
-        return self.object_module.forward(query_points)
+        return self.object_module.forward(query_points).squeeze(-1)
 
     def forward(self, trial_idcs: torch.Tensor, coords: torch.Tensor):
         # Embed trials.
@@ -38,7 +38,7 @@ class SingleToolNeuralContactField(nn.Module):
 
         # Get deformed query point.
         def_coords = coords + delta_coords
-        sdf = self.object_module.forward(def_coords)
+        sdf = self.forward_object_module(def_coords)
 
         # Get contact prob/force.
         if self.forward_deformation:
