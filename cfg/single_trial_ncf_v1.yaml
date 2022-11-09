@@ -1,0 +1,23 @@
+data:
+  dataset: ToolDataset
+  dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/test_10_26_22_single/
+training:
+  pretrain_file: out/models/pretrain_object_module_v2/model.pt
+  out_dir: out/models/single_trial_ncf_v1/
+  learning_rate: 0.0001
+  print_every: 100
+  epochs: 2000
+  min_epochs: 100
+  batch_size: 2048
+  shuffle: true
+  loss_weights:
+    sdf_loss: 1.0
+    embed_loss: 0.01
+    def_loss: 0.01
+    contact_loss: 0.0
+    force_loss: 0.0
+method: single_tool_neural_contact_field
+model:
+  method: single_tool_neural_contact_field
+  z: 64
+  forward_deformation: False

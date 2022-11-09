@@ -99,19 +99,26 @@ class Trainer(BaseTrainer):
         in_contact_float = torch.clone(in_contact).float()
         force = data["force"].float().to(device)
 
-        pred_sdf, pred_in_contact_logits, pred_in_contact, pred_contact_force = self.model.forward(trial_idx,
-                                                                                                   query_point)
+        pred_dict = self.model.forward(trial_idx, query_point)
 
         # Apply losses.
 
+        # Apply L2 loss on trial embeddings.
+        embed_loss = torch.linalg.norm(pred_dict["z"]).mean()
+        loss_dict["embed_loss"] = embed_loss
+
         # We apply the SDF loss to every point in space.
-        sdf_loss = sdf_loss_clamp(pred_sdf, sdf, clamp=1.0, reduce="mean")
+        sdf_loss = F.l1_loss(pred_dict["sdf"], sdf, reduction="mean")
         loss_dict["sdf_loss"] = sdf_loss
+
+        # Apply L2 loss on deformation.
+        def_loss = torch.linalg.norm(pred_dict["delta_coords"]).mean()
+        loss_dict["def_loss"] = def_loss
 
         # Next, for all points *on the surface* we predict the contact probability.
         surface_query_points = sdf == 0.0
         if surface_query_points.sum() > 0:
-            contact_loss = F.binary_cross_entropy_with_logits(pred_in_contact_logits[surface_query_points],
+            contact_loss = F.binary_cross_entropy_with_logits(pred_dict["contact_logits"][surface_query_points],
                                                               in_contact_float[surface_query_points], reduction="mean")
             loss_dict["contact_loss"] = contact_loss
         else:
@@ -119,13 +126,14 @@ class Trainer(BaseTrainer):
 
         # Finally, for all points *in contact* we predict the contact forces.
         if in_contact.sum() > 0:
-            force_loss = F.mse_loss(pred_contact_force[in_contact], force[in_contact], reduction="mean")
+            force_loss = F.mse_loss(pred_dict["contact_force"][in_contact], force[in_contact], reduction="mean")
             loss_dict["force_loss"] = force_loss
         else:
             loss_dict["force_loss"] = 0.0
 
         # Combined losses.
         loss = (self.loss_weights["sdf_loss"] * sdf_loss) + \
+               (self.loss_weights["def_loss"] * def_loss) + \
                (self.loss_weights["contact_loss"] * loss_dict["contact_loss"]) + \
                (self.loss_weights["force_loss"] * loss_dict["force_loss"])
         loss_dict["loss"] = loss

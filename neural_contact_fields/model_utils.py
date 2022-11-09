@@ -43,7 +43,7 @@ def load_model(model_dict, model_file):
     return load_dict
 
 
-def load_pretrained_model(model, pretrain_file):
+def load_pretrained_model(model, pretrain_file, freeze=False):
     # TODO: Find a more flexible way to do this!
     print("Loading pretrained model weights from local file: %s" % pretrain_file)
     pretrain_state_dict = torch.load(pretrain_file, map_location='cpu')
@@ -52,6 +52,9 @@ def load_pretrained_model(model, pretrain_file):
     object_module_dict = {k: pretrain_state_dict["model"][k] for k in object_module_keys}
 
     model.load_state_dict(object_module_dict, strict=False)
+
+    for param in model.object_module.parameters():
+        param.requires_grad = False
 
 
 def load_dataset_from_config(dataset_config, dataset_mode="test"):

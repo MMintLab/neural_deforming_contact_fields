@@ -54,4 +54,8 @@ class SingleToolNeuralContactField(nn.Module):
         # Get contact force at each point.
         contact_force = cm_out[:, 1:]
 
-        return sdf, contact_logits, contact_prob, contact_force
+        out_dict = {
+            "z": z, "delta_coords": delta_coords, "sdf": sdf,
+            "contact_logits": contact_logits, "contact_prob": contact_prob, "contact_force": contact_force
+        }
+        return out_dict

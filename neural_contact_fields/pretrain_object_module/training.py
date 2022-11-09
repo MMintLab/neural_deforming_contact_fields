@@ -97,10 +97,7 @@ class Trainer(BaseTrainer):
 
         pred_sdf = self.model.forward_object_module(query_point)
 
-        # Apply SDF loss.
-        # loss = sdf_loss_clamp(pred_sdf, sdf, clamp=1.0, reduce="mean")
-        # loss_dict["loss"] = loss
-
+        # SDF Loss - L1.
         loss_dict["loss"] = F.l1_loss(pred_sdf, sdf, reduction="mean")
 
         return loss_dict, out_dict
