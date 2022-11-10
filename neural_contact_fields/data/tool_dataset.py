@@ -44,6 +44,8 @@ class ToolDataset(torch.utils.data.Dataset):
             self.in_contact = np.concatenate((self.in_contact, example_dict["in_contact"]))
             self.forces = np.concatenate((self.forces, example_dict["forces"]))
 
+        self.in_contact = self.in_contact.astype(int)
+
     def __len__(self):
         return len(self.object_idcs)
 
