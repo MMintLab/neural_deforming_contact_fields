@@ -95,7 +95,8 @@ class Trainer(BaseTrainer):
         trial_idx = data["trial_idx"].long().to(device)
         query_point = data["query_point"].float().to(device)
         sdf = data["sdf"].float().to(device)
-        in_contact = data["in_contact"].to(device)
+        surface_query_points = sdf == 0.0
+        in_contact = data["in_contact"].to(device) > 0.5
         in_contact_float = torch.clone(in_contact).float()
         force = data["force"].float().to(device)
 
@@ -116,7 +117,6 @@ class Trainer(BaseTrainer):
         loss_dict["def_loss"] = def_loss
 
         # Next, for all points *on the surface* we predict the contact probability.
-        surface_query_points = sdf == 0.0
         if surface_query_points.sum() > 0:
             contact_loss = F.binary_cross_entropy_with_logits(pred_dict["contact_logits"][surface_query_points],
                                                               in_contact_float[surface_query_points], reduction="mean")

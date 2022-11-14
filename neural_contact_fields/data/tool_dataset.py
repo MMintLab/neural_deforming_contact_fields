@@ -81,3 +81,17 @@ class ToolDataset(torch.utils.data.Dataset):
             "force": self.forces[trial_idcs]
         }
         return data_dict
+
+    def get_all_points_for_trial_batch(self, object_idx, trial_idx):
+        data_dict = self.get_all_points_for_trial(object_idx, trial_idx)
+        n = data_dict["query_point"].shape[0]
+
+        batch_dict = {
+            "object_idx": torch.from_numpy(np.array([data_dict["object_idx"]] * n)),
+            "trial_idx": torch.from_numpy(np.array([data_dict["trial_idx"]] * n)),
+            "query_point": torch.from_numpy(data_dict["query_point"]),
+            "sdf": torch.from_numpy(data_dict["sdf"]),
+            "in_contact": torch.from_numpy(data_dict["in_contact"]),
+            "force": torch.from_numpy(data_dict["force"]),
+        }
+        return batch_dict

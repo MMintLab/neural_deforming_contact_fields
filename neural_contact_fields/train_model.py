@@ -1,12 +1,9 @@
-import pdb
-
-import numpy as np
 import os
 import argparse
-from tqdm import tqdm
-import time
+import pdb
+
+from neural_contact_fields.data.tool_dataset import ToolDataset
 import torch
-import torch.utils.data as data
 import torch.optim as optim
 import json
 from tensorboardX import SummaryWriter
@@ -47,22 +44,14 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     # Setup datasets.
     print('Loading train dataset:')
-    train_dataset = config.get_dataset('train', cfg)
+    train_dataset: ToolDataset = config.get_dataset('train', cfg)
     print('Dataset size: %d' % len(train_dataset))
-    train_dataloader = data.DataLoader(
-        train_dataset,
-        batch_size=cfg['training']['batch_size'],
-        shuffle=cfg['training']['shuffle'],
-        num_workers=16,
-        drop_last=True,
-    )
 
     # Create model:
     model = config.get_model(cfg, train_dataset, device=device)
     print(model)
 
     # Get optimizer (TODO: Parameterize?)
-    # TODO: Does this include the embedding parameters?
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     # Get trainer.
@@ -71,7 +60,16 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     # Load model pretrain weights, if exists.
     pretrain_file = cfg['training'].get("pretrain_file", None)
     if pretrain_file is not None:
-        model_utils.load_pretrained_model(model, pretrain_file)
+        print("Loading pretrained model weights from local file: %s" % pretrain_file)
+        pretrain_state_dict = torch.load(pretrain_file, map_location='cpu')
+
+        object_module_keys = [key for key in pretrain_state_dict["model"].keys() if "object_module" in key]
+        object_module_dict = {k: pretrain_state_dict["model"][k] for k in object_module_keys}
+
+        model.load_state_dict(object_module_dict, strict=False)
+
+        for param in model.object_module.parameters():
+            param.requires_grad = False
 
     # Load model + optimizer if exists.
     model_dict = {
@@ -99,14 +97,11 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
             break
 
         loss = None
-        for batch in tqdm(train_dataloader):
+        for trial_idx in range(train_dataset.num_trials):
             it += 1
-            loss = trainer.train_step(batch, it)
 
-            # Print output
-            # if print_every > 0 and (it % print_every) == 0:
-            #     print('[Epoch %02d] it=%03d, loss=%.4f'
-            #           % (epoch_it, it, loss))
+            batch = train_dataset.get_all_points_for_trial_batch(-1, trial_idx)
+            loss = trainer.train_step(batch, it)
 
         print('[Epoch %02d] it=%03d, loss=%.4f'
               % (epoch_it, it, loss))
