@@ -28,10 +28,7 @@ class SingleToolNeuralContactField(nn.Module):
     def forward_object_module(self, query_points: torch.Tensor):
         return self.object_module.forward(query_points).squeeze(-1)
 
-    def forward(self, trial_idcs: torch.Tensor, coords: torch.Tensor):
-        # Embed trials.
-        z = self.trial_embedding.forward(trial_idcs)
-
+    def latent_forward(self, z: torch.Tensor, coords: torch.Tensor):
         # Find deformation at each query point.
         def_in = torch.cat([z, coords], dim=1)
         delta_coords = self.deformation_module.forward(def_in)
@@ -59,3 +56,14 @@ class SingleToolNeuralContactField(nn.Module):
             "contact_logits": contact_logits, "contact_prob": contact_prob, "contact_force": contact_force
         }
         return out_dict
+
+    def trial_to_latent(self, trial_idcs: torch.Tensor):
+        # Embed trials.
+        z = self.trial_embedding.forward(trial_idcs)
+        return z
+
+    def forward(self, trial_idcs: torch.Tensor, coords: torch.Tensor):
+        # Embed trials.
+        z = self.trial_to_latent(trial_idcs)
+
+        return self.latent_forward(z, coords)

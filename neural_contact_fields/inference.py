@@ -5,6 +5,34 @@ import torch
 from tqdm import trange
 
 
+def points_inference_latent(model, latent, query_points, max_batch: int = 40 ** 3, device=None):
+    model.eval()
+
+    num_samples = query_points.shape[0]
+
+    head = 0
+    num_iters = int(np.ceil(num_samples / max_batch))
+    pred_dict_all = defaultdict(list)
+
+    for iter_idx in trange(num_iters):
+        sample_subset = query_points[head: min(head + max_batch, num_samples)]
+        latent_in = latent.repeat(sample_subset.shape[0], 1)
+
+        with torch.no_grad():
+            pred_dict = model.latent_forward(latent_in, sample_subset)
+
+        for k, v in pred_dict.items():
+            pred_dict_all[k].append(v)
+
+        head += max_batch
+
+    pred_dict_final = dict()
+    for k, v in pred_dict_all.items():
+        pred_dict_final[k] = torch.cat(v, dim=0)
+
+    return pred_dict_final
+
+
 def points_inference(model, trial_dict, max_batch: int = 40 ** 3, device=None):
     model.eval()
 
