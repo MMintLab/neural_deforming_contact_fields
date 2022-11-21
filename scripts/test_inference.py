@@ -9,6 +9,7 @@ from neural_contact_fields.inference import points_inference
 from neural_contact_fields.model_utils import load_model_and_dataset
 import neural_contact_fields.vis as vis
 import argparse
+from vis_prediction_vs_dataset import vis_prediction_vs_dataset
 
 
 def get_model_dataset_arg_parser():
@@ -57,12 +58,15 @@ def test_inference(args):
     for trial_idx in trial_indices:
         trial_dict = dataset.get_all_points_for_trial(None, trial_idx)
         trial_pred_dict = points_inference(model, trial_dict, device=device)
-
-        out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
-        mmint_utils.save_gzip_pickle({
+        results_dict = {
             "gt": numpy_dict(trial_dict),
             "pred": numpy_dict(trial_pred_dict)
-        }, out_fn)
+        }
+
+        vis_prediction_vs_dataset(results_dict)
+
+        # out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
+        # mmint_utils.save_gzip_pickle( }, out_fn)
 
 
 if __name__ == '__main__':
