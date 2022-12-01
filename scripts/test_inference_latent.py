@@ -4,14 +4,12 @@ import pdb
 import mmint_utils
 import numpy as np
 import torch
-from neural_contact_fields import vedo_utils
 from neural_contact_fields.data.tool_dataset import ToolDataset
-from neural_contact_fields.inference import points_inference, infer_latent, points_inference_latent
+from neural_contact_fields.inference import points_inference
 from neural_contact_fields.model_utils import load_model_and_dataset
 import neural_contact_fields.vis as vis
 import argparse
 from vis_prediction_vs_dataset import vis_prediction_vs_dataset
-from vedo import Plotter, Points, Arrows
 
 
 def get_model_dataset_arg_parser():
@@ -43,7 +41,7 @@ def numpy_dict(torch_dict: dict):
     np_dict = dict()
     for k, v in torch_dict.items():
         if type(v) is torch.Tensor:
-            np_dict[k] = v.detach().cpu().numpy()
+            np_dict[k] = v.cpu().numpy()
         else:
             np_dict[k] = v
     return np_dict
@@ -59,17 +57,16 @@ def test_inference(args):
     trial_indices = dataset.get_trial_indices()
     for trial_idx in trial_indices:
         trial_dict = dataset.get_all_points_for_trial(None, trial_idx)
-        query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
-        latent_code = infer_latent(model, trial_dict, device=device)
-
-        res_dict = points_inference_latent(model, latent_code, query_points, device=device)
-
+        trial_pred_dict = points_inference(model, trial_dict, device=device)
         results_dict = {
             "gt": numpy_dict(trial_dict),
-            "pred": numpy_dict(res_dict)
+            "pred": numpy_dict(trial_pred_dict)
         }
 
         vis_prediction_vs_dataset(results_dict)
+
+        # out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
+        # mmint_utils.save_gzip_pickle( }, out_fn)
 
 
 if __name__ == '__main__':

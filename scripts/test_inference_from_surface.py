@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from neural_contact_fields import vedo_utils
 from neural_contact_fields.data.tool_dataset import ToolDataset
-from neural_contact_fields.inference import points_inference, infer_latent, points_inference_latent
+from neural_contact_fields.inference import points_inference, infer_latent, points_inference_latent, \
+    infer_latent_from_surface
 from neural_contact_fields.model_utils import load_model_and_dataset
 import neural_contact_fields.vis as vis
 import argparse
@@ -60,7 +61,7 @@ def test_inference(args):
     for trial_idx in trial_indices:
         trial_dict = dataset.get_all_points_for_trial(None, trial_idx)
         query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
-        latent_code = infer_latent(model, trial_dict, device=device)
+        latent_code = infer_latent_from_surface(model, trial_dict, device=device)
 
         res_dict = points_inference_latent(model, latent_code, query_points, device=device)
 

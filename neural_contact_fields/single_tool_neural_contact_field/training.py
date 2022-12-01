@@ -106,7 +106,7 @@ class Trainer(BaseTrainer):
 
         # Apply L2 loss on trial embeddings.
         embed_loss = torch.linalg.norm(pred_dict["z"]).mean()
-        loss_dict["embed_loss"] = embed_loss
+        loss_dict["embed_loss"] = embed_loss  # TODO: This is not being used.
 
         # We apply the SDF loss to every point in space.
         sdf_loss = F.l1_loss(pred_dict["sdf"], sdf, reduction="mean")
