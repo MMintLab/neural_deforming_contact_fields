@@ -2,7 +2,7 @@ import argparse
 import mmint_utils
 import numpy as np
 from vedo import Plotter, Points, Arrows
-import neural_contact_fields.vedo_utils as vedo_utils
+import neural_contact_fields.utils.utils.vedo_utils as vedo_utils
 
 
 def vis_prediction_vs_dataset(pred_dict: dict):

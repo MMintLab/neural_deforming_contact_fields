@@ -1,18 +1,11 @@
-import os.path
-import pdb
-
 import mmint_utils
-import numpy as np
 import torch
-from neural_contact_fields import vedo_utils
 from neural_contact_fields.data.tool_dataset import ToolDataset
-from neural_contact_fields.inference import points_inference, infer_latent, points_inference_latent, \
+from neural_contact_fields.inference import points_inference_latent, \
     infer_latent_from_surface
-from neural_contact_fields.model_utils import load_model_and_dataset
-import neural_contact_fields.vis as vis
+from neural_contact_fields.utils.utils import load_model_and_dataset
 import argparse
 from vis_prediction_vs_dataset import vis_prediction_vs_dataset
-from vedo import Plotter, Points, Arrows
 
 
 def get_model_dataset_arg_parser():

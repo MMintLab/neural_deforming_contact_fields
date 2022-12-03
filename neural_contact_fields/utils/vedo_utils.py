@@ -1,6 +1,6 @@
 from vedo import Arrow
 import numpy as np
-import neural_contact_fields.utils as utils  # TODO: Fix.
+import neural_contact_fields.utils.utils as utils  # TODO: Fix.
 
 
 def draw_origin(scale=0.02):

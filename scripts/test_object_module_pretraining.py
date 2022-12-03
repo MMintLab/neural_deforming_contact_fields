@@ -3,7 +3,7 @@ import os.path
 
 import mmint_utils
 import torch
-from neural_contact_fields.model_utils import load_model_and_dataset
+from neural_contact_fields.utils.utils import load_model_and_dataset
 import numpy as np
 from tqdm import trange
 

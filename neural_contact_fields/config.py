@@ -28,7 +28,7 @@ def get_model(cfg, dataset, device=None):
     return model
 
 
-def get_trainer(model, optimizer, cfg, logger, vis_dir, device=None):
+def get_trainer(cfg, model, device=None):
     """
     Return trainer instance.
 
@@ -41,8 +41,7 @@ def get_trainer(model, optimizer, cfg, logger, vis_dir, device=None):
     - device (device): pytorch device
     """
     method = cfg['method']
-    trainer = method_dict[method].config.get_trainer(
-        model, optimizer, cfg, logger, vis_dir, device)
+    trainer = method_dict[method].config.get_trainer(cfg, model, device)
     return trainer
 
 

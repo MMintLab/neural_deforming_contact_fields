@@ -1,16 +1,16 @@
-import pdb
-from collections import defaultdict
-import numpy as np
 import torch
 from neural_contact_fields.training import BaseTrainer
-from neural_contact_fields.loss import sdf_loss_clamp
-from tqdm import tqdm
 import torch.nn.functional as F
+import os
+import mmint_utils
+from neural_contact_fields.utils import model_utils
+from tensorboardX import SummaryWriter
+import torch.optim as optim
 
 
 class Trainer(BaseTrainer):
 
-    def __init__(self, model, optimizer, logger, loss_weights, vis_dir, device=None):
+    def __init__(self, cfg, model, device=None):
         """
         Args:
         - model (nn.Module): model
@@ -20,11 +20,106 @@ class Trainer(BaseTrainer):
         - device (device): pytorch device
         """
         self.model = model
-        self.optimizer = optimizer
         self.device = device
-        self.logger = logger
-        self.loss_weights = loss_weights
-        self.vis_dir = vis_dir
+
+        # Shorthands:
+        self.out_dir = cfg['training']['out_dir']
+        self.lr = cfg['training']['learning_rate']
+        self.print_every = cfg['training']['print_every']
+        self.max_epochs = cfg['training']['epochs']
+        self.loss_weights = cfg['training']['loss_weights']
+        self.epoch_it = 0
+        self.it = 0
+
+        # Output + vis directory
+        if not os.path.exists(self.out_dir):
+            os.makedirs(self.out_dir)
+        self.logger = SummaryWriter(os.path.join(self.out_dir, 'logs'))
+
+        # Dump config to output directory.
+        mmint_utils.dump_cfg(os.path.join(self.out_dir, 'config.yaml'), cfg)
+
+        # Get optimizer (TODO: Parameterize?)
+        self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
+
+        # Load pretrained model, if appropriate.
+        self.pretrain_file = os.path.join(self.out_dir, cfg['training']['pretrain_file'])
+        self.load_pretrained_model(cfg['training']['freeze_pretrain_weights'])
+
+        # Load model + optimizer if a partially trained copy of it exists.
+        self.load_partial_train_model()
+
+    def load_partial_train_model(self):
+        model_dict = {
+            'model': self.model,
+            'optimizer': self.optimizer,
+        }
+        model_file = os.path.join(self.out_dir, 'model.pt')
+        load_dict = model_utils.load_model(model_dict, model_file)
+        self.epoch_it = load_dict.get('epoch_it', -1)
+        self.it = load_dict.get('it', -1)
+
+    ##########################################################################
+    #  Pretraining loop                                                      #
+    ##########################################################################
+
+    def load_pretrained_model(self, freeze_pretrain_weights=False):
+        # Load model pretrain weights, if exists.
+        if self.pretrain_file is not None:
+            print("Loading pretrained model weights from local file: %s" % self.pretrain_file)
+            pretrain_state_dict = torch.load(self.pretrain_file, map_location='cpu')
+
+            # Here, we only load object module weights.
+            object_module_keys = [key for key in pretrain_state_dict["model"].keys() if "object_module" in key]
+            object_module_dict = {k: pretrain_state_dict["model"][k] for k in object_module_keys}
+            self.model.load_state_dict(object_module_dict, strict=False)
+
+            # Optionally, we can freeze the pretrained weights.
+            if freeze_pretrain_weights:
+                for param in self.model.object_module.parameters():
+                    param.requires_grad = False
+
+    def pretrain(self, pretrain_dataset):
+        raise NotImplementedError()
+
+    ##########################################################################
+    #  Main training loop                                                    #
+    ##########################################################################
+
+    def train(self, train_dataset):
+        # Training loop
+        while True:
+            self.epoch_it += 1
+
+            if self.epoch_it > self.max_epochs:
+                print("Backing up and stopping training. Reached max epochs.")
+                save_dict = {
+                    'model': self.model.state_dict(),
+                    'optimizer': self.optimizer.state_dict(),
+                    'epoch_it': self.epoch_it,
+                    'it': self.it,
+                }
+                torch.save(save_dict, os.path.join(self.out_dir, 'model.pt'))
+                break
+
+            loss = None
+            for trial_idx in range(train_dataset.num_trials):
+                self.it += 1
+
+                batch = train_dataset.get_all_points_for_trial_batch(-1, trial_idx)
+                loss = self.train_step(batch, self.it)
+
+            print('[Epoch %02d] it=%03d, loss=%.4f'
+                  % (self.epoch_it, self.it, loss))
+
+            # Backup.
+            save_dict = {
+                'model': self.model.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'epoch_it': self.epoch_it,
+                'it': self.it,
+            }
+            torch.save(save_dict, os.path.join(self.out_dir, 'model.pt'))
 
     def train_step(self, data, it):
         """
@@ -46,39 +141,6 @@ class Trainer(BaseTrainer):
         self.optimizer.step()
 
         return loss.item()
-
-    def validation(self, val_loader, it):
-        val_dict = defaultdict(list)
-
-        for val_batch in tqdm(val_loader):
-            eval_loss_dict, eval_out_dict = self.eval_step(val_batch, it)
-
-            val_dict["loss"].append(eval_loss_dict["loss"].item())
-
-        return {
-            "val_loss": np.mean(val_dict["loss"]),
-        }
-
-    def eval_step(self, data, it):
-        """
-        Perform evaluation step.
-
-        Args:
-        - data (dict): data dictionary
-        """
-        self.model.eval()
-
-        with torch.no_grad():
-            loss_dict, out_dict = self.compute_loss(data, it)
-
-        return loss_dict, out_dict
-
-    def visualize(self, data):
-        """
-        Visualize the predicted RGB/Depth images.
-        """
-        # TODO: Visualize?
-        pass
 
     def compute_loss(self, data, it):
         """

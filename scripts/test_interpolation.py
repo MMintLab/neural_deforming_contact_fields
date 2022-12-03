@@ -1,12 +1,11 @@
 import argparse
 
-import mmint_utils
 import numpy as np
 import torch
-from neural_contact_fields import vedo_utils
+from neural_contact_fields.utils.utils import vedo_utils
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.inference import points_inference_latent
-from neural_contact_fields.model_utils import load_model_and_dataset
+from neural_contact_fields.utils.utils import load_model_and_dataset
 
 from vedo import Plotter, Points, Arrows
 
