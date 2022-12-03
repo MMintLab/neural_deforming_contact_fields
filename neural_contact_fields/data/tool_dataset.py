@@ -28,7 +28,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.query_points = []  # Query points.
         self.sdf = []  # Signed distance value at point.
         self.in_contact = []  # Binary contact indicator at point.
-        self.forces = []  # Contact force at point.
+        self.trial_pressure = []  # Contact force at point.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
@@ -40,7 +40,7 @@ class ToolDataset(torch.utils.data.Dataset):
             self.query_points.append(example_dict["query_points"])
             self.sdf.append(example_dict["sdf"])
             self.in_contact.append(example_dict["in_contact"])
-            self.forces.append(example_dict["forces"])
+            self.trial_pressure.append(example_dict["pressure"])
 
     def __len__(self):
         return len(self.object_idcs)
@@ -52,7 +52,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "query_point": self.query_points[index],
             "sdf": self.sdf[index],
             "in_contact": self.in_contact[index].astype(int),
-            "force": self.forces[index]
+            "pressure": self.trial_pressure[index]
         }
 
         return data_dict
