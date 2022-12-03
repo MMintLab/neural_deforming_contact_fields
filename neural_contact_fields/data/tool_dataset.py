@@ -23,28 +23,24 @@ class ToolDataset(torch.utils.data.Dataset):
         self.num_trials = len(data_fns)
 
         # Data arrays.
-        self.object_idcs = np.empty(0)  # Object index: what tool is used in this example?
-        self.trial_idcs = np.empty(0)  # Trial index: which trial is used in this example?
-        self.query_points = np.empty([0, 3])  # Query points.
-        self.sdf = np.empty(0)  # Signed distance value at point.
-        self.in_contact = np.empty(0)  # Binary contact indicator at point.
-        self.forces = np.empty([0, 3])  # Contact force at point.
+        self.object_idcs = []  # Object index: what tool is used in this example?
+        self.trial_idcs = []  # Trial index: which trial is used in this example?
+        self.query_points = []  # Query points.
+        self.sdf = []  # Signed distance value at point.
+        self.in_contact = []  # Binary contact indicator at point.
+        self.forces = []  # Contact force at point.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
-            n_points = example_dict["n_points"]
 
             # Populate example info.
-            self.object_idcs = np.concatenate((self.object_idcs,
-                                               [0] * n_points))  # TODO: Replace when using multiple tools.
-            self.trial_idcs = np.concatenate((self.trial_idcs, [trial_idx] * n_points))
-            self.query_points = np.concatenate((self.query_points, example_dict["query_points"]))
-            self.sdf = np.concatenate((self.sdf, example_dict["sdf"]))
-            self.in_contact = np.concatenate((self.in_contact, example_dict["in_contact"]))
-            self.forces = np.concatenate((self.forces, example_dict["forces"]))
-
-        self.in_contact = self.in_contact.astype(int)
+            self.object_idcs.append(0)  # TODO: Replace when using multiple tools.
+            self.trial_idcs.append(trial_idx)
+            self.query_points.append(example_dict["query_points"])
+            self.sdf.append(example_dict["sdf"])
+            self.in_contact.append(example_dict["in_contact"])
+            self.forces.append(example_dict["forces"])
 
     def __len__(self):
         return len(self.object_idcs)
@@ -55,43 +51,8 @@ class ToolDataset(torch.utils.data.Dataset):
             "trial_idx": self.trial_idcs[index],
             "query_point": self.query_points[index],
             "sdf": self.sdf[index],
-            "in_contact": self.in_contact[index],
+            "in_contact": self.in_contact[index].astype(int),
             "force": self.forces[index]
         }
 
         return data_dict
-
-    def get_trial_indices(self):
-        """
-        Return all the unique trial indices for this dataset.
-        # TODO: Handling different object indices.
-        """
-        return np.arange(self.num_trials)
-
-    def get_all_points_for_trial(self, object_idx, trial_idx):
-        # TODO: Handle for different object indices as well.
-        trial_idcs = np.nonzero(self.trial_idcs == trial_idx)[0].astype(int)
-
-        data_dict = {
-            "object_idx": object_idx,
-            "trial_idx": trial_idx,
-            "query_point": self.query_points[trial_idcs],
-            "sdf": self.sdf[trial_idcs],
-            "in_contact": self.in_contact[trial_idcs],
-            "force": self.forces[trial_idcs]
-        }
-        return data_dict
-
-    def get_all_points_for_trial_batch(self, object_idx, trial_idx):
-        data_dict = self.get_all_points_for_trial(object_idx, trial_idx)
-        n = data_dict["query_point"].shape[0]
-
-        batch_dict = {
-            "object_idx": torch.from_numpy(np.array([data_dict["object_idx"]] * n)),
-            "trial_idx": torch.from_numpy(np.array([data_dict["trial_idx"]] * n)),
-            "query_point": torch.from_numpy(data_dict["query_point"]),
-            "sdf": torch.from_numpy(data_dict["sdf"]),
-            "in_contact": torch.from_numpy(data_dict["in_contact"]),
-            "force": torch.from_numpy(data_dict["force"]),
-        }
-        return batch_dict
