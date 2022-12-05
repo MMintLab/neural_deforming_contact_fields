@@ -10,6 +10,7 @@ import os
 class ToolDataset(torch.utils.data.Dataset):
     """
     Tool dataset. Contains query points and SDF, binary contact, and contact force at each point.
+    Each example in this dataset is all sample points for a given trial.
     """
 
     def __init__(self, dataset_dir: str, transform=None):
