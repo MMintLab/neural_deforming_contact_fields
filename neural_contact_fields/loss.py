@@ -1,21 +1,102 @@
 import torch
 import torch.nn.functional as F
+import neural_contact_fields.utils.diff_operators as diff_operators
+from pytorch3d.loss import chamfer_distance
 
 
-def sdf_loss_clamp(sdf_pred: torch.Tensor, sdf_gt: torch.Tensor, clamp: float, reduce: str = "mean"):
+# TODO: Unit tests for losses.
+
+
+def sdf_loss(gt_sdf: torch.Tensor, pred_sdf: torch.Tensor, clip: float = 1.0):
     """
-    SDF Loss clamped.
+    Clipped SDF loss.
+
+    Args:
+    - gt_sdf (torch.Tensor): ground truth sdf values.
+    - pred_sdf (torch.Tensor): predicted sdf values.
+    - clip (float): value to clip predicted/gt sdf values to.
     """
-    sdf_pred_clamp = sdf_pred  # torch.clamp(sdf_pred, max=clamp)
-    sdf_gt_clamp = sdf_gt  # torch.clamp(sdf_gt, max=clamp)
+    pred_sdf_clip = torch.clip(pred_sdf, -clip, clip)
+    gt_sdf_clip = torch.clip(gt_sdf, -clip, clip)
 
-    sdf_err = torch.abs(sdf_pred_clamp - sdf_gt_clamp)
+    loss = torch.abs(pred_sdf_clip - gt_sdf_clip)
 
-    if reduce == "mean":
-        return sdf_err.mean()
-    elif reduce == "sum":
-        return sdf_err.sum()
-    elif reduce == "none":
-        return sdf_err
-    else:
-        raise Exception("Unknown reduction: %s." % reduce)
+    return loss.mean()
+
+
+def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_sdf: torch.Tensor, coords: torch.Tensor):
+    """
+    Surface normal loss. Encourage the surface normals predicted to match the ground truth.
+
+    Args:
+    - gt_sdf (torch.Tensor): ground truth sdf values.
+    - gt_normals (torch.Tensor): ground truth surface normals.
+    - pred_sdf (torch.Tensor): predicted sdf values.
+    - coords (torch.Tensor): coordinates for normals/predicted.
+    """
+    # Calculate the predicted gradient from the implicit model.
+    pred_normals = diff_operators.gradient(pred_sdf, coords)
+
+    # Calculate difference between predicted and gt normals.
+    diff = (1.0 - F.cosine_similarity(pred_normals, gt_normals, dim=-1))[..., None]
+    diff_loss = torch.where(gt_sdf == 0.0, diff, 0.0)
+
+    return diff_loss.mean()
+
+
+def surface_chamfer_loss(nominal_coords: torch.Tensor, nominal_sdf: torch.Tensor, gt_sdf: torch.Tensor,
+                         pred_def_coords: torch.Tensor):
+    """
+    Surface chamfer loss. Encourage the deformed surface to match the nominal for the given object.
+
+    Args:
+    - nominal_coords (torch.Tensor): nominal object sample coords.
+    - nominal_sdf (torch.Tensor): gt nominal object sdf values.
+    - gt_sdf (torch.Tensor): gt sdf values (for deformed).
+    - pred_def_coords (torch.Tensor): predicted deformed object coords (i.e., predicted nominal).
+    """
+    # Get the surfaces of the GT nominal and predicted nominal implicits.
+    nominal_surface_points = nominal_coords[nominal_sdf == 0.0]
+    predicted_surface_points = pred_def_coords[gt_sdf == 0.0]
+
+    # Calculate the chamfer distance between the extracted surfaces.
+    c_loss = chamfer_distance(nominal_surface_points, predicted_surface_points)
+
+    return c_loss.mean()
+
+
+def deform_loss(pred_def: torch.Tensor):
+    """
+    Deformation loss. L2 of predicted deformation. Encourages smaller deformations (to smooth deformation fields).
+
+    Args:
+    - pred_def (torch.Tensor): predicted deformation field.
+    """
+    pred_def_norm = torch.linalg.vector_norm(pred_def, dim=-1)
+
+    return pred_def_norm.mean()
+
+
+def hypo_weight_loss(hypo_params: torch.Tensor):
+    """
+    Hypo Weight Loss. L2 Squared of predicted hypernetwork parameters.
+
+    Args:
+    - hypo_params (torch.Tensor): predicted parameters.
+    """
+    weight_sum = 0.0
+    total_weights = 0
+
+    for weight in hypo_params.values():
+        weight_sum += torch.sum(weight ** 2.0)
+        total_weights += weight.numel()
+
+    return weight_sum * (1.0 / total_weights)
+
+
+def embedding_loss(embeddings: torch.Tensor):
+    """
+    Embedding loss. L2 Squared of predicted embeddings.
+    """
+    embedding_sizes = torch.sum(embeddings ** 2, dim=-1)
+    return torch.mean(embedding_sizes)
