@@ -1,4 +1,4 @@
-from neural_contact_fields.single_tool_neural_contact_field import (
+from neural_contact_fields.neural_contact_field import (
     config, models, training
 )
 

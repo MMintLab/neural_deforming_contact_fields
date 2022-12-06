@@ -1,7 +1,6 @@
-from neural_contact_fields.data.tool_dataset import ToolDataset
-from neural_contact_fields.single_tool_neural_contact_field.models.concat_mlp import \
+from neural_contact_fields.neural_contact_field.models.concat_mlp import \
     SingleToolNeuralContactField
-from neural_contact_fields.single_tool_neural_contact_field.training import Trainer
+from neural_contact_fields.neural_contact_field.training import Trainer
 
 
 def get_model(cfg, device=None):

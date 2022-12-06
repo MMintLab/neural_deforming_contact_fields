@@ -1,16 +1,10 @@
-import os
-
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
 from torchvision import transforms
-from neural_contact_fields import single_neural_contact_field
-from neural_contact_fields import single_tool_neural_contact_field
-from neural_contact_fields import pretrain_object_module
+from neural_contact_fields import neural_contact_field
 
 method_dict = {
-    'single_neural_contact_field': single_neural_contact_field,
-    'single_tool_neural_contact_field': single_tool_neural_contact_field,
-    'pretrain_object_module': pretrain_object_module,
+    'neural_contact_field': neural_contact_field,
 }
 
 
