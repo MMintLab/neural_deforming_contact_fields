@@ -19,6 +19,7 @@ class PretrainObjectModuleDataset(torch.utils.data.Dataset):
         data_dict = mmint_utils.load_gzip_pickle(self.dataset_fn)
         self.n_points = [data_dict["n_points"]]
         self.query_points = [data_dict["query_points"]]
+        self.normals = [data_dict["normals"]]
         self.sdf = [data_dict["sdf"]]
 
     def __len__(self):
@@ -28,6 +29,7 @@ class PretrainObjectModuleDataset(torch.utils.data.Dataset):
         data_dict = {
             "query_point": self.query_points[index],
             "sdf": self.sdf[index],
+            "normals": self.normals[index],
         }
 
         return data_dict

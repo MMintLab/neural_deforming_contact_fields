@@ -1,5 +1,6 @@
 import mmint_utils
 import torch
+from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.training import BaseTrainer
 import torch.nn.functional as F
 import os
@@ -10,6 +11,9 @@ from torch.utils.data import Dataset
 
 
 class Trainer(BaseTrainer):
+
+    def __init__(self, cfg, model: NeuralContactField, device):
+        super().__init__(cfg, model, device)
 
     def load_pretrained_model(self, pretrain_file: str, freeze_object_module_weights=False):
         """

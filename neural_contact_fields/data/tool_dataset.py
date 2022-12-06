@@ -1,7 +1,4 @@
-import pdb
-
 import mmint_utils
-import numpy as np
 import torch.utils.data
 import torch
 import os
@@ -28,6 +25,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.trial_idcs = []  # Trial index: which trial is used in this example?
         self.query_points = []  # Query points.
         self.sdf = []  # Signed distance value at point.
+        self.normals = []  # Surface normals at point.
         self.in_contact = []  # Binary contact indicator at point.
         self.trial_pressure = []  # Contact force at point.
 
@@ -40,20 +38,39 @@ class ToolDataset(torch.utils.data.Dataset):
             self.trial_idcs.append(trial_idx)
             self.query_points.append(example_dict["query_points"])
             self.sdf.append(example_dict["sdf"])
+            self.normals.append(example_dict["normals"])
             self.in_contact.append(example_dict["in_contact"])
             self.trial_pressure.append(example_dict["pressure"])
+
+        # Load nominal geometry info.
+        self.nominal_query_points = []
+        self.nominal_sdf = []
+        nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
+                             key=lambda x: int(x.split(".")[0].split("_")[-1]))
+
+        for object_idx, nominal_fn in enumerate(nominal_fns):
+            example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, nominal_fn))
+
+            # Populate nominal info.
+            self.nominal_query_points.append(example_dict["query_points"])
+            self.nominal_sdf.append(example_dict["sdf"])
 
     def __len__(self):
         return len(self.object_idcs)
 
     def __getitem__(self, index):
+        object_index = self.object_idcs[index]
+
         data_dict = {
-            "object_idx": self.object_idcs[index],
+            "object_idx": object_index,
             "trial_idx": self.trial_idcs[index],
             "query_point": self.query_points[index],
             "sdf": self.sdf[index],
+            "normals": self.normals[index],
             "in_contact": self.in_contact[index].astype(int),
-            "pressure": self.trial_pressure[index]
+            "pressure": self.trial_pressure[index],
+            "nominal_query_point": self.nominal_query_points[object_index],
+            "nominal_sdf": self.nominal_sdf[object_index],
         }
 
         return data_dict
