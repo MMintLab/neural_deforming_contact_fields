@@ -1,6 +1,5 @@
 import os
 
-from neural_contact_fields.data.single_tool_dataset import SingleToolDataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
 from torchvision import transforms
@@ -15,7 +14,7 @@ method_dict = {
 }
 
 
-def get_model(cfg, dataset, device=None):
+def get_model(cfg, device=None):
     """
     Args:
     - cfg (dict): training config.
@@ -23,8 +22,7 @@ def get_model(cfg, dataset, device=None):
     - device (device): pytorch device.
     """
     method = cfg['method']
-    model = method_dict[method].config.get_model(
-        cfg, dataset, device=device)
+    model = method_dict[method].config.get_model(cfg, device=device)
     return model
 
 

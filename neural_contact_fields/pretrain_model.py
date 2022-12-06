@@ -7,10 +7,11 @@ import json
 
 import mmint_utils as utils
 import neural_contact_fields.config as config
+import neural_contact_fields.utils.model_utils as model_utils
 
 
-def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbose: bool = False,
-                config_args: dict = None):
+def pretrain_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbose: bool = False,
+                   config_args: dict = None):
     # Read config.
     cfg = utils.load_cfg(config_file)
 
@@ -23,8 +24,8 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     # Setup datasets.
     print('Loading train dataset:')
-    train_dataset: ToolDataset = config.get_dataset('train', cfg)
-    print('Train dataset size: %d' % len(train_dataset))
+    pretrain_dataset: ToolDataset = config.get_dataset('pretrain', cfg)
+    print('Train dataset size: %d' % len(pretrain_dataset))
 
     # Create model:
     print('Loading model:')
@@ -33,7 +34,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     # Get trainer.
     trainer = config.get_trainer(cfg, model, device=device)
-    trainer.train(train_dataset)
+    trainer.pretrain(pretrain_dataset)
 
 
 if __name__ == '__main__':
@@ -47,4 +48,4 @@ if __name__ == '__main__':
                         help='Config elements to overwrite. Use for easy hyperparameter search.')
     args = parser.parse_args()
 
-    train_model(args.config, args.cuda_id, args.no_cuda, args.verbose, args.config_args)
+    pretrain_model(args.config, args.cuda_id, args.no_cuda, args.verbose, args.config_args)
