@@ -1,6 +1,7 @@
 import torch
-from neural_contact_field import NeuralContactField
+from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.models import meta_modules
+import neural_contact_fields.loss as ncf_losses
 
 
 class VirdoNCF(NeuralContactField):
@@ -31,7 +32,19 @@ class VirdoNCF(NeuralContactField):
         }
 
         model_out = self.object_model(model_in)
-        return model_out
+
+        out_dict = {
+            "query_points": model_out["model_in"],
+            "sdf": model_out["model_out"].squeeze(-1),
+            "hypo_params": model_out["hypo_params"],
+            "embedding": z_object,
+        }
+        return out_dict
+
+    def object_module_regularization_loss(self, out_dict: dict):
+        hypo_params = out_dict["hypo_params"]
+        hypo_loss = ncf_losses.hypo_weight_loss(hypo_params)
+        return hypo_loss
 
     def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor):
         combined_embedding = torch.cat([z_deform, z_object], dim=-1)

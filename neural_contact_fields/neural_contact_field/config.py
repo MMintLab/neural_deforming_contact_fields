@@ -1,13 +1,11 @@
-from neural_contact_fields.neural_contact_field.models.concat_mlp import \
-    SingleToolNeuralContactField
+from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
 from neural_contact_fields.neural_contact_field.training import Trainer
 
 
 def get_model(cfg, device=None):
     model_cfg = cfg["model"]
 
-    model = SingleToolNeuralContactField(num_trials=dataset.num_trials, z=model_cfg["z"],
-                                         forward_deformation=model_cfg["forward_deformation"], device=device)
+    model = VirdoNCF(model_cfg["z_object_size"], model_cfg["z_deform_size"], device)
     return model
 
 

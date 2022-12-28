@@ -20,7 +20,7 @@ class BaseTrainer(object):
         self.model = model
         self.device = device
 
-    def load_partial_train_model(self, optimizer, out_dir, partial_model_fn):
+    def load_partial_train_model(self, model_dict, out_dir, partial_model_fn):
         """
         Loads a partially trained model from the given out/fn and attempts to load optimizer state.
 
@@ -29,10 +29,6 @@ class BaseTrainer(object):
         - out_dir (str): out directory where files are being saved
         - partial_model_fn (str): file where partially trained model is
         """
-        model_dict = {
-            'model': self.model,
-            'optimizer': optimizer,
-        }
         model_file = os.path.join(out_dir, partial_model_fn)
         load_dict = model_utils.load_model(model_dict, model_file)
         epoch_it = load_dict.get('epoch_it', -1)

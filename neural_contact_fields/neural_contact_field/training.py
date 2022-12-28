@@ -1,5 +1,7 @@
 import mmint_utils
+import numpy as np
 import torch
+import torch.nn as nn
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.training import BaseTrainer
 import torch.nn.functional as F
@@ -8,12 +10,15 @@ from neural_contact_fields.utils import model_utils
 from tensorboardX import SummaryWriter
 from torch import optim
 from torch.utils.data import Dataset
+import neural_contact_fields.loss as ncf_losses
 
 
 class Trainer(BaseTrainer):
 
     def __init__(self, cfg, model: NeuralContactField, device):
         super().__init__(cfg, model, device)
+
+        self.model: NeuralContactField = model
 
     def load_pretrained_model(self, pretrain_file: str, freeze_object_module_weights=False):
         """
@@ -55,11 +60,20 @@ class Trainer(BaseTrainer):
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
 
+        # Setup the embedding.
+        num_objects = len(pretrain_dataset)
+        object_code = nn.Embedding(num_objects, self.cfg["model"]["z_object_size"]).requires_grad_(True).to(self.device)
+        nn.init.normal_(object_code.weight, mean=0.0, std=0.1)
+
         # Get optimizer (TODO: Parameterize?)
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        optimizer = optim.Adam([
+            {"params": self.model.parameters(), "lr": lr},
+            {"params": object_code.parameters(), "lr": lr},
+        ])
 
         # Load model + optimizer if a partially trained copy of it exists.
-        self.load_partial_train_model(optimizer, out_dir, "pretrain_model.pt")
+        self.load_partial_train_model({"model": self.model, "optimizer": optimizer, "object_code": object_code},
+                                      out_dir, "pretrain_model.pt")
 
         # Training loop
         while True:
@@ -69,6 +83,7 @@ class Trainer(BaseTrainer):
                 print("Backing up and stopping training. Reached max epochs.")
                 save_dict = {
                     'model': self.model.state_dict(),
+                    'object_code': object_code.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'epoch_it': epoch_it,
                     'it': it,
@@ -78,11 +93,19 @@ class Trainer(BaseTrainer):
 
             loss = None
 
-            for trial_idx in range(len(pretrain_dataset)):
+            object_idcs = np.arange(len(pretrain_dataset))
+            np.random.shuffle(object_idcs)
+            object_idcs = torch.from_numpy(object_idcs).to(self.device)
+
+            for object_idx in object_idcs:
                 it += 1
 
                 # For this training, we use just a single example per run.
-                batch = pretrain_dataset[trial_idx]
+                batch = pretrain_dataset[object_idx]
+
+                # Encode the object idx.
+                batch["z_object"] = object_code(object_idx).float()
+
                 loss = self.train_step(batch, it, optimizer, logger, self.compute_pretrain_loss)
 
             print('[Epoch %02d] it=%03d, loss=%.4f'
@@ -91,6 +114,7 @@ class Trainer(BaseTrainer):
         # Backup.
         save_dict = {
             'model': self.model.state_dict(),
+            'object_code': object_code.state_dict(),
             'optimizer': optimizer.state_dict(),
             'epoch_it': epoch_it,
             'it': it,
@@ -104,10 +128,39 @@ class Trainer(BaseTrainer):
         Args:
         - data (dict): data dictionary
         """
-        loss_dict = dict()
-        out_dict = dict()
+        # Load data from batch.
+        coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
+        gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
+        gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
+        obj_code = data["z_object"]
 
-        loss_dict["loss"] = 0.0
+        # Forward prediction.
+        out_dict = self.model.forward_object_module(coords, obj_code)
+
+        # Calculate Losses:
+        loss_dict = dict()
+
+        # SDF Loss: How accurate are the SDF predictions at each query point.
+        sdf_loss = ncf_losses.sdf_loss(out_dict["sdf"], gt_sdf)
+        loss_dict["sdf_loss"] = sdf_loss
+
+        # Normals loss: are the normals accurate.
+        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, out_dict["sdf"], out_dict["query_points"])
+        loss_dict["normals_loss"] = normals_loss
+
+        # Latent embedding loss: well-formed embedding.
+        embedding_loss = ncf_losses.embedding_loss(out_dict["embedding"])
+        loss_dict["embedding_loss"] = embedding_loss
+
+        # Network regularization.
+        reg_loss = self.model.object_module_regularization_loss(out_dict)
+        loss_dict["reg_loss"] = reg_loss
+
+        # Calculate total weighted loss.
+        loss = 0.0
+        for loss_key in loss_dict.keys():
+            loss += float(self.pretrain_loss_weights[loss_key]) * loss_dict[loss_key]
+        loss_dict["loss"] = loss
 
         return loss_dict, out_dict
 

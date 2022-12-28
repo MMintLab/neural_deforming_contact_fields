@@ -43,18 +43,15 @@ def get_dataset(mode, cfg):
     - mode (str): dataset mode [train, val, test].
     - cfg (dict): training config.
     """
-    dataset_type = cfg['data']['dataset']
+    dataset_type = cfg['data'][mode]['dataset']
 
     # Build dataset transforms.
     transforms_ = get_transforms(cfg)
 
-    if dataset_type == "SingleToolDataset":
-        dataset = SingleToolDataset(cfg["data"]["dataset_fn"], cfg["data"]["split"], cfg["data"]["tool_idx"],
-                                    cfg["data"]["deformation_idx"], transform=transforms_)
-    elif dataset_type == "ToolDataset":
-        dataset = ToolDataset(cfg["data"]["dataset_dir"], transform=transforms_)
+    if dataset_type == "ToolDataset":
+        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
     elif dataset_type == "PretrainObjectModuleDataset":
-        dataset = PretrainObjectModuleDataset(cfg["data"]["dataset_fn"], transform=transforms_)
+        dataset = PretrainObjectModuleDataset(cfg["data"][mode]["dataset_fn"], transform=transforms_)
     else:
         raise Exception("Unknown requested dataset type: %s" % dataset_type)
 

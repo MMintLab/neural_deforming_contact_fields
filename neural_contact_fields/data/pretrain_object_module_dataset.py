@@ -27,9 +27,9 @@ class PretrainObjectModuleDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         data_dict = {
-            "query_point": self.query_points[index],
-            "sdf": self.sdf[index],
-            "normals": self.normals[index],
+            "query_point": self.query_points[index].astype(float),
+            "sdf": self.sdf[index].astype(float),
+            "normals": self.normals[index].astype(float),
         }
 
         return data_dict

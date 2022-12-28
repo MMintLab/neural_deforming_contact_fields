@@ -7,7 +7,6 @@ import json
 
 import mmint_utils as utils
 import neural_contact_fields.config as config
-import neural_contact_fields.utils.model_utils as model_utils
 
 
 def pretrain_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbose: bool = False,
@@ -23,9 +22,9 @@ def pretrain_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, ve
     device = torch.device("cuda:%d" % cuda_id if is_cuda else "cpu")
 
     # Setup datasets.
-    print('Loading train dataset:')
+    print('Loading pretrain dataset:')
     pretrain_dataset: ToolDataset = config.get_dataset('pretrain', cfg)
-    print('Train dataset size: %d' % len(pretrain_dataset))
+    print('Pretrain dataset size: %d' % len(pretrain_dataset))
 
     # Create model:
     print('Loading model:')

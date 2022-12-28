@@ -1,4 +1,4 @@
-import modules
+import neural_contact_fields.models.modules as modules
 import torch
 from torch import nn
 from collections import OrderedDict

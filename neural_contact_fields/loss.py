@@ -37,11 +37,16 @@ def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_sdf
     # Calculate the predicted gradient from the implicit model.
     pred_normals = diff_operators.gradient(pred_sdf, coords)
 
-    # Calculate difference between predicted and gt normals.
-    diff = (1.0 - F.cosine_similarity(pred_normals, gt_normals, dim=-1))[..., None]
-    diff_loss = torch.where(gt_sdf == 0.0, diff, 0.0)
+    # Normalize predicted normals to be length 1.0
+    pred_normals_unit = pred_normals / torch.linalg.norm(pred_normals, dim=-1)[..., None]
 
-    return diff_loss.mean()
+    # Calculate difference between predicted and gt normals.
+    diff = (1.0 - F.cosine_similarity(pred_normals_unit, gt_normals, dim=-1))
+    diff_loss = torch.where(gt_sdf == 0.0, diff, torch.tensor(0.0, dtype=pred_sdf.dtype, device=pred_sdf.device))
+
+    # Average error (for surface points).
+    norm_loss = diff_loss.sum() / (gt_sdf == 0.0).sum()
+    return norm_loss
 
 
 def surface_chamfer_loss(nominal_coords: torch.Tensor, nominal_sdf: torch.Tensor, gt_sdf: torch.Tensor,
