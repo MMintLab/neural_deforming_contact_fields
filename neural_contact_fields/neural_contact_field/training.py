@@ -60,7 +60,7 @@ class Trainer(BaseTrainer):
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
 
-        # Setup the embedding.
+        # Setup the embedding. TODO: Move inside of model please.
         num_objects = len(pretrain_dataset)
         object_code = nn.Embedding(num_objects, self.cfg["model"]["z_object_size"]).requires_grad_(True).to(self.device)
         nn.init.normal_(object_code.weight, mean=0.0, std=0.1)
