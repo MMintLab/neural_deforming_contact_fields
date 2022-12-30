@@ -9,16 +9,19 @@ training:
   out_dir: out/models/ncf_v1/
   learning_rate: 0.0001
   epochs: 100000
+  update_object_code: false
+  freeze_pretrain_weights: true
   loss_weights:
-    sdf_loss: 1.0
-    embed_loss: 1.0e-8
-    def_loss: 1.0e-8
-    contact_loss: 0.1
-    force_loss: 1.0
+    sdf_loss: 1e6
+    normals_loss: 5e1
+    embedding_loss: 1e2
+    def_loss: 1.0
+    contact_loss: 1e3
+    reg_loss: 1e2
 pretraining:
   out_dir: out/models/ncf_v1/
   learning_rate: 0.0001
-  epochs: 10010
+  epochs: 10000
   loss_weights:
     sdf_loss: 6e6
     normals_loss: 5e1

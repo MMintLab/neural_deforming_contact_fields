@@ -99,6 +99,14 @@ def hypo_weight_loss(hypo_params: torch.Tensor):
     return weight_sum * (1.0 / total_weights)
 
 
+def deformation_loss(defs: torch.Tensor):
+    """
+    Deformation loss. L2 Squared of predicted deformations.
+    """
+    defs_sizes = torch.sum(defs ** 2, dim=-1)
+    return torch.mean(defs_sizes)
+
+
 def embedding_loss(embeddings: torch.Tensor):
     """
     Embedding loss. L2 Squared of predicted embeddings.

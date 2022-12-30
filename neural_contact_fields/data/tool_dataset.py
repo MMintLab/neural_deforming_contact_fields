@@ -40,7 +40,9 @@ class ToolDataset(torch.utils.data.Dataset):
             self.sdf.append(example_dict["sdf"])
             self.normals.append(example_dict["normals"])
             self.in_contact.append(example_dict["in_contact"])
-            self.trial_pressure.append(example_dict["pressure"])
+            # self.trial_pressure.append(example_dict["pressure"])  # TODO: Add back pressure.
+
+        self.num_objects = max(self.object_idcs) + 1
 
         # Load nominal geometry info.
         self.nominal_query_points = []
@@ -55,8 +57,14 @@ class ToolDataset(torch.utils.data.Dataset):
             self.nominal_query_points.append(example_dict["query_points"])
             self.nominal_sdf.append(example_dict["sdf"])
 
+    def get_num_objects(self):
+        return self.num_objects
+
+    def get_num_trials(self):
+        return self.num_trials
+
     def __len__(self):
-        return len(self.object_idcs)
+        return self.num_trials
 
     def __getitem__(self, index):
         object_index = self.object_idcs[index]
@@ -68,7 +76,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "sdf": self.sdf[index],
             "normals": self.normals[index],
             "in_contact": self.in_contact[index].astype(int),
-            "pressure": self.trial_pressure[index],
+            # "pressure": self.trial_pressure[index],
             "nominal_query_point": self.nominal_query_points[object_index],
             "nominal_sdf": self.nominal_sdf[object_index],
         }

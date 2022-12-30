@@ -2,6 +2,7 @@ import torch
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.models import meta_modules
 import neural_contact_fields.loss as ncf_losses
+import torch.nn.functional as F
 
 
 class VirdoNCF(NeuralContactField):
@@ -55,7 +56,7 @@ class VirdoNCF(NeuralContactField):
             "embedding": combined_embedding,
         }
         deform_out = self.deformation_model(deform_in)
-        query_point_defs = deform_out["model_output"]
+        query_point_defs = deform_out["model_out"]
 
         # Apply deformation to query points.
         object_coords = query_points + query_point_defs
@@ -67,6 +68,27 @@ class VirdoNCF(NeuralContactField):
             "embedding": combined_embedding,
         }
         contact_out = self.contact_model(contact_in)
+        in_contact_logits = contact_out["model_out"].squeeze(-1)
+        in_contact = F.sigmoid(in_contact_logits)
 
-    def regularization_loss(self):
-        pass
+        out_dict = {
+            "query_points": object_out["query_points"],
+            "pred_deform": query_point_defs,
+            "def_hypo_params": deform_out["hypo_params"],
+            "sdf": object_out["sdf"],
+            "sdf_hypo_params": object_out["hypo_params"],
+            "in_contact_logits": in_contact_logits,
+            "in_contact": in_contact,
+            "in_contact_hypo_params": contact_out["hypo_params"],
+            "embedding": combined_embedding,
+        }
+        return out_dict
+
+    def regularization_loss(self, out_dict: dict):
+        def_hypo_params = out_dict["def_hypo_params"]
+        def_hypo_loss = ncf_losses.hypo_weight_loss(def_hypo_params)
+        sdf_hypo_params = out_dict["sdf_hypo_params"]
+        sdf_hypo_loss = ncf_losses.hypo_weight_loss(sdf_hypo_params)
+        in_contact_hypo_params = out_dict["in_contact_hypo_params"]
+        in_contact_hypo_loss = ncf_losses.hypo_weight_loss(in_contact_hypo_params)
+        return def_hypo_loss + sdf_hypo_loss + in_contact_hypo_loss

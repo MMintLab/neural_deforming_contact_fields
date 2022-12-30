@@ -2,6 +2,7 @@ import mmint_utils
 import numpy as np
 import torch
 import torch.nn as nn
+from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.training import BaseTrainer
 import torch.nn.functional as F
@@ -20,7 +21,7 @@ class Trainer(BaseTrainer):
 
         self.model: NeuralContactField = model
 
-    def load_pretrained_model(self, pretrain_file: str, freeze_object_module_weights=False):
+    def load_pretrained_model(self, object_code: nn.Embedding, pretrain_file: str, freeze_object_module_weights=False):
         """
         Load pretrained model weights. Optionally freeze object module weights.
 
@@ -34,10 +35,14 @@ class Trainer(BaseTrainer):
         object_module_dict = {k: pretrain_state_dict["model"][k] for k in object_module_keys}
         self.model.load_state_dict(object_module_dict, strict=False)
 
-        # Optionally, we can freeze the pretrained weights.
+        object_code.load_state_dict(pretrain_state_dict, strict=False)
+
+        # Optionally, we can freeze the pretrained weights. TODO: Make this better.
         if freeze_object_module_weights:
-            for param in self.model.object_module.parameters():
+            for param in self.model.object_model.parameters():
                 param.requires_grad = False
+
+        object_code.requires_grad_(False)
 
     ##########################################################################
     #  Pretraining loop                                                      #
@@ -60,7 +65,7 @@ class Trainer(BaseTrainer):
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
 
-        # Setup the embedding. TODO: Move inside of model please.
+        # Setup the object embedding.
         num_objects = len(pretrain_dataset)
         object_code = nn.Embedding(num_objects, self.cfg["model"]["z_object_size"]).requires_grad_(True).to(self.device)
         nn.init.normal_(object_code.weight, mean=0.0, std=0.1)
@@ -168,7 +173,7 @@ class Trainer(BaseTrainer):
     #  Main training loop                                                    #
     ##########################################################################
 
-    def train(self, train_dataset: Dataset):
+    def train(self, train_dataset: ToolDataset):
         # Shorthands:
         out_dir = self.cfg['training']['out_dir']
         lr = self.cfg['training']['learning_rate']
@@ -185,15 +190,30 @@ class Trainer(BaseTrainer):
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
 
+        # Setup the object/trial embeddings.
+        num_objects = train_dataset.get_num_objects()
+        num_trials = train_dataset.get_num_trials()
+        object_code = nn.Embedding(num_objects, self.cfg["model"]["z_object_size"]).requires_grad_(True).to(self.device)
+        nn.init.normal_(object_code.weight, mean=0.0, std=0.1)
+        trial_code = nn.Embedding(num_trials, self.cfg["model"]["z_deform_size"]).requires_grad_(True).to(self.device)
+        nn.init.normal_(trial_code.weight, mean=0.0, std=0.1)
+
         # Get optimizer (TODO: Parameterize?)
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        optim_params = [
+            {"params": self.model.parameters(), "lr": lr},
+            {"params": trial_code.parameters(), "lr": lr},
+        ]
+        if self.cfg["training"]["update_object_code"]:
+            optim_params.append({"params": object_code.parameters(), "lr": lr})
+        optimizer = optim.Adam(optim_params)
 
         # Load pretrained model, if appropriate.
-        pretrain_file = os.path.join(out_dir, self.cfg['training']['pretrain_file'])
-        self.load_pretrained_model(pretrain_file, self.cfg['training']['freeze_pretrain_weights'])
+        pretrain_file = os.path.join(out_dir, "pretrain_model.pt")
+        self.load_pretrained_model(object_code, pretrain_file, self.cfg['training']['freeze_pretrain_weights'])
 
         # Load model + optimizer if a partially trained copy of it exists.
-        self.load_partial_train_model(optimizer, out_dir, "model.pt")
+        self.load_partial_train_model({"model": self.model, "optimizer": optimizer, "object_code": object_code,
+                                       "trial_code": trial_code}, out_dir, "model.pt")
 
         # Training loop
         while True:
@@ -203,6 +223,8 @@ class Trainer(BaseTrainer):
                 print("Backing up and stopping training. Reached max epochs.")
                 save_dict = {
                     'model': self.model.state_dict(),
+                    'object_code': object_code.state_dict(),
+                    'trial_code': trial_code.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'epoch_it': epoch_it,
                     'it': it,
@@ -217,6 +239,13 @@ class Trainer(BaseTrainer):
 
                 # For this training, we use just a single example per run.
                 batch = train_dataset[trial_idx]
+                object_idx_tensor = torch.tensor(batch["object_idx"], device=self.device)
+                trial_idx_tensor = torch.tensor(batch["trial_idx"], device=self.device)
+
+                # Encode object idx/trial idx.
+                batch["z_object"] = object_code(object_idx_tensor).float()
+                batch["z_trial"] = trial_code(trial_idx_tensor).float()
+
                 loss = self.train_step(batch, it, optimizer, logger, self.compute_train_loss)
 
             print('[Epoch %02d] it=%03d, loss=%.4f'
@@ -225,6 +254,8 @@ class Trainer(BaseTrainer):
         # Backup.
         save_dict = {
             'model': self.model.state_dict(),
+            'object_code': object_code.state_dict(),
+            'trial_code': trial_code.state_dict(),
             'optimizer': optimizer.state_dict(),
             'epoch_it': epoch_it,
             'it': it,
@@ -238,9 +269,46 @@ class Trainer(BaseTrainer):
         Args:
         - data (dict): data dictionary
         """
-        loss_dict = dict()
-        out_dict = dict()
+        obj_code = data["z_object"]
+        trial_code = data["z_trial"]
+        coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
+        gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
+        gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
+        gt_in_contact = torch.from_numpy(data["in_contact"]).to(self.device).float().unsqueeze(0)
 
-        loss_dict["loss"] = 0.0
+        out_dict = self.model.forward(coords, trial_code, obj_code)
+
+        # Loss:
+        loss_dict = dict()
+
+        # SDF Loss: How accurate are the SDF predictions at each query point.
+        sdf_loss = ncf_losses.sdf_loss(out_dict["sdf"], gt_sdf)
+        loss_dict["sdf_loss"] = sdf_loss
+
+        # Normals loss: are the normals accurate.
+        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, out_dict["sdf"], out_dict["query_points"])
+        loss_dict["normals_loss"] = normals_loss
+
+        # Latent embedding loss: well-formed embedding.
+        embedding_loss = ncf_losses.embedding_loss(out_dict["embedding"])
+        loss_dict["embedding_loss"] = embedding_loss
+
+        # Loss on deformation field.
+        def_loss = ncf_losses.deformation_loss(out_dict["pred_deform"])
+        loss_dict["def_loss"] = def_loss
+
+        # Network regularization.
+        reg_loss = self.model.regularization_loss(out_dict)
+        loss_dict["reg_loss"] = reg_loss
+
+        # Contact prediction loss.
+        contact_loss = F.binary_cross_entropy_with_logits(out_dict["in_contact_logits"], gt_in_contact)
+        loss_dict["contact_loss"] = contact_loss
+
+        # Calculate total weighted loss.
+        loss = 0.0
+        for loss_key in loss_dict.keys():
+            loss += float(self.train_loss_weights[loss_key]) * loss_dict[loss_key]
+        loss_dict["loss"] = loss
 
         return loss_dict, out_dict
