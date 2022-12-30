@@ -1,4 +1,5 @@
-from collections import defaultdict
+import pdb
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 import torch
@@ -149,11 +150,18 @@ def infer_latent_from_surface(model, trial_dict, max_batch: int = 40 ** 3, devic
     return latent_code
 
 
-def points_inference(model, trial_dict, max_batch: int = 40 ** 3, device=None):
+def points_inference(model, object_code, trial_code, trial_dict, max_batch: int = 40 ** 3, device=None):
     model.eval()
-
     object_index = trial_dict["object_idx"]
     trial_index = trial_dict["trial_idx"]
+
+    # Encode object idx/trial idx.
+    object_idx_tensor = torch.tensor(object_index, device=device)
+    trial_idx_tensor = torch.tensor(trial_index, device=device)
+    z_object = object_code(object_idx_tensor).float()
+    z_trial = trial_code(trial_idx_tensor).float()
+
+    # Get query points to sample.
     query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
     num_samples = query_points.shape[0]
 
@@ -166,7 +174,7 @@ def points_inference(model, trial_dict, max_batch: int = 40 ** 3, device=None):
         trial_indices = torch.zeros(sample_subset.shape[0], dtype=torch.long).to(device) + trial_index
 
         with torch.no_grad():
-            pred_dict = model(trial_indices, sample_subset)
+            pred_dict = model.forward(sample_subset, z_trial, z_object)
 
         for k, v in pred_dict.items():
             pred_dict_all[k].append(v)
@@ -175,6 +183,7 @@ def points_inference(model, trial_dict, max_batch: int = 40 ** 3, device=None):
 
     pred_dict_final = dict()
     for k, v in pred_dict_all.items():
-        pred_dict_final[k] = torch.cat(v, dim=0)
+        if type(v[0]) is torch.Tensor:
+            pred_dict_final[k] = torch.cat(v, dim=0)
 
     return pred_dict_final

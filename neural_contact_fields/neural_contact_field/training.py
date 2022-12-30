@@ -53,6 +53,7 @@ class Trainer(BaseTrainer):
         out_dir = self.cfg['pretraining']['out_dir']
         lr = self.cfg['pretraining']['learning_rate']
         max_epochs = self.cfg['pretraining']['epochs']
+        epochs_per_save = self.cfg['pretraining']['epochs_per_save']
         self.pretrain_loss_weights = self.cfg['pretraining']['loss_weights']  # TODO: Better way to set this?
         epoch_it = 0
         it = 0
@@ -116,6 +117,16 @@ class Trainer(BaseTrainer):
             print('[Epoch %02d] it=%03d, loss=%.4f'
                   % (epoch_it, it, loss))
 
+            if epoch_it % epochs_per_save:
+                save_dict = {
+                    'model': self.model.state_dict(),
+                    'object_code': object_code.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'epoch_it': epoch_it,
+                    'it': it,
+                }
+                torch.save(save_dict, os.path.join(out_dir, 'pretrain_model.pt'))
+
         # Backup.
         save_dict = {
             'model': self.model.state_dict(),
@@ -178,6 +189,7 @@ class Trainer(BaseTrainer):
         out_dir = self.cfg['training']['out_dir']
         lr = self.cfg['training']['learning_rate']
         max_epochs = self.cfg['training']['epochs']
+        epochs_per_save = self.cfg['training']['epochs_per_save']
         self.train_loss_weights = self.cfg['training']['loss_weights']  # TODO: Better way to set this?
         epoch_it = 0
         it = 0
@@ -250,6 +262,17 @@ class Trainer(BaseTrainer):
 
             print('[Epoch %02d] it=%03d, loss=%.4f'
                   % (epoch_it, it, loss))
+
+            if epoch_it % epochs_per_save:
+                save_dict = {
+                    'model': self.model.state_dict(),
+                    'object_code': object_code.state_dict(),
+                    'trial_code': trial_code.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'epoch_it': epoch_it,
+                    'it': it,
+                }
+                torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
 
         # Backup.
         save_dict = {

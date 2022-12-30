@@ -11,6 +11,7 @@ training:
   epochs: 100000
   update_object_code: false
   freeze_pretrain_weights: true
+  epochs_per_save: 10
   loss_weights:
     sdf_loss: 1e6
     normals_loss: 5e1
@@ -21,7 +22,8 @@ training:
 pretraining:
   out_dir: out/models/ncf_v1/
   learning_rate: 0.0001
-  epochs: 10000
+  epochs: 5000
+  epochs_per_save: 1000
   loss_weights:
     sdf_loss: 6e6
     normals_loss: 5e1

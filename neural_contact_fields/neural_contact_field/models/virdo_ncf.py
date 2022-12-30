@@ -69,7 +69,7 @@ class VirdoNCF(NeuralContactField):
         }
         contact_out = self.contact_model(contact_in)
         in_contact_logits = contact_out["model_out"].squeeze(-1)
-        in_contact = F.sigmoid(in_contact_logits)
+        in_contact = torch.sigmoid(in_contact_logits)
 
         out_dict = {
             "query_points": object_out["query_points"],
