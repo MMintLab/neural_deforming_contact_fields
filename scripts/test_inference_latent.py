@@ -20,6 +20,8 @@ def get_model_dataset_arg_parser():
     parser.add_argument("--dataset_config", "-d", type=str, default=None, help="Optional dataset config to use.")
     parser.add_argument("--mode", "-m", type=str, default="test", help="Which split to vis [train, val, test].")
     parser.add_argument("--model_file", "-f", type=str, default="model.pt", help="Which model save file to use.")
+    parser.add_argument("-v", "--vis", dest="vis", action="store_true", help="Visualize.")
+    parser.set_defaults(vis=False)
     return parser
 
 
@@ -54,6 +56,7 @@ def numpy_dict(torch_dict: dict):
 
 
 def test_inference(args):
+    vis = args.vis
     dataset: ToolDataset
     model_cfg, model, object_code, trial_code, dataset, device = load_model_dataset_from_args(args)
 
@@ -69,10 +72,11 @@ def test_inference(args):
             "pred": numpy_dict(trial_pred_dict)
         }
 
-        vis_prediction_vs_dataset(results_dict)
+        if vis:
+            vis_prediction_vs_dataset(results_dict)
 
-        # out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
-        # mmint_utils.save_gzip_pickle( }, out_fn)
+        out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
+        mmint_utils.save_gzip_pickle(results_dict, out_fn)
 
 
 if __name__ == '__main__':

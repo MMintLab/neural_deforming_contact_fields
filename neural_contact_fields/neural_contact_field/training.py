@@ -28,21 +28,14 @@ class Trainer(BaseTrainer):
         Note: assumes object_module defined in model.
         """
         print("Loading pretrained model weights from local file: %s" % pretrain_file)
-        pretrain_state_dict = torch.load(pretrain_file, map_location='cpu')
 
-        # Here, we only load object module weights.
-        object_module_keys = [key for key in pretrain_state_dict["model"].keys() if "object_module" in key]
-        object_module_dict = {k: pretrain_state_dict["model"][k] for k in object_module_keys}
-        self.model.load_state_dict(object_module_dict, strict=False)
-
-        object_code.load_state_dict(pretrain_state_dict, strict=False)
+        model_utils.load_model({"model": self.model, "object_code": object_code}, pretrain_file)
 
         # Optionally, we can freeze the pretrained weights. TODO: Make this better.
         if freeze_object_module_weights:
             for param in self.model.object_model.parameters():
                 param.requires_grad = False
-
-        object_code.requires_grad_(False)
+            object_code.requires_grad_(False)
 
     ##########################################################################
     #  Pretraining loop                                                      #
@@ -220,12 +213,13 @@ class Trainer(BaseTrainer):
         optimizer = optim.Adam(optim_params)
 
         # Load pretrained model, if appropriate.
-        pretrain_file = os.path.join(out_dir, "pretrain_model.pt")
+        pretrain_file = os.path.join(self.cfg["pretraining"]["out_dir"], "pretrain_model.pt")
         self.load_pretrained_model(object_code, pretrain_file, self.cfg['training']['freeze_pretrain_weights'])
 
         # Load model + optimizer if a partially trained copy of it exists.
-        self.load_partial_train_model({"model": self.model, "optimizer": optimizer, "object_code": object_code,
-                                       "trial_code": trial_code}, out_dir, "model.pt")
+        epoch_it, it = self.load_partial_train_model(
+            {"model": self.model, "optimizer": optimizer, "object_code": object_code,
+             "trial_code": trial_code}, out_dir, "model.pt")
 
         # Training loop
         while True:
