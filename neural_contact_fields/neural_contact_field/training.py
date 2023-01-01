@@ -54,7 +54,7 @@ class Trainer(BaseTrainer):
         # Output + vis directory
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        logger = SummaryWriter(os.path.join(out_dir, 'logs'))
+        logger = SummaryWriter(os.path.join(out_dir, 'logs/pretrain'))
 
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
@@ -71,8 +71,9 @@ class Trainer(BaseTrainer):
         ])
 
         # Load model + optimizer if a partially trained copy of it exists.
-        self.load_partial_train_model({"model": self.model, "optimizer": optimizer, "object_code": object_code},
-                                      out_dir, "pretrain_model.pt")
+        epoch_it, it = self.load_partial_train_model(
+            {"model": self.model, "optimizer": optimizer, "object_code": object_code},
+            out_dir, "pretrain_model.pt")
 
         # Training loop
         while True:
@@ -190,7 +191,7 @@ class Trainer(BaseTrainer):
         # Output + vis directory
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        logger = SummaryWriter(os.path.join(out_dir, 'logs'))
+        logger = SummaryWriter(os.path.join(out_dir, 'logs/train'))
 
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
