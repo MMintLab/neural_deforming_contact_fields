@@ -110,7 +110,7 @@ class Trainer(BaseTrainer):
             print('[Epoch %02d] it=%03d, loss=%.4f'
                   % (epoch_it, it, loss))
 
-            if epoch_it % epochs_per_save:
+            if epoch_it % epochs_per_save == 0:
                 save_dict = {
                     'model': self.model.state_dict(),
                     'object_code': object_code.state_dict(),
@@ -257,7 +257,7 @@ class Trainer(BaseTrainer):
             print('[Epoch %02d] it=%03d, loss=%.4f'
                   % (epoch_it, it, loss))
 
-            if epoch_it % epochs_per_save:
+            if epoch_it % epochs_per_save == 0:
                 save_dict = {
                     'model': self.model.state_dict(),
                     'object_code': object_code.state_dict(),
