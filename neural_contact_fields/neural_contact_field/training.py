@@ -141,7 +141,7 @@ class Trainer(BaseTrainer):
         coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
-        obj_code = data["z_object"]
+        obj_code = data["z_object"].unsqueeze(0)
 
         # Forward prediction.
         out_dict = self.model.forward_object_module(coords, obj_code)
@@ -158,7 +158,7 @@ class Trainer(BaseTrainer):
         loss_dict["normals_loss"] = normals_loss
 
         # Latent embedding loss: well-formed embedding.
-        embedding_loss = ncf_losses.embedding_loss(out_dict["embedding"])
+        embedding_loss = ncf_losses.l2_loss(out_dict["embedding"], squared=True)
         loss_dict["embedding_loss"] = embedding_loss
 
         # Network regularization.
@@ -286,8 +286,8 @@ class Trainer(BaseTrainer):
         Args:
         - data (dict): data dictionary
         """
-        obj_code = data["z_object"]
-        trial_code = data["z_trial"]
+        obj_code = data["z_object"].unsqueeze(0)
+        trial_code = data["z_trial"].unsqueeze(0)
         coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
@@ -307,11 +307,11 @@ class Trainer(BaseTrainer):
         loss_dict["normals_loss"] = normals_loss
 
         # Latent embedding loss: well-formed embedding.
-        embedding_loss = ncf_losses.embedding_loss(out_dict["embedding"])
+        embedding_loss = ncf_losses.l2_loss(out_dict["embedding"], squared=True)
         loss_dict["embedding_loss"] = embedding_loss
 
         # Loss on deformation field.
-        def_loss = ncf_losses.deformation_loss(out_dict["pred_deform"])
+        def_loss = ncf_losses.l2_loss(out_dict["pred_deform"], squared=True)
         loss_dict["def_loss"] = def_loss
 
         # Network regularization.

@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 import torch.nn.functional as F
 import neural_contact_fields.utils.diff_operators as diff_operators
@@ -49,6 +51,22 @@ def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_sdf
     return norm_loss
 
 
+def l2_loss(tens: torch.Tensor, squared: bool = False):
+    """
+    L2 loss on provided tensor.
+
+    Args:
+    - tens (torch.Tensor): tensor to derive l2 loss from.
+    - squared (bool): whether to derive squared l2 loss.
+    """
+    l2_squared = torch.sum(tens ** 2.0, dim=-1)
+
+    if squared:
+        return torch.mean(l2_squared)
+    else:
+        return torch.mean(torch.sqrt(l2_squared))
+
+
 def surface_chamfer_loss(nominal_coords: torch.Tensor, nominal_sdf: torch.Tensor, gt_sdf: torch.Tensor,
                          pred_def_coords: torch.Tensor):
     """
@@ -70,24 +88,12 @@ def surface_chamfer_loss(nominal_coords: torch.Tensor, nominal_sdf: torch.Tensor
     return c_loss.mean()
 
 
-def deform_loss(pred_def: torch.Tensor):
-    """
-    Deformation loss. L2 of predicted deformation. Encourages smaller deformations (to smooth deformation fields).
-
-    Args:
-    - pred_def (torch.Tensor): predicted deformation field.
-    """
-    pred_def_norm = torch.linalg.vector_norm(pred_def, dim=-1)
-
-    return pred_def_norm.mean()
-
-
-def hypo_weight_loss(hypo_params: torch.Tensor):
+def hypo_weight_loss(hypo_params: OrderedDict):
     """
     Hypo Weight Loss. L2 Squared of predicted hypernetwork parameters.
 
     Args:
-    - hypo_params (torch.Tensor): predicted parameters.
+    - hypo_params (OrderedDict): predicted parameters.
     """
     weight_sum = 0.0
     total_weights = 0
@@ -97,19 +103,3 @@ def hypo_weight_loss(hypo_params: torch.Tensor):
         total_weights += weight.numel()
 
     return weight_sum * (1.0 / total_weights)
-
-
-def deformation_loss(defs: torch.Tensor):
-    """
-    Deformation loss. L2 Squared of predicted deformations.
-    """
-    defs_sizes = torch.sum(defs ** 2, dim=-1)
-    return torch.mean(defs_sizes)
-
-
-def embedding_loss(embeddings: torch.Tensor):
-    """
-    Embedding loss. L2 Squared of predicted embeddings.
-    """
-    embedding_sizes = torch.sum(embeddings ** 2, dim=-1)
-    return torch.mean(embedding_sizes)
