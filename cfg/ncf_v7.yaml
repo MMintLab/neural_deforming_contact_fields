@@ -6,7 +6,7 @@ data:
     dataset: ToolDataset
     dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/sim_12_6_22_single/
 training:
-  out_dir: out/models/ncf_v6/
+  out_dir: out/models/ncf_v7/
   learning_rate: 0.0001
   epochs: 50000
   update_object_code: false
@@ -19,6 +19,7 @@ training:
     def_loss: 1e-8
     contact_loss: 0.0
     reg_loss: 1e-8
+    chamfer_loss: 0.01
 pretraining:
   out_dir: out/models/ncf_v6/
   learning_rate: 0.000001

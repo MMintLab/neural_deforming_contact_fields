@@ -293,6 +293,8 @@ class Trainer(BaseTrainer):
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
         gt_in_contact = torch.from_numpy(data["in_contact"]).to(self.device).float().unsqueeze(0)
+        nominal_coords = torch.from_numpy(data["nominal_query_point"]).to(self.device).float().unsqueeze(0)
+        nominal_sdf = torch.from_numpy(data["nominal_sdf"]).to(self.device).float().unsqueeze(0)
 
         out_dict = self.model.forward(coords, trial_code, obj_code)
 
@@ -320,8 +322,13 @@ class Trainer(BaseTrainer):
         loss_dict["reg_loss"] = reg_loss
 
         # Contact prediction loss.
-        contact_loss = F.binary_cross_entropy_with_logits(out_dict["in_contact_logits"], gt_in_contact)
+        contact_loss = F.binary_cross_entropy_with_logits(out_dict["in_contact_logits"][gt_sdf == 0.0],
+                                                          gt_in_contact[gt_sdf == 0.0])
         loss_dict["contact_loss"] = contact_loss
+
+        # Chamfer distance loss.
+        chamfer_loss = ncf_losses.surface_chamfer_loss(nominal_coords, nominal_sdf, gt_sdf, out_dict["pred_nominal"])
+        loss_dict["chamfer_loss"] = chamfer_loss
 
         # Calculate total weighted loss.
         loss = 0.0

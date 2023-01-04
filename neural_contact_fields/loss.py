@@ -40,7 +40,7 @@ def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_sdf
     pred_normals = diff_operators.gradient(pred_sdf, coords)
 
     # Normalize predicted normals to be length 1.0
-    pred_normals_unit = pred_normals / torch.linalg.norm(pred_normals, dim=-1)[..., None]
+    pred_normals_unit = pred_normals / (torch.linalg.norm(pred_normals, dim=-1)[..., None] + 1.0e-6)
 
     # Calculate difference between predicted and gt normals.
     diff = (1.0 - F.cosine_similarity(pred_normals_unit, gt_normals, dim=-1))
@@ -79,11 +79,13 @@ def surface_chamfer_loss(nominal_coords: torch.Tensor, nominal_sdf: torch.Tensor
     - pred_def_coords (torch.Tensor): predicted deformed object coords (i.e., predicted nominal).
     """
     # Get the surfaces of the GT nominal and predicted nominal implicits.
-    nominal_surface_points = nominal_coords[nominal_sdf == 0.0]
-    predicted_surface_points = pred_def_coords[gt_sdf == 0.0]
+    nom_on_surf_idx = torch.where(nominal_sdf == 0)[1]
+    def_on_surf_idx = torch.where(gt_sdf == 0)[1]
+    nominal_surface_points = nominal_coords[:, nom_on_surf_idx, :]
+    predicted_surface_points = pred_def_coords[:, def_on_surf_idx, :]
 
     # Calculate the chamfer distance between the extracted surfaces.
-    c_loss = chamfer_distance(nominal_surface_points, predicted_surface_points)
+    c_loss = chamfer_distance(nominal_surface_points, predicted_surface_points)[0]
 
     return c_loss.mean()
 

@@ -74,6 +74,7 @@ class VirdoNCF(NeuralContactField):
         out_dict = {
             "query_points": object_out["query_points"],
             "pred_deform": query_point_defs,
+            "pred_nominal": object_coords,
             "def_hypo_params": deform_out["hypo_params"],
             "sdf": object_out["sdf"],
             "sdf_hypo_params": object_out["hypo_params"],
