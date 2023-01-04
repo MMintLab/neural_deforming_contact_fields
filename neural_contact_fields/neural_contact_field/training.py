@@ -12,7 +12,6 @@ from tensorboardX import SummaryWriter
 from torch import optim
 from torch.utils.data import Dataset
 import neural_contact_fields.loss as ncf_losses
-import neural_contact_fields.utils.diff_operators as diff_operators
 
 
 class Trainer(BaseTrainer):
