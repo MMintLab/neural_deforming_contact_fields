@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
-import neural_contact_fields.utils.diff_operators as diff_operators
 from pytorch3d.loss import chamfer_distance
 
 
@@ -23,7 +22,7 @@ def sdf_loss(gt_sdf: torch.Tensor, pred_sdf: torch.Tensor, clip: float = 1.0):
     return loss.mean()
 
 
-def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_sdf: torch.Tensor, coords: torch.Tensor):
+def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_normals: torch.Tensor):
     """
     Surface normal loss. Encourage the surface normals predicted to match the ground truth.
 
@@ -33,15 +32,12 @@ def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_sdf
     - pred_sdf (torch.Tensor): predicted sdf values.
     - coords (torch.Tensor): coordinates for normals/predicted.
     """
-    # Calculate the predicted gradient from the implicit model.
-    pred_normals = diff_operators.gradient(pred_sdf, coords)
-
     # Normalize predicted normals to be length 1.0
-    pred_normals_unit = pred_normals / (torch.linalg.norm(pred_normals, dim=-1)[..., None] + 1.0e-6)
+    pred_normals_unit = pred_normals / (torch.linalg.norm(pred_normals, dim=-1)[..., None] + 1.0e-8)
 
     # Calculate difference between predicted and gt normals.
     diff = (1.0 - F.cosine_similarity(pred_normals_unit, gt_normals, dim=-1))
-    diff_loss = torch.where(gt_sdf == 0.0, diff, torch.tensor(0.0, dtype=pred_sdf.dtype, device=pred_sdf.device))
+    diff_loss = torch.where(gt_sdf == 0.0, diff, torch.tensor(0.0, dtype=pred_normals.dtype, device=pred_normals.device))
 
     # Average error (for surface points).
     norm_loss = diff_loss.sum() / (gt_sdf == 0.0).sum()

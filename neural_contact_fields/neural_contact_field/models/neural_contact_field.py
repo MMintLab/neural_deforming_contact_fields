@@ -7,7 +7,8 @@ class NeuralContactField(nn.Module):
     Neural Contact Field abstract class.
     """
 
-    def forward_object_module(self, query_points: torch.Tensor, z_object: torch.Tensor):
+    def forward_object_module(self, query_points: torch.Tensor, z_object: torch.Tensor,
+                              normal_query_points: torch.Tensor = None):
         raise NotImplementedError()
 
     def object_module_regularization_loss(self, out_dict: dict):

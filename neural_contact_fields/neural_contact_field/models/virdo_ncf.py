@@ -2,7 +2,7 @@ import torch
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.models import meta_modules
 import neural_contact_fields.loss as ncf_losses
-import torch.nn.functional as F
+from neural_contact_fields.utils import diff_operators
 
 
 class VirdoNCF(NeuralContactField):
@@ -26,7 +26,8 @@ class VirdoNCF(NeuralContactField):
                                                          hyper_in_features=self.z_object_size + self.z_deform_size,
                                                          hl=2).to(self.device)
 
-    def forward_object_module(self, query_points: torch.Tensor, z_object: torch.Tensor):
+    def forward_object_module(self, query_points: torch.Tensor, z_object: torch.Tensor,
+                              normal_query_points: torch.Tensor = None):
         model_in = {
             "coords": query_points,
             "embedding": z_object,
@@ -34,11 +35,17 @@ class VirdoNCF(NeuralContactField):
 
         model_out = self.object_model(model_in)
 
+        # Calculate normals.
+        if normal_query_points is None:
+            normal_query_points = model_out["model_in"]
+        pred_normals = diff_operators.gradient(model_out["model_out"].squeeze(-1), normal_query_points)
+
         out_dict = {
             "query_points": model_out["model_in"],
             "sdf": model_out["model_out"].squeeze(-1),
             "hypo_params": model_out["hypo_params"],
             "embedding": z_object,
+            "normals": pred_normals,
         }
         return out_dict
 
@@ -60,7 +67,7 @@ class VirdoNCF(NeuralContactField):
 
         # Apply deformation to query points.
         object_coords = query_points + query_point_defs
-        object_out = self.forward_object_module(object_coords, z_object)
+        object_out = self.forward_object_module(object_coords, z_object, deform_out["model_in"])
 
         # Get contact label at each query point.
         contact_in = {
@@ -73,8 +80,8 @@ class VirdoNCF(NeuralContactField):
 
         out_dict = {
             "query_points": object_out["query_points"],
-            "pred_deform": query_point_defs,
-            "pred_nominal": object_coords,
+            "deform": query_point_defs,
+            "nominal": object_coords,
             "def_hypo_params": deform_out["hypo_params"],
             "sdf": object_out["sdf"],
             "sdf_hypo_params": object_out["hypo_params"],
@@ -82,6 +89,7 @@ class VirdoNCF(NeuralContactField):
             "in_contact": in_contact,
             "in_contact_hypo_params": contact_out["hypo_params"],
             "embedding": combined_embedding,
+            "normals": object_out["normals"],
         }
         return out_dict
 

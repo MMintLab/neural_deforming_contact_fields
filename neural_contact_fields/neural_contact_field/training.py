@@ -12,6 +12,7 @@ from tensorboardX import SummaryWriter
 from torch import optim
 from torch.utils.data import Dataset
 import neural_contact_fields.loss as ncf_losses
+import neural_contact_fields.utils.diff_operators as diff_operators
 
 
 class Trainer(BaseTrainer):
@@ -155,7 +156,7 @@ class Trainer(BaseTrainer):
         loss_dict["sdf_loss"] = sdf_loss
 
         # Normals loss: are the normals accurate.
-        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, out_dict["sdf"], out_dict["query_points"])
+        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, out_dict["normals"])
         loss_dict["normals_loss"] = normals_loss
 
         # Latent embedding loss: well-formed embedding.
@@ -306,7 +307,7 @@ class Trainer(BaseTrainer):
         loss_dict["sdf_loss"] = sdf_loss
 
         # Normals loss: are the normals accurate.
-        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, out_dict["sdf"], out_dict["query_points"])
+        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, out_dict["normals"])
         loss_dict["normals_loss"] = normals_loss
 
         # Latent embedding loss: well-formed embedding.
