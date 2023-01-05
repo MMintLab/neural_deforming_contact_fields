@@ -2,10 +2,10 @@ import argparse
 
 import numpy as np
 import torch
-from neural_contact_fields.utils.utils import vedo_utils
+from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.inference import points_inference_latent
-from neural_contact_fields.utils.utils import load_model_and_dataset
+from neural_contact_fields.utils.model_utils import load_model_and_dataset
 
 from vedo import Plotter, Points, Arrows
 
@@ -44,7 +44,7 @@ def test_interpolation(args):
     model_cfg, model, dataset, device = load_model_dataset_from_args(args)
 
     # Get some query points:
-    trial_dict = dataset.get_all_points_for_trial(None, 0)
+    trial_dict = dataset[0]
     query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
     query_points_np = query_points.cpu().numpy()
 
