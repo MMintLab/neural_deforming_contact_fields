@@ -112,8 +112,9 @@ def test_object_module_inference(args):
 
         slice_image[z, x] = slice_pred_sdf[0, idx]
 
-    plt.imshow(slice_image)
-    plt.show()
+    if vis:
+        plt.imshow(slice_image)
+        plt.show()
 
 
 if __name__ == '__main__':

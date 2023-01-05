@@ -14,10 +14,10 @@ def precision_recall(pred: torch.Tensor, gt: torch.Tensor):
     recall = tp.sum() / (tp.sum() + fn.sum())
 
     return {
-        "tp": tp.sum(),
-        "fp": fp.sum(),
-        "fn": fn.sum(),
-        "tn": tn.sum(),
+        "tp": tp,
+        "fp": fp,
+        "fn": fn,
+        "tn": tn,
         "precision": precision,
         "recall": recall,
     }
