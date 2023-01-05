@@ -15,7 +15,10 @@ def test_pretrain_precision_recall(data_fn: str, vis: bool = False):
     in_object_pr = metrics.precision_recall(torch.from_numpy(pred_sdf),
                                             torch.from_numpy(sdf))
 
-    print(in_object_pr)
+    # print(in_object_pr)
+    print("TP: %d, FP: %d, TN: %d, FN: %d" % (in_object_pr["tp"].sum(), in_object_pr["fp"].sum(),
+                                              in_object_pr["tn"].sum(), in_object_pr["fn"].sum()))
+    print("Precision: %f, Recall: %f" % (in_object_pr["precision"], in_object_pr["recall"]))
 
     if vis:
         qp = pred_dict["query_points"]
