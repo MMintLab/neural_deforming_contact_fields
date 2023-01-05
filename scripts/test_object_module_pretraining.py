@@ -5,6 +5,7 @@ import pdb
 import torch.nn as nn
 import mmint_utils
 import torch
+from matplotlib import pyplot as plt
 from neural_contact_fields.utils.model_utils import load_model_and_dataset, load_model
 import numpy as np
 from scripts.vis_object_module_pretraining import vis_object_module_pretraining
@@ -83,6 +84,36 @@ def test_object_module_inference(args):
 
     if vis:
         vis_object_module_pretraining(out_dict)
+
+    # Visualize a slice through the object.
+    y = 0
+    x_min = -0.04
+    x_max = 0.04
+    z_min = 0.02
+    z_max = 0.1
+    xs = np.arange(x_min, x_max, (x_max - x_min) / 1000.0)
+    zs = np.arange(z_min, z_max, (z_max - z_min) / 1000.0)
+
+    # Build query points.
+    query_points = []
+    for x in xs:
+        for z in zs:
+            query_points.append([x, y, z])
+    qp = np.array(query_points)
+    qp = torch.from_numpy(qp).to(device).unsqueeze(0).float()
+
+    slice_out_dict = model.forward_object_module(qp, z_object=z_object)
+    slice_pred_sdf = slice_out_dict["sdf"].detach().cpu().numpy()
+
+    slice_image = np.zeros([len(zs), len(xs)])
+    for idx in range(len(query_points)):
+        z = int(idx // len(zs))
+        x = int(idx % len(zs))
+
+        slice_image[z, x] = slice_pred_sdf[0, idx]
+
+    plt.imshow(slice_image)
+    plt.show()
 
 
 if __name__ == '__main__':

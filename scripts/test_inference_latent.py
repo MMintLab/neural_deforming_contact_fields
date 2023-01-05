@@ -1,6 +1,7 @@
 import os
 
 import mmint_utils
+import numpy as np
 import torch
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.inference import points_inference
