@@ -314,7 +314,7 @@ class Trainer(BaseTrainer):
         loss_dict["embedding_loss"] = embedding_loss
 
         # Loss on deformation field.
-        def_loss = ncf_losses.l2_loss(out_dict["pred_deform"], squared=True)
+        def_loss = ncf_losses.l2_loss(out_dict["deform"], squared=True)
         loss_dict["def_loss"] = def_loss
 
         # Network regularization.
@@ -327,7 +327,7 @@ class Trainer(BaseTrainer):
         loss_dict["contact_loss"] = contact_loss
 
         # Chamfer distance loss.
-        chamfer_loss = ncf_losses.surface_chamfer_loss(nominal_coords, nominal_sdf, gt_sdf, out_dict["pred_nominal"])
+        chamfer_loss = ncf_losses.surface_chamfer_loss(nominal_coords, nominal_sdf, gt_sdf, out_dict["nominal"])
         loss_dict["chamfer_loss"] = chamfer_loss
 
         # Calculate total weighted loss.
