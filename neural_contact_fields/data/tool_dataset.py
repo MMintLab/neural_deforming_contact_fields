@@ -1,4 +1,5 @@
 import mmint_utils
+import numpy as np
 import torch.utils.data
 import torch
 import os
@@ -70,8 +71,8 @@ class ToolDataset(torch.utils.data.Dataset):
         object_index = self.object_idcs[index]
 
         data_dict = {
-            "object_idx": object_index,
-            "trial_idx": self.trial_idcs[index],
+            "object_idx": np.array([object_index]),
+            "trial_idx": np.array([self.trial_idcs[index]]),
             "query_point": self.query_points[index],
             "sdf": self.sdf[index],
             "normals": self.normals[index],

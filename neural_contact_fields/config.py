@@ -8,15 +8,15 @@ method_dict = {
 }
 
 
-def get_model(cfg, device=None):
+def get_model(cfg, dataset, device=None):
     """
     Args:
     - cfg (dict): training config.
-    - dataset (dataset): training dataset
+    - dataset (dataset): training dataset (in case model depends).
     - device (device): pytorch device.
     """
     method = cfg['method']
-    model = method_dict[method].config.get_model(cfg, device=device)
+    model = method_dict[method].config.get_model(cfg, dataset, device=device)
     return model
 
 
