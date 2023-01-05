@@ -28,10 +28,17 @@ class VirdoNCF(NeuralContactField):
 
     def forward_object_module(self, query_points: torch.Tensor, z_object: torch.Tensor,
                               normal_query_points: torch.Tensor = None):
-        model_in = {
-            "coords": query_points,
-            "embedding": z_object,
-        }
+        if normal_query_points is None:
+            model_in = {
+                "coords": query_points,
+                "embedding": z_object,
+            }
+        else:
+            model_in = {
+                "coords": normal_query_points,
+                "model_out": query_points,
+                "embedding": z_object
+            }
 
         model_out = self.object_model(model_in)
 
@@ -66,7 +73,7 @@ class VirdoNCF(NeuralContactField):
         query_point_defs = deform_out["model_out"]
 
         # Apply deformation to query points.
-        object_coords = query_points + query_point_defs
+        object_coords = deform_out["model_in"] + deform_out["model_out"]
         object_out = self.forward_object_module(object_coords, z_object, deform_out["model_in"])
 
         # Get contact label at each query point.

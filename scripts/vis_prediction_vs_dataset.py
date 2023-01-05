@@ -16,7 +16,8 @@ def vis_prediction_vs_dataset(pred_dict: dict):
     # Prediction data.
     pred_sdf = pred_dict["pred"]["sdf"][0]
     pred_contact = pred_dict["pred"]["in_contact"][0] > 0.5
-    pred_def = pred_dict["pred"]["pred_deform"][0]
+    pred_def = pred_dict["pred"]["deform"][0]
+    pred_normals = pred_dict["pred"]["normals"][0]
 
     plt = Plotter(shape=(2, 3))
     plt.at(0).show(Points(all_points[sdf <= 0.0], c="b"), Points(all_points[in_contact], c="r"),
@@ -30,6 +31,9 @@ def vis_prediction_vs_dataset(pred_dict: dict):
     plt.at(4).show(Points(all_points[pred_sdf <= 0.0], c="b"),
                    Points(all_points[pred_contact], c="r"), vedo_utils.draw_origin(),
                    "Predicted Contact (All)")
+    plt.at(5).show(Points(all_points[sdf == 0.0]),
+                   Arrows(all_points[sdf == 0.0], all_points[sdf == 0.0] + (0.01 * pred_normals)[sdf == 0.0]),
+                   "Predicted Normals")
     plt.interactive().close()
 
 

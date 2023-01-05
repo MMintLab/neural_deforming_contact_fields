@@ -7,6 +7,7 @@ import mmint_utils
 import torch
 from neural_contact_fields.utils.model_utils import load_model_and_dataset, load_model
 import numpy as np
+from scripts.vis_object_module_pretraining import vis_object_module_pretraining
 from tqdm import trange
 
 
@@ -17,6 +18,8 @@ def get_model_dataset_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Model/data config file.")
     parser.add_argument("out_fn", type=str, help="Place to write results to.")
+    parser.add_argument("-v", "--vis", dest="vis", action="store_true", help="Visualize.")
+    parser.set_defaults(vis=False)
     return parser
 
 
@@ -37,6 +40,7 @@ def load_model_dataset_from_args(args):
 
 
 def test_object_module_inference(args):
+    vis = args.vis
     max_batch = 40 ** 3
     model_cfg, model, object_code, dataset, device = load_model_dataset_from_args(args)
     model.eval()
@@ -51,16 +55,18 @@ def test_object_module_inference(args):
 
     num_iters = int(np.ceil(num_samples / max_batch))
     sdf_preds = []
+    normals_preds = []
 
     for iter_idx in trange(num_iters):
         sample_subset = query_points[head: min(head + max_batch, num_samples), 0:3]
 
-        with torch.no_grad():
-            sdf_pred = model.forward_object_module(sample_subset.float().unsqueeze(0), z_object)["sdf"]
-        sdf_preds.append(sdf_pred.squeeze(0))
+        out_dict = model.forward_object_module(sample_subset.float().unsqueeze(0), z_object.unsqueeze(0))
+        sdf_preds.append(out_dict["sdf"].squeeze(0))
+        normals_preds.append(out_dict["normals"].squeeze(0))
 
         head += max_batch
     sdf_preds = torch.cat(sdf_preds, dim=0)
+    normals_preds = torch.cat(normals_preds, dim=0)
 
     # Write prediction results to file.
     out_fn = args.out_fn
@@ -68,11 +74,15 @@ def test_object_module_inference(args):
 
     out_dict = {
         "query_points": batch["query_point"],
-        "pred_sdf": sdf_preds.cpu().numpy(),
+        "pred_sdf": sdf_preds.detach().cpu().numpy(),
+        "pred_normals": normals_preds.detach().cpu().numpy(),
         "sdf": batch["sdf"],
     }
 
     mmint_utils.save_gzip_pickle(out_dict, out_fn)
+
+    if vis:
+        vis_object_module_pretraining(out_dict)
 
 
 if __name__ == '__main__':

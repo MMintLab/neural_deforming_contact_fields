@@ -158,8 +158,8 @@ def points_inference(model, object_code, trial_code, trial_dict, max_batch: int 
     # Encode object idx/trial idx.
     object_idx_tensor = torch.tensor(object_index, device=device)
     trial_idx_tensor = torch.tensor(trial_index, device=device)
-    z_object = object_code(object_idx_tensor).float()
-    z_trial = trial_code(trial_idx_tensor).float()
+    z_object = object_code(object_idx_tensor).float().unsqueeze(0)
+    z_trial = trial_code(trial_idx_tensor).float().unsqueeze(0)
 
     # Get query points to sample.
     query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
@@ -173,8 +173,7 @@ def points_inference(model, object_code, trial_code, trial_dict, max_batch: int 
         sample_subset = query_points[head: min(head + max_batch, num_samples)]
         trial_indices = torch.zeros(sample_subset.shape[0], dtype=torch.long).to(device) + trial_index
 
-        with torch.no_grad():
-            pred_dict = model.forward(sample_subset, z_trial, z_object)
+        pred_dict = model.forward(sample_subset.unsqueeze(0), z_trial, z_object)
 
         for k, v in pred_dict.items():
             pred_dict_all[k].append(v)
