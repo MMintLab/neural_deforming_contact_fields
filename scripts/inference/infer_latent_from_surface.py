@@ -28,7 +28,6 @@ def load_model_dataset_from_args(args):
                                                                dataset_mode=args.mode,
                                                                model_file=args.model_file)
     model.eval()
-
     return model_cfg, model, dataset, device
 
 
@@ -49,19 +48,14 @@ def test_inference(args):
     out_dir = args.out
     mmint_utils.make_dir(out_dir)
 
-    trial_indices = dataset.get_trial_indices()
-    for trial_idx in trial_indices:
-        trial_dict = dataset.get_all_points_for_trial(None, trial_idx)
-        query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
-        latent_code = infer_latent_from_surface(model, trial_dict, device=device)
-
-        res_dict = points_inference_latent(model, latent_code, query_points, device=device)
+    for trial_idx in range(len(dataset)):
+        trial_dict = dataset[trial_idx]
+        latent_code, pred_dict = infer_latent_from_surface(model, trial_dict, {}, device=device)
 
         results_dict = {
             "gt": numpy_dict(trial_dict),
-            "pred": numpy_dict(res_dict)
+            "pred": numpy_dict(pred_dict)
         }
-
         vis_prediction_vs_dataset(results_dict)
 
 

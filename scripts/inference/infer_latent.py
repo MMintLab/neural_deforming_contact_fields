@@ -56,7 +56,6 @@ def infer_latent_test(args):
             "gt": numpy_dict(trial_dict),
             "pred": numpy_dict(pred_dict)
         }
-
         vis_prediction_vs_dataset(results_dict)
 
 
