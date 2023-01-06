@@ -5,7 +5,7 @@ from neural_contact_fields.inference import points_inference_latent, \
     infer_latent_from_surface
 from neural_contact_fields.utils.utils import load_model_and_dataset
 import argparse
-from vis_prediction_vs_dataset import vis_prediction_vs_dataset
+from scripts.train.vis_prediction_vs_dataset import vis_prediction_vs_dataset
 
 
 def get_model_dataset_arg_parser():

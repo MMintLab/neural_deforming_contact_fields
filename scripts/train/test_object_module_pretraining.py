@@ -1,6 +1,5 @@
 import argparse
 import os.path
-import pdb
 
 import torch.nn as nn
 import mmint_utils
@@ -8,7 +7,7 @@ import torch
 from matplotlib import pyplot as plt
 from neural_contact_fields.utils.model_utils import load_model_and_dataset, load_model
 import numpy as np
-from scripts.vis_object_module_pretraining import vis_object_module_pretraining
+from scripts.train.vis_object_module_pretraining import vis_object_module_pretraining
 from tqdm import trange
 
 
