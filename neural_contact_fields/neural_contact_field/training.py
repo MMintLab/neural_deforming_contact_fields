@@ -21,7 +21,7 @@ class Trainer(BaseTrainer):
 
         self.model: NeuralContactField = model
 
-    def load_pretrained_model(self, object_code: nn.Embedding, pretrain_file: str, freeze_object_module_weights=False):
+    def load_pretrained_model(self, pretrain_file: str, freeze_object_module_weights=False):
         """
         Load pretrained model weights. Optionally freeze object module weights.
 
@@ -29,13 +29,12 @@ class Trainer(BaseTrainer):
         """
         print("Loading pretrained model weights from local file: %s" % pretrain_file)
 
-        model_utils.load_model({"model": self.model, "object_code": object_code}, pretrain_file)
+        model_utils.load_model({"model": self.model}, pretrain_file)
 
         # Optionally, we can freeze the pretrained weights. TODO: Make this better.
         if freeze_object_module_weights:
             for param in self.model.object_model.parameters():
                 param.requires_grad = False
-            object_code.requires_grad_(False)
 
     ##########################################################################
     #  Pretraining loop                                                      #
@@ -59,20 +58,12 @@ class Trainer(BaseTrainer):
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
 
-        # Setup the object embedding.
-        num_objects = len(pretrain_dataset)
-        object_code = nn.Embedding(num_objects, self.cfg["model"]["z_object_size"]).requires_grad_(True).to(self.device)
-        nn.init.normal_(object_code.weight, mean=0.0, std=0.1)
-
         # Get optimizer (TODO: Parameterize?)
-        optimizer = optim.Adam([
-            {"params": self.model.parameters(), "lr": lr},
-            {"params": object_code.parameters(), "lr": lr},
-        ])
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
         # Load model + optimizer if a partially trained copy of it exists.
         epoch_it, it = self.load_partial_train_model(
-            {"model": self.model, "optimizer": optimizer, "object_code": object_code},
+            {"model": self.model, "optimizer": optimizer},
             out_dir, "pretrain_model.pt")
 
         # Training loop
@@ -83,7 +74,6 @@ class Trainer(BaseTrainer):
                 print("Backing up and stopping training. Reached max epochs.")
                 save_dict = {
                     'model': self.model.state_dict(),
-                    'object_code': object_code.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'epoch_it': epoch_it,
                     'it': it,
@@ -102,10 +92,6 @@ class Trainer(BaseTrainer):
 
                 # For this training, we use just a single example per run.
                 batch = pretrain_dataset[object_idx]
-
-                # Encode the object idx.
-                batch["z_object"] = object_code(object_idx).float()
-
                 loss = self.train_step(batch, it, optimizer, logger, self.compute_pretrain_loss)
 
             print('[Epoch %02d] it=%03d, loss=%.4f'
@@ -114,22 +100,11 @@ class Trainer(BaseTrainer):
             if epoch_it % epochs_per_save == 0:
                 save_dict = {
                     'model': self.model.state_dict(),
-                    'object_code': object_code.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'epoch_it': epoch_it,
                     'it': it,
                 }
                 torch.save(save_dict, os.path.join(out_dir, 'pretrain_model.pt'))
-
-        # Backup.
-        save_dict = {
-            'model': self.model.state_dict(),
-            'object_code': object_code.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'epoch_it': epoch_it,
-            'it': it,
-        }
-        torch.save(save_dict, os.path.join(out_dir, 'pretrain_model.pt'))
 
     def compute_pretrain_loss(self, data, it) -> (dict, dict):
         """
@@ -139,13 +114,14 @@ class Trainer(BaseTrainer):
         - data (dict): data dictionary
         """
         # Load data from batch.
+        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
         coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
-        obj_code = data["z_object"].unsqueeze(0)
 
         # Forward prediction.
-        out_dict = self.model.forward_object_module(coords, obj_code)
+        z_object = self.model.encode_object(object_idx)
+        out_dict = self.model.forward_object_module(coords, z_object)
 
         # Calculate Losses:
         loss_dict = dict()
@@ -196,31 +172,16 @@ class Trainer(BaseTrainer):
         # Dump config to output directory.
         mmint_utils.dump_cfg(os.path.join(out_dir, 'config.yaml'), self.cfg)
 
-        # Setup the object/trial embeddings.
-        num_objects = train_dataset.get_num_objects()
-        num_trials = train_dataset.get_num_trials()
-        object_code = nn.Embedding(num_objects, self.cfg["model"]["z_object_size"]).requires_grad_(True).to(self.device)
-        nn.init.normal_(object_code.weight, mean=0.0, std=0.1)
-        trial_code = nn.Embedding(num_trials, self.cfg["model"]["z_deform_size"]).requires_grad_(True).to(self.device)
-        nn.init.normal_(trial_code.weight, mean=0.0, std=0.1)
-
         # Get optimizer (TODO: Parameterize?)
-        optim_params = [
-            {"params": self.model.parameters(), "lr": lr},
-            {"params": trial_code.parameters(), "lr": lr},
-        ]
-        if self.cfg["training"]["update_object_code"]:
-            optim_params.append({"params": object_code.parameters(), "lr": lr})
-        optimizer = optim.Adam(optim_params)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
         # Load pretrained model, if appropriate.
         pretrain_file = os.path.join(self.cfg["pretraining"]["out_dir"], "pretrain_model.pt")
-        self.load_pretrained_model(object_code, pretrain_file, self.cfg['training']['freeze_pretrain_weights'])
+        self.load_pretrained_model(pretrain_file, self.cfg['training']['freeze_pretrain_weights'])
 
         # Load model + optimizer if a partially trained copy of it exists.
         epoch_it, it = self.load_partial_train_model(
-            {"model": self.model, "optimizer": optimizer, "object_code": object_code,
-             "trial_code": trial_code}, out_dir, "model.pt")
+            {"model": self.model, "optimizer": optimizer}, out_dir, "model.pt")
 
         # Training loop
         while True:
@@ -230,8 +191,6 @@ class Trainer(BaseTrainer):
                 print("Backing up and stopping training. Reached max epochs.")
                 save_dict = {
                     'model': self.model.state_dict(),
-                    'object_code': object_code.state_dict(),
-                    'trial_code': trial_code.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'epoch_it': epoch_it,
                     'it': it,
@@ -241,18 +200,15 @@ class Trainer(BaseTrainer):
 
             loss = None
 
-            for trial_idx in range(len(train_dataset)):
+            trial_idcs = np.arange(len(train_dataset))
+            np.random.shuffle(trial_idcs)
+            trial_idcs = torch.from_numpy(trial_idcs).to(self.device)
+
+            for trial_idx in trial_idcs:
                 it += 1
 
                 # For this training, we use just a single example per run.
                 batch = train_dataset[trial_idx]
-                object_idx_tensor = torch.tensor(batch["object_idx"], device=self.device)
-                trial_idx_tensor = torch.tensor(batch["trial_idx"], device=self.device)
-
-                # Encode object idx/trial idx.
-                batch["z_object"] = object_code(object_idx_tensor).float()
-                batch["z_trial"] = trial_code(trial_idx_tensor).float()
-
                 loss = self.train_step(batch, it, optimizer, logger, self.compute_train_loss)
 
             print('[Epoch %02d] it=%03d, loss=%.4f'
@@ -261,24 +217,11 @@ class Trainer(BaseTrainer):
             if epoch_it % epochs_per_save == 0:
                 save_dict = {
                     'model': self.model.state_dict(),
-                    'object_code': object_code.state_dict(),
-                    'trial_code': trial_code.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'epoch_it': epoch_it,
                     'it': it,
                 }
                 torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
-
-        # Backup.
-        save_dict = {
-            'model': self.model.state_dict(),
-            'object_code': object_code.state_dict(),
-            'trial_code': trial_code.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'epoch_it': epoch_it,
-            'it': it,
-        }
-        torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
 
     def compute_train_loss(self, data, it) -> (dict, dict):
         """
@@ -287,8 +230,8 @@ class Trainer(BaseTrainer):
         Args:
         - data (dict): data dictionary
         """
-        obj_code = data["z_object"].unsqueeze(0)
-        trial_code = data["z_trial"].unsqueeze(0)
+        object_idx = torch.from_numpy(data["object_idx"]).to(self.device).unsqueeze(0)
+        trial_idx = torch.from_numpy(data["trial_idx"]).to(self.device).unsqueeze(0)
         coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
@@ -296,7 +239,8 @@ class Trainer(BaseTrainer):
         nominal_coords = torch.from_numpy(data["nominal_query_point"]).to(self.device).float().unsqueeze(0)
         nominal_sdf = torch.from_numpy(data["nominal_sdf"]).to(self.device).float().unsqueeze(0)
 
-        out_dict = self.model.forward(coords, trial_code, obj_code)
+        z_object, z_trial = self.model.encode_trial(object_idx, trial_idx)
+        out_dict = self.model.forward(coords, z_trial, z_object)
 
         # Loss:
         loss_dict = dict()

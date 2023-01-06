@@ -3,6 +3,7 @@ from neural_contact_fields.neural_contact_field.models.neural_contact_field impo
 from neural_contact_fields.models import meta_modules
 import neural_contact_fields.loss as ncf_losses
 from neural_contact_fields.utils import diff_operators
+from torch import nn
 
 
 class VirdoNCF(NeuralContactField):
@@ -10,10 +11,8 @@ class VirdoNCF(NeuralContactField):
     Neural Contact Field using Virdo sub-modules.
     """
 
-    def __init__(self, z_object_size: int, z_deform_size: int, device=None):
-        super().__init__()
-        self.z_object_size = z_object_size
-        self.z_deform_size = z_deform_size
+    def __init__(self, num_objects: int, num_trials: int, z_object_size: int, z_deform_size: int, device=None):
+        super().__init__(z_object_size, z_deform_size)
         self.device = device
 
         # Setup sub-models of the VirdoNCF.
@@ -25,6 +24,17 @@ class VirdoNCF(NeuralContactField):
         self.contact_model = meta_modules.virdo_hypernet(in_features=3, out_features=1,
                                                          hyper_in_features=self.z_object_size + self.z_deform_size,
                                                          hl=2).to(self.device)
+
+        # Setup latent embeddings (used during training).
+        self.object_code = nn.Embedding(num_objects, self.z_object_size, dtype=torch.float32).requires_grad_(True).to(
+            self.device)
+        nn.init.normal_(self.object_code.weight, mean=0.0, std=0.1)
+        self.trial_code = nn.Embedding(num_trials, self.z_deform_size, dtype=torch.float32).requires_grad_(True).to(
+            self.device)
+        nn.init.normal_(self.trial_code.weight, mean=0.0, std=0.1)
+
+    def encode_object(self, object_idx: torch.Tensor):
+        return self.object_code(object_idx)
 
     def forward_object_module(self, query_points: torch.Tensor, z_object: torch.Tensor,
                               normal_query_points: torch.Tensor = None):
@@ -60,6 +70,11 @@ class VirdoNCF(NeuralContactField):
         hypo_params = out_dict["hypo_params"]
         hypo_loss = ncf_losses.hypo_weight_loss(hypo_params)
         return hypo_loss
+
+    def encode_trial(self, object_idx: torch.Tensor, trial_idx: torch.Tensor):
+        z_object = self.encode_object(object_idx)
+        z_trial = self.trial_code(trial_idx)
+        return z_object, z_trial
 
     def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor):
         combined_embedding = torch.cat([z_deform, z_object], dim=-1)

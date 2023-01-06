@@ -28,7 +28,7 @@ def pretrain_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, ve
 
     # Create model:
     print('Loading model:')
-    model = config.get_model(cfg, device=device)
+    model = config.get_model(cfg, pretrain_dataset, device=device)
     print(model)
 
     # Get trainer.
