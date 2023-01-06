@@ -35,15 +35,7 @@ def load_model_dataset_from_args(args):
                                                                dataset_mode=args.mode,
                                                                model_file=args.model_file)
     model.eval()
-
-    num_objects = dataset.get_num_objects()
-    num_trials = dataset.get_num_trials()
-    object_code = nn.Embedding(num_objects, model_cfg["model"]["z_object_size"]).to(device)
-    trial_code = nn.Embedding(num_trials, model_cfg["model"]["z_deform_size"]).to(device)
-    model_file = os.path.join(model_cfg["training"]["out_dir"], "model.pt")
-    load_model({"object_code": object_code, "trial_code": trial_code}, model_file)
-
-    return model_cfg, model, object_code, trial_code, dataset, device
+    return model_cfg, model, dataset, device
 
 
 def numpy_dict(torch_dict: dict):
@@ -59,7 +51,7 @@ def numpy_dict(torch_dict: dict):
 def test_inference(args):
     vis = args.vis
     dataset: ToolDataset
-    model_cfg, model, object_code, trial_code, dataset, device = load_model_dataset_from_args(args)
+    model_cfg, model, dataset, device = load_model_dataset_from_args(args)
 
     out_dir = args.out
     mmint_utils.make_dir(out_dir)
@@ -67,7 +59,7 @@ def test_inference(args):
     num_trials = dataset.get_num_trials()
     for trial_idx in range(num_trials):
         trial_dict = dataset[trial_idx]
-        trial_pred_dict = points_inference(model, object_code, trial_code, trial_dict, device=device)
+        trial_pred_dict = points_inference(model, trial_dict, device=device)
         results_dict = {
             "gt": numpy_dict(trial_dict),
             "pred": numpy_dict(trial_pred_dict)

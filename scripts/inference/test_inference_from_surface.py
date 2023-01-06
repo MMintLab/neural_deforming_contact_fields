@@ -3,7 +3,7 @@ import torch
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.inference import points_inference_latent, \
     infer_latent_from_surface
-from neural_contact_fields.utils.utils import load_model_and_dataset
+from neural_contact_fields.utils.model_utils import load_model_and_dataset
 import argparse
 from scripts.train.vis_prediction_vs_dataset import vis_prediction_vs_dataset
 

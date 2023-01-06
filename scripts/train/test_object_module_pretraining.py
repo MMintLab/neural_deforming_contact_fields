@@ -30,29 +30,19 @@ def load_model_dataset_from_args(args):
     model_cfg, model, dataset, device = load_model_and_dataset(args.config, dataset_mode="pretrain",
                                                                model_file="pretrain_model.pt")
     model.eval()
-
-    num_objects = len(dataset)
-    object_code = nn.Embedding(num_objects, model_cfg["model"]["z_object_size"]).to(device)
-    model_file = os.path.join(model_cfg['pretraining']['out_dir'], "pretrain_model.pt")
-    load_model({"object_code": object_code}, model_file)
-
-    return model_cfg, model, object_code, dataset, device
+    return model_cfg, model, dataset, device
 
 
 def test_object_module_inference(args):
     vis = args.vis
     max_batch = 40 ** 3
-    model_cfg, model, object_code, dataset, device = load_model_dataset_from_args(args)
+    model_cfg, model, dataset, device = load_model_dataset_from_args(args)
     model.eval()
 
-    # Predict on query points.
-    z_object = object_code(torch.tensor(0, device=device)).to(device).float()
     head = 0
-
     batch = dataset[0]
     query_points = torch.from_numpy(batch["query_point"]).float().to(device)
     num_samples = query_points.shape[0]
-
     num_iters = int(np.ceil(num_samples / max_batch))
     sdf_preds = []
     normals_preds = []
@@ -60,6 +50,7 @@ def test_object_module_inference(args):
     for iter_idx in trange(num_iters):
         sample_subset = query_points[head: min(head + max_batch, num_samples), 0:3]
 
+        z_object = model.encode_object(torch.tensor(0).to(device))
         out_dict = model.forward_object_module(sample_subset.float().unsqueeze(0), z_object.unsqueeze(0))
         sdf_preds.append(out_dict["sdf"].squeeze(0))
         normals_preds.append(out_dict["normals"].squeeze(0))

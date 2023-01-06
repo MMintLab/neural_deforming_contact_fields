@@ -3,6 +3,7 @@ from collections import defaultdict, OrderedDict
 
 import numpy as np
 import torch
+from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from tqdm import trange
 import torch.optim as optim
 
@@ -150,16 +151,14 @@ def infer_latent_from_surface(model, trial_dict, max_batch: int = 40 ** 3, devic
     return latent_code
 
 
-def points_inference(model, object_code, trial_code, trial_dict, max_batch: int = 40 ** 3, device=None):
+def points_inference(model: NeuralContactField, trial_dict, max_batch: int = 40 ** 3, device=None):
     model.eval()
     object_index = trial_dict["object_idx"]
     trial_index = trial_dict["trial_idx"]
 
     # Encode object idx/trial idx.
-    object_idx_tensor = torch.tensor(object_index, device=device)
-    trial_idx_tensor = torch.tensor(trial_index, device=device)
-    z_object = object_code(object_idx_tensor).float().unsqueeze(0)
-    z_trial = trial_code(trial_idx_tensor).float().unsqueeze(0)
+    z_object, z_trial = model.encode_trial(torch.from_numpy(object_index).to(device),
+                                           torch.from_numpy(trial_index).to(device))
 
     # Get query points to sample.
     query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
@@ -171,7 +170,6 @@ def points_inference(model, object_code, trial_code, trial_dict, max_batch: int 
 
     for iter_idx in trange(num_iters):
         sample_subset = query_points[head: min(head + max_batch, num_samples)]
-        trial_indices = torch.zeros(sample_subset.shape[0], dtype=torch.long).to(device) + trial_index
 
         pred_dict = model.forward(sample_subset.unsqueeze(0), z_trial, z_object)
 

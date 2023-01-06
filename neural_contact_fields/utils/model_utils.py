@@ -59,7 +59,7 @@ def load_model_from_config(model_config, dataset, model_file="model_best.pt", cu
     cuda_device = torch.device("cuda:%d" % cuda_id if is_cuda else "cpu")
 
     # Create model:
-    model = config.get_model(model_cfg, device=cuda_device)
+    model = config.get_model(model_cfg, dataset, device=cuda_device)
 
     # Load model from file.
     model_dict = {
