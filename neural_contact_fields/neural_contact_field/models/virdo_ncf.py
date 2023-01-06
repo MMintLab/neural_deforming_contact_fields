@@ -12,9 +12,7 @@ class VirdoNCF(NeuralContactField):
     """
 
     def __init__(self, num_objects: int, num_trials: int, z_object_size: int, z_deform_size: int, device=None):
-        super().__init__()
-        self.z_object_size = z_object_size
-        self.z_deform_size = z_deform_size
+        super().__init__(z_object_size, z_deform_size)
         self.device = device
 
         # Setup sub-models of the VirdoNCF.

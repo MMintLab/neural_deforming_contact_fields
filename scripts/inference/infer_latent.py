@@ -1,7 +1,7 @@
 import mmint_utils
 import torch
 from neural_contact_fields.data.tool_dataset import ToolDataset
-from neural_contact_fields.inference import infer_latent_from_surface
+from neural_contact_fields.inference import infer_latent_from_surface, infer_latent
 from neural_contact_fields.utils.model_utils import load_model_and_dataset
 import argparse
 from scripts.train.vis_prediction_vs_dataset import vis_prediction_vs_dataset
@@ -28,7 +28,6 @@ def load_model_dataset_from_args(args):
                                                                dataset_mode=args.mode,
                                                                model_file=args.model_file)
     model.eval()
-
     return model_cfg, model, dataset, device
 
 
@@ -42,24 +41,20 @@ def numpy_dict(torch_dict: dict):
     return np_dict
 
 
-def test_inference(args):
+def infer_latent_test(args):
     dataset: ToolDataset
     model_cfg, model, dataset, device = load_model_dataset_from_args(args)
 
     out_dir = args.out
     mmint_utils.make_dir(out_dir)
 
-    trial_indices = dataset.get_trial_indices()
-    for trial_idx in trial_indices:
-        trial_dict = dataset.get_all_points_for_trial(None, trial_idx)
-        query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
-        latent_code = infer_latent_from_surface(model, trial_dict, device=device)
-
-        res_dict = points_inference_latent(model, latent_code, query_points, device=device)
+    for trial_idx in range(len(dataset)):
+        trial_dict = dataset[trial_idx]
+        latent_code, pred_dict = infer_latent(model, trial_dict, model_cfg["training"]["loss_weights"], device=device)
 
         results_dict = {
             "gt": numpy_dict(trial_dict),
-            "pred": numpy_dict(res_dict)
+            "pred": numpy_dict(pred_dict)
         }
 
         vis_prediction_vs_dataset(results_dict)
@@ -69,4 +64,4 @@ if __name__ == '__main__':
     parser = get_model_dataset_arg_parser()
     args_ = parser.parse_args()
 
-    test_inference(args_)
+    infer_latent_test(args_)

@@ -7,6 +7,11 @@ class NeuralContactField(nn.Module):
     Neural Contact Field abstract class.
     """
 
+    def __init__(self, z_object_size: int, z_deform_size: int):
+        super().__init__()
+        self.z_object_size = z_object_size
+        self.z_deform_size = z_deform_size
+
     def encode_object(self, object_idx: torch.Tensor):
         raise NotImplementedError()
 
