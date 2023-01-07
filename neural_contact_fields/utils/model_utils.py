@@ -76,6 +76,7 @@ def load_model_and_dataset(model_config, dataset_config=None, dataset_mode="test
         dataset_config = model_config
     dataset = load_dataset_from_config(dataset_config, dataset_mode)
 
-    model_cfg, model, cuda_device = load_model_from_config(model_config, dataset, model_file=model_file,
+    train_dataset = load_dataset_from_config(model_config, dataset_mode="train")
+    model_cfg, model, cuda_device = load_model_from_config(model_config, train_dataset, model_file=model_file,
                                                            cuda_id=cuda_id, no_cuda=no_cuda)
     return model_cfg, model, dataset, cuda_device
