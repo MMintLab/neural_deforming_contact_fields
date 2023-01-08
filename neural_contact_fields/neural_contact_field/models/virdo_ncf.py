@@ -23,11 +23,11 @@ class VirdoNCF(NeuralContactField):
                                                         hyper_in_features=self.z_object_size, hl=2).to(self.device)
         self.deformation_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=3,
-            hyper_in_features=self.z_object_size + self.z_deform_size, hl=1
+            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_pressure_size, hl=1
         ).to(self.device)
         self.contact_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=1,
-            hyper_in_features=self.z_object_size + self.z_deform_size, hl=2
+            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_pressure_size, hl=2
         ).to(self.device)
         self.pressure_encoder = mlp.build_mlp(1, z_pressure_size, hidden_sizes=None, device=device)
 
@@ -103,12 +103,13 @@ class VirdoNCF(NeuralContactField):
         return z_object, z_trial
 
     def encode_pressure(self, pressure: torch.Tensor):
+        pressure /= 5000.0
         z_pressure = self.pressure_encoder(pressure)
         return z_pressure
 
     def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor,
                 z_pressure: torch.Tensor):
-        combined_embedding = torch.cat([z_deform, z_object], dim=-1)
+        combined_embedding = torch.cat([z_deform, z_object, z_pressure], dim=-1)
 
         # Determine deformation at each query point.
         deform_in = {
