@@ -25,7 +25,8 @@ class NeuralContactField(nn.Module):
     def encode_trial(self, object_idx: torch.Tensor, trial_idx: torch.Tensor):
         raise NotImplementedError()
 
-    def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor):
+    def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor,
+                pressure: torch.Tensor):
         raise NotImplementedError()
 
     def regularization_loss(self, out_dict: dict):

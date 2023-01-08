@@ -41,7 +41,7 @@ class ToolDataset(torch.utils.data.Dataset):
             self.sdf.append(example_dict["sdf"])
             self.normals.append(example_dict["normals"])
             self.in_contact.append(example_dict["in_contact"])
-            # self.trial_pressure.append(example_dict["pressure"])  # TODO: Add back pressure.
+            self.trial_pressure.append(example_dict["pressure"])
 
         self.num_objects = max(self.object_idcs) + 1
 
@@ -77,7 +77,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "sdf": self.sdf[index],
             "normals": self.normals[index],
             "in_contact": self.in_contact[index].astype(int),
-            # "pressure": self.trial_pressure[index],
+            "pressure": np.array([self.trial_pressure[index]]),
             "nominal_query_point": self.nominal_query_points[object_index],
             "nominal_sdf": self.nominal_sdf[object_index],
         }

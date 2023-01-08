@@ -230,17 +230,18 @@ class Trainer(BaseTrainer):
         Args:
         - data (dict): data dictionary
         """
-        object_idx = torch.from_numpy(data["object_idx"]).to(self.device).unsqueeze(0)
-        trial_idx = torch.from_numpy(data["trial_idx"]).to(self.device).unsqueeze(0)
+        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
+        trial_idx = torch.from_numpy(data["trial_idx"]).to(self.device)
         coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
         gt_in_contact = torch.from_numpy(data["in_contact"]).to(self.device).float().unsqueeze(0)
         nominal_coords = torch.from_numpy(data["nominal_query_point"]).to(self.device).float().unsqueeze(0)
         nominal_sdf = torch.from_numpy(data["nominal_sdf"]).to(self.device).float().unsqueeze(0)
+        pressure = torch.from_numpy(data["pressure"]).to(self.device).float().unsqueeze(0)
 
         z_object, z_trial = self.model.encode_trial(object_idx, trial_idx)
-        out_dict = self.model.forward(coords, z_trial, z_object)
+        out_dict = self.model.forward(coords, z_trial, z_object, pressure)
 
         # Loss:
         loss_dict = dict()
