@@ -241,7 +241,8 @@ class Trainer(BaseTrainer):
         pressure = torch.from_numpy(data["pressure"]).to(self.device).float().unsqueeze(0)
 
         z_object, z_trial = self.model.encode_trial(object_idx, trial_idx)
-        out_dict = self.model.forward(coords, z_trial, z_object, pressure)
+        z_pressure = self.model.encode_pressure(pressure)
+        out_dict = self.model.forward(coords, z_trial, z_object, z_pressure)
 
         # Loss:
         loss_dict = dict()

@@ -136,6 +136,7 @@ def points_inference(model: NeuralContactField, trial_dict, device=None):
     model.eval()
     object_index = trial_dict["object_idx"]
     trial_index = trial_dict["trial_idx"]
+    pressure = torch.from_numpy(trial_dict["pressure"]).to(device).unsqueeze(0).float()
 
     # Encode object idx/trial idx.
     z_object, z_trial = model.encode_trial(torch.from_numpy(object_index).to(device),
@@ -143,6 +144,6 @@ def points_inference(model: NeuralContactField, trial_dict, device=None):
 
     # Get query points to sample.
     query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
-    pred_dict = model.forward(query_points.unsqueeze(0), z_trial, z_object)
+    pred_dict = model.forward(query_points.unsqueeze(0), z_trial, z_object, pressure)
 
     return pred_dict

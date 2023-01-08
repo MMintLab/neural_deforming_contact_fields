@@ -17,7 +17,7 @@ def get_model_dataset_arg_parser():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Model/data config file.")
-    parser.add_argument("out", type=str, help="Directory to write results to.")
+    parser.add_argument("--out", "-o", type=str, default=None, help="Directory to write results to.")
     parser.add_argument("--dataset_config", "-d", type=str, default=None, help="Optional dataset config to use.")
     parser.add_argument("--mode", "-m", type=str, default="test", help="Which split to vis [train, val, test].")
     parser.add_argument("--model_file", "-f", type=str, default="model.pt", help="Which model save file to use.")
@@ -54,7 +54,8 @@ def test_inference(args):
     model_cfg, model, dataset, device = load_model_dataset_from_args(args)
 
     out_dir = args.out
-    mmint_utils.make_dir(out_dir)
+    if out_dir is not None:
+        mmint_utils.make_dir(out_dir)
 
     num_trials = dataset.get_num_trials()
     for trial_idx in range(num_trials):
@@ -68,8 +69,9 @@ def test_inference(args):
         if vis:
             vis_prediction_vs_dataset(results_dict)
 
-        out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
-        mmint_utils.save_gzip_pickle(results_dict, out_fn)
+        if out_dir is not None:
+            out_fn = os.path.join(out_dir, "pred_%d.pkl.gzip" % trial_idx)
+            mmint_utils.save_gzip_pickle(results_dict, out_fn)
 
 
 if __name__ == '__main__':
