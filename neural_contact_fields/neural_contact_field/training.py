@@ -21,21 +21,6 @@ class Trainer(BaseTrainer):
 
         self.model: NeuralContactField = model
 
-    def load_pretrained_model(self, pretrain_file: str, freeze_object_module_weights=False):
-        """
-        Load pretrained model weights. Optionally freeze object module weights.
-
-        Note: assumes object_module defined in model.
-        """
-        print("Loading pretrained model weights from local file: %s" % pretrain_file)
-
-        model_utils.load_model({"model": self.model}, pretrain_file)
-
-        # Optionally, we can freeze the pretrained weights. TODO: Make this better.
-        if freeze_object_module_weights:
-            for param in self.model.object_model.parameters():
-                param.requires_grad = False
-
     ##########################################################################
     #  Pretraining loop                                                      #
     ##########################################################################
@@ -177,7 +162,7 @@ class Trainer(BaseTrainer):
 
         # Load pretrained model, if appropriate.
         pretrain_file = os.path.join(self.cfg["pretraining"]["out_dir"], "pretrain_model.pt")
-        self.load_pretrained_model(pretrain_file, self.cfg['training']['freeze_pretrain_weights'])
+        self.model.load_pretrained_model(pretrain_file, self.cfg['training']['load_pretrain'])
 
         # Load model + optimizer if a partially trained copy of it exists.
         epoch_it, it = self.load_partial_train_model(

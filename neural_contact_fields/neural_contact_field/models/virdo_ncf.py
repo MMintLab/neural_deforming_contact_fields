@@ -1,3 +1,5 @@
+import os
+
 import torch
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.models import meta_modules, mlp
@@ -21,11 +23,11 @@ class VirdoNCF(NeuralContactField):
                                                         hyper_in_features=self.z_object_size, hl=2).to(self.device)
         self.deformation_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=3,
-            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_pressure_size, hl=1
+            hyper_in_features=self.z_object_size + self.z_deform_size, hl=1
         ).to(self.device)
         self.contact_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=1,
-            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_pressure_size, hl=2
+            hyper_in_features=self.z_object_size + self.z_deform_size, hl=2
         ).to(self.device)
         self.pressure_encoder = mlp.build_mlp(1, z_pressure_size, hidden_sizes=None, device=device)
 
@@ -75,6 +77,26 @@ class VirdoNCF(NeuralContactField):
         hypo_loss = ncf_losses.hypo_weight_loss(hypo_params)
         return hypo_loss
 
+    def load_pretrained_model(self, pretrain_file: str, load_pretrain_cfg: dict):
+        # Load object model from pretrain state dict.
+        if os.path.exists(pretrain_file):
+            print('Loading checkpoint from local file: %s' % pretrain_file)
+            state_dict = torch.load(pretrain_file, map_location='cpu')
+            pretrain_object_module_dict = {k.replace("object_model.", ""): state_dict["model"][k] for k in
+                                           state_dict["model"].keys() if "object_model" in k}
+
+            missing_keys, _ = self.object_model.load_state_dict(pretrain_object_module_dict)
+            if len(missing_keys) != 0:
+                raise Exception("Pretrain model missing keys!")
+        else:
+            raise Exception("Couldn't find pretrain file: %s" % pretrain_file)
+
+        # Freeze object module, if requested.
+        freeze_object_module_weights = load_pretrain_cfg["freeze_object_module_weights"]
+        if freeze_object_module_weights:
+            for param in self.object_model.parameters():
+                param.requires_grad = False
+
     def encode_trial(self, object_idx: torch.Tensor, trial_idx: torch.Tensor):
         z_object = self.encode_object(object_idx)
         z_trial = self.trial_code(trial_idx)
@@ -86,7 +108,7 @@ class VirdoNCF(NeuralContactField):
 
     def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor,
                 z_pressure: torch.Tensor):
-        combined_embedding = torch.cat([z_deform, z_object, z_pressure], dim=-1)
+        combined_embedding = torch.cat([z_deform, z_object], dim=-1)
 
         # Determine deformation at each query point.
         deform_in = {

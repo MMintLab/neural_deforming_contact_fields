@@ -23,6 +23,9 @@ class NeuralContactField(nn.Module):
     def object_module_regularization_loss(self, out_dict: dict):
         raise NotImplementedError()
 
+    def load_pretrained_model(self, pretrain_file: str, load_pretrain_cfg: dict):
+        raise NotImplementedError()
+
     def encode_trial(self, object_idx: torch.Tensor, trial_idx: torch.Tensor):
         raise NotImplementedError()
 
