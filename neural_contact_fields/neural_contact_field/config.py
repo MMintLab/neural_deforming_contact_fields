@@ -14,7 +14,7 @@ def get_model(cfg, dataset, device=None):
         raise Exception("Training with unexpected dataset type: %s." % str(type(dataset)))
 
     model = VirdoNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
-                     model_cfg["z_pressure_size"], device)
+                     model_cfg["z_wrench_size"], device)
     return model
 
 

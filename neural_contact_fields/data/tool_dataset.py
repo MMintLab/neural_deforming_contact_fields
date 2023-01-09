@@ -29,6 +29,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.normals = []  # Surface normals at point.
         self.in_contact = []  # Binary contact indicator at point.
         self.trial_pressure = []  # Contact force at point.
+        self.wrist_wrench = []  # Wrist wrench.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
@@ -42,6 +43,7 @@ class ToolDataset(torch.utils.data.Dataset):
             self.normals.append(example_dict["normals"])
             self.in_contact.append(example_dict["in_contact"])
             self.trial_pressure.append(example_dict["pressure"])
+            self.wrist_wrench.append(example_dict["wrist_wrench"])
 
         self.num_objects = max(self.object_idcs) + 1
 
@@ -78,6 +80,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "normals": self.normals[index],
             "in_contact": self.in_contact[index].astype(int),
             "pressure": np.array([self.trial_pressure[index]]),
+            "wrist_wrench": self.wrist_wrench[index],
             "nominal_query_point": self.nominal_query_points[object_index],
             "nominal_sdf": self.nominal_sdf[object_index],
         }

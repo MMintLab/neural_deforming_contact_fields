@@ -13,9 +13,9 @@ class VirdoNCF(NeuralContactField):
     Neural Contact Field using Virdo sub-modules.
     """
 
-    def __init__(self, num_objects: int, num_trials: int, z_object_size: int, z_deform_size: int, z_pressure_size: int,
+    def __init__(self, num_objects: int, num_trials: int, z_object_size: int, z_deform_size: int, z_wrench_size: int,
                  device=None):
-        super().__init__(z_object_size, z_deform_size, z_pressure_size)
+        super().__init__(z_object_size, z_deform_size, z_wrench_size)
         self.device = device
 
         # Setup sub-models of the VirdoNCF.
@@ -23,13 +23,13 @@ class VirdoNCF(NeuralContactField):
                                                         hyper_in_features=self.z_object_size, hl=2).to(self.device)
         self.deformation_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=3,
-            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_pressure_size, hl=1
+            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_wrench_size, hl=1
         ).to(self.device)
         self.contact_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=1,
-            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_pressure_size, hl=2
+            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_wrench_size, hl=2
         ).to(self.device)
-        self.pressure_encoder = mlp.build_mlp(1, z_pressure_size, hidden_sizes=None, device=device)
+        self.wrench_encoder = mlp.build_mlp(6, self.z_wrench_size, hidden_sizes=[16], device=device)
 
         # Setup latent embeddings (used during training).
         self.object_code = nn.Embedding(num_objects, self.z_object_size, dtype=torch.float32).requires_grad_(True).to(
@@ -102,14 +102,13 @@ class VirdoNCF(NeuralContactField):
         z_trial = self.trial_code(trial_idx)
         return z_object, z_trial
 
-    def encode_pressure(self, pressure: torch.Tensor):
-        pressure /= 5000.0
-        z_pressure = self.pressure_encoder(pressure)
-        return z_pressure
+    def encode_wrench(self, wrench: torch.Tensor):
+        z_wrench = self.wrench_encoder(wrench)
+        return z_wrench
 
     def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor,
-                z_pressure: torch.Tensor):
-        combined_embedding = torch.cat([z_deform, z_object, z_pressure], dim=-1)
+                z_wrench: torch.Tensor):
+        combined_embedding = torch.cat([z_deform, z_object, z_wrench], dim=-1)
 
         # Determine deformation at each query point.
         deform_in = {

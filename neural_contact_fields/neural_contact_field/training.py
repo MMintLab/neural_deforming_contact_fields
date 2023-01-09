@@ -223,11 +223,12 @@ class Trainer(BaseTrainer):
         gt_in_contact = torch.from_numpy(data["in_contact"]).to(self.device).float().unsqueeze(0)
         nominal_coords = torch.from_numpy(data["nominal_query_point"]).to(self.device).float().unsqueeze(0)
         nominal_sdf = torch.from_numpy(data["nominal_sdf"]).to(self.device).float().unsqueeze(0)
-        pressure = torch.from_numpy(data["pressure"]).to(self.device).float().unsqueeze(0)
+        wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
 
+        # Run model forward.
         z_object, z_trial = self.model.encode_trial(object_idx, trial_idx)
-        z_pressure = self.model.encode_pressure(pressure)
-        out_dict = self.model.forward(coords, z_trial, z_object, z_pressure)
+        z_wrench = self.model.encode_wrench(wrist_wrench)
+        out_dict = self.model.forward(coords, z_trial, z_object, z_wrench)
 
         # Loss:
         loss_dict = dict()
