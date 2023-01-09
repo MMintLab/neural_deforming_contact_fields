@@ -16,7 +16,7 @@ def vis_object_module_pretraining(pred_dict: dict):
     plt.at(0).show(Points(query_points), vedo_utils.draw_origin(), "All Sample Points")
     plt.at(1).show(Points(query_points[sdf <= 0.0], c="b"), vedo_utils.draw_origin(), "Occupied Points (GT)")
     plt.at(2).show(Points(query_points[pred_sdf <= 0.0], c="b"), vedo_utils.draw_origin(), "Occupied Points (Pred)")
-    plt.at(3).show(Points(query_points[sdf == 0.0]),
+    plt.at(3).show(Points(query_points[sdf == 0.0]), vedo_utils.draw_origin(),
                    Arrows(query_points[sdf == 0.0], query_points[sdf == 0.0] + (0.01 * normals)[sdf == 0.0]),
                    "Normals (Pred)")
     plt.interactive().close()

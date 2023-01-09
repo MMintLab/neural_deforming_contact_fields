@@ -17,7 +17,7 @@ def get_model_dataset_arg_parser():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Model/data config file.")
-    parser.add_argument("out_fn", type=str, help="Place to write results to.")
+    parser.add_argument("-o", "--out", type=str, default=None, help="Place to write results to.")
     parser.add_argument("-v", "--vis", dest="vis", action="store_true", help="Visualize.")
     parser.set_defaults(vis=False)
     return parser
@@ -28,7 +28,7 @@ def load_model_dataset_from_args(args):
     Load model and dataset from arguments object.
     """
     model_cfg, model, dataset, device = load_model_and_dataset(args.config, dataset_mode="pretrain",
-                                                               model_file="pretrain_model.pt")
+                                                               model_file="pretrain.pt")
     model.eval()
     return model_cfg, model, dataset, device
 
@@ -60,8 +60,9 @@ def test_object_module_inference(args):
     normals_preds = torch.cat(normals_preds, dim=0)
 
     # Write prediction results to file.
-    out_fn = args.out_fn
-    mmint_utils.make_dir(os.path.dirname(out_fn))
+    out_fn = args.out
+    if out_fn is not None:
+        mmint_utils.make_dir(os.path.dirname(out_fn))
 
     out_dict = {
         "query_points": batch["query_point"],
@@ -70,7 +71,8 @@ def test_object_module_inference(args):
         "sdf": batch["sdf"],
     }
 
-    mmint_utils.save_gzip_pickle(out_dict, out_fn)
+    if out_fn is not None:
+        mmint_utils.save_gzip_pickle(out_dict, out_fn)
 
     if vis:
         vis_object_module_pretraining(out_dict)

@@ -35,3 +35,4 @@ model:
   method: neural_contact_field
   z_object_size: 6
   z_deform_size: 12
+  z_pressure_size: 3
