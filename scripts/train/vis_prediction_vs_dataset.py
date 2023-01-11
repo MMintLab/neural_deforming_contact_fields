@@ -3,11 +3,11 @@ import pdb
 
 import mmint_utils
 import numpy as np
-from vedo import Plotter, Points, Arrows
+from vedo import Plotter, Points, Arrows, Mesh
 import neural_contact_fields.utils.vedo_utils as vedo_utils
 
 
-def vis_prediction_vs_dataset(pred_dict: dict):
+def vis_prediction_vs_dataset(pred_dict: dict, mesh=None):
     # Dataset data.
     all_points = pred_dict["gt"]["query_point"]
     sdf = pred_dict["gt"]["sdf"]
@@ -31,9 +31,11 @@ def vis_prediction_vs_dataset(pred_dict: dict):
     plt.at(4).show(Points(all_points[pred_sdf <= 0.0], c="b"),
                    Points(all_points[pred_contact], c="r"), vedo_utils.draw_origin(),
                    "Predicted Contact (All)")
-    plt.at(5).show(Points(all_points[sdf == 0.0]),
-                   Arrows(all_points[sdf == 0.0], all_points[sdf == 0.0] + (0.01 * pred_normals)[sdf == 0.0]),
-                   "Predicted Normals")
+    # plt.at(5).show(Points(all_points[sdf == 0.0]),
+    #                Arrows(all_points[sdf == 0.0], all_points[sdf == 0.0] + (0.01 * pred_normals)[sdf == 0.0]),
+    #                "Predicted Normals")
+    if mesh is not None:
+        plt.at(5).show(vedo_utils.draw_origin(), Mesh([mesh.vertices, mesh.faces]), "Predicted Mesh")
     plt.interactive().close()
 
 

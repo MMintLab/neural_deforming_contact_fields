@@ -9,9 +9,8 @@ import trimesh
 
 # From the DeepSDF repository https://github.com/facebookresearch/DeepSDF
 
-def create_mesh(decoder, filename, N=256, max_batch=40 ** 3, offset=None, scale=None):
+def create_mesh(decoder, N=256, max_batch=40 ** 3, offset=None, scale=None):
     start = time.time()
-    ply_filename = filename
 
     # TODO: How best to determine these?
     min_bounds = [-0.053, -0.053, 0.02]

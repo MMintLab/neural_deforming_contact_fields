@@ -51,13 +51,13 @@ def test_inference(args):
 
     for trial_idx in range(len(dataset)):
         trial_dict = dataset[trial_idx]
-        latent_code, pred_dict = infer_latent_from_surface(model, trial_dict, {}, device=device)
+        latent_code, pred_dict, mesh = infer_latent_from_surface(model, trial_dict, {}, device=device)
 
         results_dict = {
             "gt": numpy_dict(trial_dict),
             "pred": numpy_dict(pred_dict)
         }
-        vis_prediction_vs_dataset(results_dict)
+        vis_prediction_vs_dataset(results_dict, mesh=mesh)
 
 
 if __name__ == '__main__':

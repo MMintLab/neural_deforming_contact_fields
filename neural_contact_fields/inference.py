@@ -97,7 +97,7 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     # Initialize latent code as noise.
     z_deform_ = nn.Embedding(1, model.z_deform_size, dtype=torch.float32).requires_grad_(True).to(device)
     torch.nn.init.normal_(z_deform_.weight, mean=0.0, std=0.1)
-    optimizer = optim.Adam(z_deform_.parameters(), lr=1e-2)
+    optimizer = optim.Adam(z_deform_.parameters(), lr=1e-3)
 
     z_deform = z_deform_.weight
     for ep in range(1000):
@@ -133,7 +133,12 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     z_object = model.encode_object(object_idx)
     z_wrench = model.encode_wrench(wrist_wrench)
     pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
-    return z_deform_, pred_dict
+
+    # Generate mesh.
+    latent_sdf_decoder = LatentSDFDecoder(model, z_object, z_deform, z_wrench)
+    mesh = create_mesh(latent_sdf_decoder)
+
+    return z_deform_, pred_dict, mesh
 
 
 def points_inference(model: NeuralContactField, trial_dict, device=None):
@@ -181,4 +186,4 @@ def marching_cubes_latent(model: NeuralContactField, trial_dict, device=None):
 
     latent_sdf_decoder = LatentSDFDecoder(model, z_object, z_trial, z_wrench)
 
-    return create_mesh(latent_sdf_decoder, "test.ply")
+    return create_mesh(latent_sdf_decoder)
