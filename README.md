@@ -10,6 +10,11 @@ conda create -f environment.yaml
 conda activate ncf
 ```
 
+Our code also relies on the following libraries. Install each to the `ncf` environment using `pip install`:
+
+* [mmint_utils](https://github.com/MMintLab/mmint_utils)
+* [pytorch-meta](https://github.com/tristandeleu/pytorch-meta)
+
 ## Data
 
 Datasets contain full simulated data including geometry, contact patches and 
