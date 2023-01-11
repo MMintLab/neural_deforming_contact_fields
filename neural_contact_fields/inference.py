@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import tqdm
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
+from neural_contact_fields.utils.sdf_meshing import create_mesh
 from torch import nn
 from tqdm import trange
 import torch.optim as optim
@@ -151,3 +152,33 @@ def points_inference(model: NeuralContactField, trial_dict, device=None):
     pred_dict = model.forward(query_points.unsqueeze(0), z_trial, z_object, z_wrench)
 
     return pred_dict
+
+
+class LatentSDFDecoder(nn.Module):
+
+    def __init__(self, model: NeuralContactField, z_object, z_deform, z_wrench):
+        super().__init__()
+        self.model: NeuralContactField = model
+        self.z_object = z_object
+        self.z_deform = z_deform
+        self.z_wrench = z_wrench
+
+    def forward(self, query_points: torch.Tensor):
+        out_dict = self.model.forward(query_points.unsqueeze(0), self.z_deform, self.z_object, self.z_wrench)
+        return out_dict["sdf"].squeeze(0)
+
+
+def marching_cubes_latent(model: NeuralContactField, trial_dict, device=None):
+    model.eval()
+    object_index = trial_dict["object_idx"]
+    trial_index = trial_dict["trial_idx"]
+    wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
+
+    # Encode object idx/trial idx.
+    z_object, z_trial = model.encode_trial(torch.from_numpy(object_index).to(device),
+                                           torch.from_numpy(trial_index).to(device))
+    z_wrench = model.encode_wrench(wrist_wrench)
+
+    latent_sdf_decoder = LatentSDFDecoder(model, z_object, z_trial, z_wrench)
+
+    return create_mesh(latent_sdf_decoder, "test.ply")
