@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import tqdm
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
-from neural_contact_fields.utils.sdf_meshing import create_mesh
+from neural_contact_fields.utils.marching_cubes import create_mesh
 from torch import nn
 from tqdm import trange
 import torch.optim as optim
@@ -88,7 +88,11 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
     z_wrench = model.encode_wrench(wrist_wrench)
     pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
 
-    return z_deform_, pred_dict
+    # Generate mesh.
+    latent_sdf_decoder = LatentSDFDecoder(model, z_object, z_deform, z_wrench)
+    mesh = create_mesh(latent_sdf_decoder)
+
+    return z_deform_, pred_dict, mesh
 
 
 def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_weights: dict, device=None):

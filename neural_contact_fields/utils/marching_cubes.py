@@ -27,8 +27,8 @@ def create_mesh(decoder, N=256, max_batch=40 ** 3, offset=None, scale=None):
     # transform first 3 columns
     # to be the x, y, z index
     samples[:, 2] = overall_index % N
-    samples[:, 1] = (overall_index.long() // N) % N
-    samples[:, 0] = ((overall_index.long() // N) // N) % N
+    samples[:, 1] = torch.div(overall_index.long(), N, rounding_mode="floor") % N
+    samples[:, 0] = torch.div(torch.div(overall_index.long(), N, rounding_mode="floor"), N, rounding_mode="floor") % N
 
     # transform first 3 columns
     # to be the x, y, z coordinate
