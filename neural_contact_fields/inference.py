@@ -30,12 +30,14 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
         gt_in_contact = torch.from_numpy(trial_dict["in_contact"]).to(device).float().unsqueeze(0)
         nominal_coords = torch.from_numpy(trial_dict["nominal_query_point"]).to(device).float().unsqueeze(0)
         nominal_sdf = torch.from_numpy(trial_dict["nominal_sdf"]).to(device).float().unsqueeze(0)
+        wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
         # We assume we know the object code.
         z_object = model.encode_object(object_idx)
+        z_wrench = model.encode_wrench(wrist_wrench)
 
         # Predict with updated latents.
-        pred_dict = model.forward(coords, z_deform, z_object)
+        pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
 
         # Loss:
         loss_dict = dict()
@@ -80,8 +82,10 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
     # Predict with final latent.
     object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
     coords = torch.from_numpy(trial_dict["query_point"]).to(device).float().unsqueeze(0)
+    wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
     z_object = model.encode_object(object_idx)
-    pred_dict = model.forward(coords, z_deform, z_object)
+    z_wrench = model.encode_wrench(wrist_wrench)
+    pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
 
     return z_deform_, pred_dict
 
@@ -92,28 +96,25 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     # Initialize latent code as noise.
     z_deform_ = nn.Embedding(1, model.z_deform_size, dtype=torch.float32).requires_grad_(True).to(device)
     torch.nn.init.normal_(z_deform_.weight, mean=0.0, std=0.1)
-    optimizer = optim.Adam(z_deform_.parameters(), lr=2e-3)
+    optimizer = optim.Adam(z_deform_.parameters(), lr=1e-2)
 
     z_deform = z_deform_.weight
     for ep in range(1000):
         # Pull out relevant data.
         object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
         coords = torch.from_numpy(trial_dict["query_point"]).to(device).float().unsqueeze(0)
-        trial_idx = torch.from_numpy(trial_dict["trial_idx"]).to(device)
         gt_sdf = torch.from_numpy(trial_dict["sdf"]).to(device).float().unsqueeze(0)
-        gt_normals = torch.from_numpy(trial_dict["normals"]).to(device).float().unsqueeze(0)
-        gt_in_contact = torch.from_numpy(trial_dict["in_contact"]).to(device).float().unsqueeze(0)
-        nominal_coords = torch.from_numpy(trial_dict["nominal_query_point"]).to(device).float().unsqueeze(0)
-        nominal_sdf = torch.from_numpy(trial_dict["nominal_sdf"]).to(device).float().unsqueeze(0)
+        wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
         # Get surface points.
         surface_coords = coords[gt_sdf == 0.0]
 
         # We assume we know the object code.
         z_object = model.encode_object(object_idx)
+        z_wrench = model.encode_wrench(wrist_wrench)
 
         # Predict with updated latents.
-        pred_dict = model.forward(surface_coords, z_deform, z_object)
+        pred_dict = model.forward(surface_coords, z_deform, z_object, z_wrench)
 
         # Loss: all points on surface should have SDF = 0.0.
         loss = torch.mean(torch.abs(pred_dict["sdf"]))
@@ -127,8 +128,10 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     # Predict with final latent.
     object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
     coords = torch.from_numpy(trial_dict["query_point"]).to(device).float().unsqueeze(0)
+    wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
     z_object = model.encode_object(object_idx)
-    pred_dict = model.forward(coords, z_deform, z_object)
+    z_wrench = model.encode_wrench(wrist_wrench)
+    pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
     return z_deform_, pred_dict
 
 
@@ -136,15 +139,15 @@ def points_inference(model: NeuralContactField, trial_dict, device=None):
     model.eval()
     object_index = trial_dict["object_idx"]
     trial_index = trial_dict["trial_idx"]
-    pressure = torch.from_numpy(trial_dict["pressure"]).to(device).unsqueeze(0).float()
+    wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
     # Encode object idx/trial idx.
     z_object, z_trial = model.encode_trial(torch.from_numpy(object_index).to(device),
                                            torch.from_numpy(trial_index).to(device))
-    z_pressure = model.encode_pressure(pressure)
+    z_wrench = model.encode_wrench(wrist_wrench)
 
     # Get query points to sample.
     query_points = torch.from_numpy(trial_dict["query_point"]).to(device).float()
-    pred_dict = model.forward(query_points.unsqueeze(0), z_trial, z_object, z_pressure)
+    pred_dict = model.forward(query_points.unsqueeze(0), z_trial, z_object, z_wrench)
 
     return pred_dict
