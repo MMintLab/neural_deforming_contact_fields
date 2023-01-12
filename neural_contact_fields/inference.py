@@ -104,27 +104,28 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     optimizer = optim.Adam(z_deform_.parameters(), lr=1e-3)
 
     z_deform = z_deform_.weight
-    for ep in range(1000):
-        # Pull out relevant data.
-        object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
-        surface_coords = torch.from_numpy(trial_dict["surface_points"]).to(device).float().unsqueeze(0)
-        wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
+    with trange(1000) as t:
+        for ep in t:
+            # Pull out relevant data.
+            object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
+            surface_coords = torch.from_numpy(trial_dict["surface_points"]).to(device).float().unsqueeze(0)
+            wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
-        # We assume we know the object code.
-        z_object = model.encode_object(object_idx)
-        z_wrench = model.encode_wrench(wrist_wrench)
+            # We assume we know the object code.
+            z_object = model.encode_object(object_idx)
+            z_wrench = model.encode_wrench(wrist_wrench)
 
-        # Predict with updated latents.
-        pred_dict = model.forward(surface_coords, z_deform, z_object, z_wrench)
+            # Predict with updated latents.
+            pred_dict = model.forward(surface_coords, z_deform, z_object, z_wrench)
 
-        # Loss: all points on surface should have SDF = 0.0.
-        loss = torch.mean(torch.abs(pred_dict["sdf"]))
+            # Loss: all points on surface should have SDF = 0.0.
+            loss = torch.mean(torch.abs(pred_dict["sdf"]))
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        tqdm.tqdm.write("Epoch: %d, Loss: %f" % (ep, loss.item()))
+            t.set_postfix(loss=loss.item())
 
     # Predict with final latent.
     object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)

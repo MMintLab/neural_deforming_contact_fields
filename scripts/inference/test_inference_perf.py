@@ -20,6 +20,8 @@ def get_model_dataset_arg_parser():
     parser.add_argument("--dataset_config", "-d", type=str, default=None, help="Optional dataset config to use.")
     parser.add_argument("--mode", "-m", type=str, default="test", help="Which split to vis [train, val, test].")
     parser.add_argument("--model_file", "-f", type=str, default="model.pt", help="Which model save file to use.")
+    parser.add_argument("-v", "--vis", dest="vis", action="store_true", help="Visualize.")
+    parser.set_defaults(vis=False)
     return parser
 
 
@@ -45,6 +47,8 @@ def test_inference_perf(args):
     dataset: ToolDataset
     model_cfg, model, dataset, device = load_model_dataset_from_args(args)
 
+    vis = args.vis
+
     # Load meshes.
     gt_meshes = []
     dataset_dir = dataset.dataset_dir
@@ -63,7 +67,17 @@ def test_inference_perf(args):
                                                                                     device=device)
 
         # Compare meshes.
-        vis_mesh_prediction(mesh, gt_meshes[trial_idx])
+        if vis:
+            vis_mesh_prediction(mesh, gt_meshes[trial_idx])
+
+        # Write results.
+        if out_dir is not None:
+            # Write predicted mesh to file.
+            mesh.export(os.path.join(out_dir, "pred_%d_mesh.obj" % trial_idx))
+
+            # Write surface predictions to file.
+            mmint_utils.save_gzip_pickle(surface_pred_dict,
+                                         os.path.join(out_dir, "pred_%d_surface.pkl.gzip" % trial_idx))
 
 
 if __name__ == '__main__':
