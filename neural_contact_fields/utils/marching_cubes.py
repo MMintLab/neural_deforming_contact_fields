@@ -1,6 +1,4 @@
-import logging
 import numpy as np
-import plyfile
 import skimage.measure
 import time
 import torch
