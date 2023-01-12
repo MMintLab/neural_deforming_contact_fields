@@ -107,12 +107,8 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     for ep in range(1000):
         # Pull out relevant data.
         object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
-        coords = torch.from_numpy(trial_dict["query_point"]).to(device).float().unsqueeze(0)
-        gt_sdf = torch.from_numpy(trial_dict["sdf"]).to(device).float().unsqueeze(0)
+        surface_coords = torch.from_numpy(trial_dict["surface_points"]).to(device).float().unsqueeze(0)
         wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
-
-        # Get surface points.
-        surface_coords = coords[gt_sdf == 0.0]
 
         # We assume we know the object code.
         z_object = model.encode_object(object_idx)
@@ -138,11 +134,15 @@ def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_
     z_wrench = model.encode_wrench(wrist_wrench)
     pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
 
+    # Predict surface point labels.
+    surface_coords = torch.from_numpy(trial_dict["surface_points"]).to(device).float().unsqueeze(0)
+    surface_pred_dict = model.forward(surface_coords, z_deform, z_object, z_wrench)
+
     # Generate mesh.
     latent_sdf_decoder = LatentSDFDecoder(model, z_object, z_deform, z_wrench)
     mesh = create_mesh(latent_sdf_decoder)
 
-    return z_deform_, pred_dict, mesh
+    return z_deform_, pred_dict, surface_pred_dict, mesh
 
 
 def points_inference(model: NeuralContactField, trial_dict, device=None):

@@ -1,10 +1,13 @@
+import argparse
+import os
+
 import mmint_utils
-import torch
+import trimesh
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.inference import infer_latent_from_surface
+from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.utils.model_utils import load_model_and_dataset
-import argparse
-from scripts.train.vis_prediction_vs_dataset import vis_prediction_vs_dataset
+from vedo import Plotter, Mesh
 
 
 def get_model_dataset_arg_parser():
@@ -31,19 +34,24 @@ def load_model_dataset_from_args(args):
     return model_cfg, model, dataset, device
 
 
-def numpy_dict(torch_dict: dict):
-    np_dict = dict()
-    for k, v in torch_dict.items():
-        if type(v) is torch.Tensor:
-            np_dict[k] = v.detach().cpu().numpy()
-        else:
-            np_dict[k] = v
-    return np_dict
+def vis_mesh_prediction(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh):
+    plt = Plotter(shape=(1, 2))
+    plt.at(0).show(Mesh([gt_mesh.vertices, gt_mesh.faces]), vedo_utils.draw_origin(), "GT Mesh")
+    plt.at(1).show(Mesh([pred_mesh.vertices, pred_mesh.faces]), vedo_utils.draw_origin(), "Pred. Mesh")
+    plt.interactive().close()
 
 
-def test_inference(args):
+def test_inference_perf(args):
     dataset: ToolDataset
     model_cfg, model, dataset, device = load_model_dataset_from_args(args)
+
+    # Load meshes.
+    gt_meshes = []
+    dataset_dir = dataset.dataset_dir
+    for trial_idx in range(len(dataset)):
+        mesh_fn = os.path.join(dataset_dir, "out_%d_mesh.obj" % trial_idx)
+        mesh = trimesh.load(mesh_fn)
+        gt_meshes.append(mesh)
 
     out_dir = args.out
     if out_dir is not None:
@@ -51,17 +59,14 @@ def test_inference(args):
 
     for trial_idx in range(len(dataset)):
         trial_dict = dataset[trial_idx]
-        latent_code, pred_dict, _, mesh = infer_latent_from_surface(model, trial_dict, {}, device=device)
+        latent_code, pred_dict, surface_pred_dict, mesh = infer_latent_from_surface(model, trial_dict, {},
+                                                                                    device=device)
 
-        results_dict = {
-            "gt": numpy_dict(trial_dict),
-            "pred": numpy_dict(pred_dict)
-        }
-        vis_prediction_vs_dataset(results_dict, mesh=mesh)
+        # Compare meshes.
+        vis_mesh_prediction(mesh, gt_meshes[trial_idx])
 
 
 if __name__ == '__main__':
-    parser = get_model_dataset_arg_parser()
-    args_ = parser.parse_args()
-
-    test_inference(args_)
+    parser_ = get_model_dataset_arg_parser()
+    args_ = parser_.parse_args()
+    test_inference_perf(args_)
