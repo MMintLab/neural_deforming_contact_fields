@@ -21,8 +21,15 @@ def precision_recall(pred: torch.Tensor, gt: torch.Tensor):
     fn = torch.logical_and(torch.logical_not(pred), gt)
     tn = torch.logical_and(torch.logical_not(pred), torch.logical_not(gt))
 
-    precision = tp.sum() / (tp.sum() + fp.sum())
-    recall = tp.sum() / (tp.sum() + fn.sum())
+    if tp.sum() + fp.sum() == 0:
+        precision = 0.0
+    else:
+        precision = tp.sum() / (tp.sum() + fp.sum())
+
+    if tp.sum() + fn.sum() == 0:
+        recall = 0.0
+    else:
+        recall = tp.sum() / (tp.sum() + fn.sum())
 
     return {
         "tp": tp,
@@ -48,7 +55,7 @@ def binary_accuracy(pred: torch.Tensor, gt: torch.Tensor):
     return (pred == gt).sum(-1) / pred.shape[-1]
 
 
-def mesh_chamfer_distance(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, n: int = 100000):
+def mesh_chamfer_distance(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, n: int = 10000, device=None):
     """
     Calculate chamfer distance between predicted and ground truth mesh.
 
@@ -60,5 +67,6 @@ def mesh_chamfer_distance(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, 
     pred_pc = pred_mesh.sample(n)
     gt_pc = gt_mesh.sample(n)
 
-    chamfer_dist = pytorch3d.loss.chamfer_distance(torch.from_numpy(pred_pc), torch.from_numpy(gt_pc))
+    chamfer_dist = pytorch3d.loss.chamfer_distance(torch.from_numpy(pred_pc).unsqueeze(0).float().to(device),
+                                                   torch.from_numpy(gt_pc).unsqueeze(0).float().to(device))
     return chamfer_dist

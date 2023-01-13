@@ -31,11 +31,12 @@ def vis_prediction_vs_dataset(pred_dict: dict, mesh=None):
     plt.at(4).show(Points(all_points[pred_sdf <= 0.0], c="b"),
                    Points(all_points[pred_contact], c="r"), vedo_utils.draw_origin(),
                    "Predicted Contact (All)")
-    # plt.at(5).show(Points(all_points[sdf == 0.0]),
-    #                Arrows(all_points[sdf == 0.0], all_points[sdf == 0.0] + (0.01 * pred_normals)[sdf == 0.0]),
-    #                "Predicted Normals")
     if mesh is not None:
         plt.at(5).show(vedo_utils.draw_origin(), Mesh([mesh.vertices, mesh.faces]), "Predicted Mesh")
+    else:
+        plt.at(5).show(Points(all_points[sdf == 0.0]),
+                       Arrows(all_points[sdf == 0.0], all_points[sdf == 0.0] + (0.01 * pred_normals)[sdf == 0.0]),
+                       "Predicted Normals")
     plt.interactive().close()
 
 
