@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import tqdm
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
+from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from neural_contact_fields.utils.marching_cubes import create_mesh
 from torch import nn
 from tqdm import trange
@@ -97,35 +98,29 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
 
 def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_weights: dict, device=None):
     model.eval()
+    z_deform_size = model.z_deform_size
 
-    # Initialize latent code as noise.
-    z_deform_ = nn.Embedding(1, model.z_deform_size, dtype=torch.float32).requires_grad_(True).to(device)
-    torch.nn.init.normal_(z_deform_.weight, mean=0.0, std=0.1)
-    optimizer = optim.Adam(z_deform_.parameters(), lr=1e-3)
+    def surface_loss_fn(model_, latent, data_dict):
+        # Pull out relevant data.
+        object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
+        surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(device).float().unsqueeze(0)
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
+        # We assume we know the object code.
+        z_object_ = model_.encode_object(object_idx_)
+        z_wrench_ = model_.encode_wrench(wrist_wrench_)
+
+        # Predict with updated latents.
+        pred_dict_ = model_.forward(surface_coords_, latent, z_object_, z_wrench_)
+
+        # Loss: all points on surface should have SDF = 0.0.
+        loss = torch.mean(torch.abs(pred_dict_["sdf"]))
+
+        return loss
+
+    z_deform_, _ = inference_by_optimization(model, surface_loss_fn, z_deform_size, 1, trial_dict, device=device,
+                                             verbose=True)
     z_deform = z_deform_.weight
-    with trange(1000) as t:
-        for ep in t:
-            # Pull out relevant data.
-            object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
-            surface_coords = torch.from_numpy(trial_dict["surface_points"]).to(device).float().unsqueeze(0)
-            wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
-
-            # We assume we know the object code.
-            z_object = model.encode_object(object_idx)
-            z_wrench = model.encode_wrench(wrist_wrench)
-
-            # Predict with updated latents.
-            pred_dict = model.forward(surface_coords, z_deform, z_object, z_wrench)
-
-            # Loss: all points on surface should have SDF = 0.0.
-            loss = torch.mean(torch.abs(pred_dict["sdf"]))
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            t.set_postfix(loss=loss.item())
 
     # Predict with final latent.
     object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
