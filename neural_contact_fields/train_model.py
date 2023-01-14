@@ -26,6 +26,11 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
     train_dataset: ToolDataset = config.get_dataset('train', cfg)
     print('Train dataset size: %d' % len(train_dataset))
 
+    if "validation" in cfg["data"]:
+        print('Loading validation dataset:')
+        validation_dataset: ToolDataset = config.get_dataset('validation', cfg)
+        print('Validation dataset size: %d' % len(validation_dataset))
+
     # Create model:
     print('Loading model:')
     model = config.get_model(cfg, train_dataset, device=device)
@@ -33,7 +38,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     # Get trainer.
     trainer = config.get_trainer(cfg, model, device=device)
-    trainer.train(train_dataset)
+    trainer.train(train_dataset, validation_dataset)
 
 
 if __name__ == '__main__':

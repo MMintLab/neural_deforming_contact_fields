@@ -28,11 +28,11 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
         # We assume we know the object code.
-        z_object_ = model.encode_object(object_idx_)
-        z_wrench_ = model.encode_wrench(wrist_wrench_)
+        z_object_ = model_.encode_object(object_idx_)
+        z_wrench_ = model_.encode_wrench(wrist_wrench_)
 
         # Predict with updated latents.
-        pred_dict_ = model.forward(coords_, latent_, z_object_, z_wrench_)
+        pred_dict_ = model_.forward(coords_, latent_, z_object_, z_wrench_)
 
         # Loss:
         loss_dict = dict()

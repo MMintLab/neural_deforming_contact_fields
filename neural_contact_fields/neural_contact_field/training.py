@@ -8,10 +8,12 @@ from neural_contact_fields.training import BaseTrainer
 import torch.nn.functional as F
 import os
 from neural_contact_fields.utils import model_utils
+from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from tensorboardX import SummaryWriter
 from torch import optim
 from torch.utils.data import Dataset
 import neural_contact_fields.loss as ncf_losses
+from tqdm import tqdm
 
 
 class Trainer(BaseTrainer):
@@ -32,8 +34,6 @@ class Trainer(BaseTrainer):
         max_epochs = self.cfg['pretraining']['epochs']
         epochs_per_save = self.cfg['pretraining']['epochs_per_save']
         self.pretrain_loss_weights = self.cfg['pretraining']['loss_weights']  # TODO: Better way to set this?
-        epoch_it = 0
-        it = 0
 
         # Output + vis directory
         if not os.path.exists(out_dir):
@@ -139,15 +139,61 @@ class Trainer(BaseTrainer):
     #  Main training loop                                                    #
     ##########################################################################
 
-    def train(self, train_dataset: ToolDataset):
+    def surface_loss_fn(self, model, latent, data_dict):
+        # Pull out relevant data.
+        object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(self.device)
+        surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+
+        # We assume we know the object code.
+        z_object_ = self.model.encode_object(object_idx_)
+        z_wrench_ = self.model.encode_wrench(wrist_wrench_)
+
+        # Predict with updated latents.
+        pred_dict_ = self.model.forward(surface_coords_, latent, z_object_, z_wrench_)
+
+        # Loss: all points on surface should have SDF = 0.0.
+        loss = torch.mean(torch.abs(pred_dict_["sdf"]))
+
+        return loss
+
+    def validation(self, validation_dataset: ToolDataset, logger: SummaryWriter, epoch_it: int, it: int):
+        trial_idcs = np.arange(len(validation_dataset))
+        trial_idcs = torch.from_numpy(trial_idcs).to(self.device)
+
+        def validation_loss_fn(model, latent, data_dict):
+            loss_dict, _ = self.compute_train_loss_from_latent(data_dict, latent)
+            return loss_dict["loss"]
+
+        trial_losses = torch.zeros(len(validation_dataset)).to(self.device)
+        trial_sf_losses = torch.zeros(len(validation_dataset)).to(self.device)
+        for trial_idx in tqdm(trial_idcs):
+            data = validation_dataset[trial_idx]
+
+            # Run inference to recover latent for validation example.
+            _, final_loss = inference_by_optimization(self.model, validation_loss_fn, self.model.z_deform_size, 1, data,
+                                                      device=self.device, verbose=False)
+            trial_losses[trial_idx] = final_loss
+
+            # Run inference but only with surface points.
+            # _, final_sf_loss = inference_by_optimization(self.model, self.surface_loss_fn, self.model.z_deform_size,
+            #                                              1, data, device=self.device, verbose=False)
+            # trial_sf_losses[trial_idx] = final_sf_loss
+
+        # Log average validation loss.
+        val_loss = torch.mean(trial_losses)
+        logger.add_scalar("val_loss", val_loss, it)
+        val_sf_loss = torch.mean(trial_sf_losses)
+        logger.add_scalar("val_sf_loss", val_sf_loss, it)
+
+    def train(self, train_dataset: ToolDataset, validation_dataset: ToolDataset):
         # Shorthands:
         out_dir = self.cfg['training']['out_dir']
         lr = self.cfg['training']['learning_rate']
         max_epochs = self.cfg['training']['epochs']
         epochs_per_save = self.cfg['training']['epochs_per_save']
+        epochs_per_validation = self.cfg['training']['epochs_per_validation']
         self.train_loss_weights = self.cfg['training']['loss_weights']  # TODO: Better way to set this?
-        epoch_it = 0
-        it = 0
 
         # Output + vis directory
         if not os.path.exists(out_dir):
@@ -199,6 +245,10 @@ class Trainer(BaseTrainer):
             print('[Epoch %02d] it=%03d, loss=%.4f'
                   % (epoch_it, it, loss))
 
+            if epoch_it % epochs_per_validation == 0:
+                print("Validating model...")
+                self.validation(validation_dataset, logger, epoch_it, it)
+
             if epoch_it % epochs_per_save == 0:
                 save_dict = {
                     'model': self.model.state_dict(),
@@ -208,15 +258,8 @@ class Trainer(BaseTrainer):
                 }
                 torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
 
-    def compute_train_loss(self, data, it) -> (dict, dict):
-        """
-        Get loss over provided batch of data.
-
-        Args:
-        - data (dict): data dictionary
-        """
+    def compute_train_loss_from_latent(self, data, z_trial):
         object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
-        trial_idx = torch.from_numpy(data["trial_idx"]).to(self.device)
         coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
         gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
@@ -226,7 +269,7 @@ class Trainer(BaseTrainer):
         wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
 
         # Run model forward.
-        z_object, z_trial = self.model.encode_trial(object_idx, trial_idx)
+        z_object = self.model.encode_object(object_idx)
         z_wrench = self.model.encode_wrench(wrist_wrench)
         out_dict = self.model.forward(coords, z_trial, z_object, z_wrench)
 
@@ -269,3 +312,18 @@ class Trainer(BaseTrainer):
         loss_dict["loss"] = loss
 
         return loss_dict, out_dict
+
+    def compute_train_loss(self, data, it) -> (dict, dict):
+        """
+        Get loss over provided batch of data.
+
+        Args:
+        - data (dict): data dictionary
+        """
+        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
+        trial_idx = torch.from_numpy(data["trial_idx"]).to(self.device)
+
+        # Run model forward.
+        _, z_trial = self.model.encode_trial(object_idx, trial_idx)
+
+        return self.compute_train_loss_from_latent(data, z_trial)
