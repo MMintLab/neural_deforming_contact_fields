@@ -7,66 +7,59 @@ from neural_contact_fields.neural_contact_field.models.neural_contact_field impo
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from neural_contact_fields.utils.marching_cubes import create_mesh
 from torch import nn
-from tqdm import trange
 import torch.optim as optim
 import neural_contact_fields.loss as ncf_losses
 import torch.nn.functional as F
 
 
 def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict, device=None):
-    model.eval()
+    z_deform_size = model.z_deform_size
 
-    # Initialize latent code as noise.
-    z_deform_ = nn.Embedding(1, model.z_deform_size, dtype=torch.float32).requires_grad_(True).to(device)
-    torch.nn.init.normal_(z_deform_.weight, mean=0.0, std=0.1)
-    optimizer = optim.Adam(z_deform_.parameters(), lr=2e-3)
-
-    z_deform = z_deform_.weight
-    for ep in range(1000):
+    def infer_loss_fn(model_, latent_, data_dict):
         # Pull out relevant data.
-        object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
-        coords = torch.from_numpy(trial_dict["query_point"]).to(device).float().unsqueeze(0)
-        trial_idx = torch.from_numpy(trial_dict["trial_idx"]).to(device)
-        gt_sdf = torch.from_numpy(trial_dict["sdf"]).to(device).float().unsqueeze(0)
-        gt_normals = torch.from_numpy(trial_dict["normals"]).to(device).float().unsqueeze(0)
-        gt_in_contact = torch.from_numpy(trial_dict["in_contact"]).to(device).float().unsqueeze(0)
-        nominal_coords = torch.from_numpy(trial_dict["nominal_query_point"]).to(device).float().unsqueeze(0)
-        nominal_sdf = torch.from_numpy(trial_dict["nominal_sdf"]).to(device).float().unsqueeze(0)
-        wrist_wrench = torch.from_numpy(trial_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
+        object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
+        coords_ = torch.from_numpy(data_dict["query_point"]).to(device).float().unsqueeze(0)
+        trial_idx = torch.from_numpy(data_dict["trial_idx"]).to(device)
+        gt_sdf = torch.from_numpy(data_dict["sdf"]).to(device).float().unsqueeze(0)
+        gt_normals = torch.from_numpy(data_dict["normals"]).to(device).float().unsqueeze(0)
+        gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(device).float().unsqueeze(0)
+        nominal_coords = torch.from_numpy(data_dict["nominal_query_point"]).to(device).float().unsqueeze(0)
+        nominal_sdf = torch.from_numpy(data_dict["nominal_sdf"]).to(device).float().unsqueeze(0)
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
         # We assume we know the object code.
-        z_object = model.encode_object(object_idx)
-        z_wrench = model.encode_wrench(wrist_wrench)
+        z_object_ = model.encode_object(object_idx_)
+        z_wrench_ = model.encode_wrench(wrist_wrench_)
 
         # Predict with updated latents.
-        pred_dict = model.forward(coords, z_deform, z_object, z_wrench)
+        pred_dict_ = model.forward(coords_, latent_, z_object_, z_wrench_)
 
         # Loss:
         loss_dict = dict()
 
         # SDF Loss: How accurate are the SDF predictions at each query point.
-        sdf_loss = ncf_losses.sdf_loss(pred_dict["sdf"], gt_sdf)
+        sdf_loss = ncf_losses.sdf_loss(pred_dict_["sdf"], gt_sdf)
         loss_dict["sdf_loss"] = sdf_loss
 
         # Normals loss: are the normals accurate.
-        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, pred_dict["normals"])
+        normals_loss = ncf_losses.surface_normal_loss(gt_sdf, gt_normals, pred_dict_["normals"])
         loss_dict["normals_loss"] = normals_loss
 
         # Latent embedding loss: well-formed embedding.
-        embedding_loss = ncf_losses.l2_loss(pred_dict["embedding"], squared=True)
+        embedding_loss = ncf_losses.l2_loss(pred_dict_["embedding"], squared=True)
         loss_dict["embedding_loss"] = embedding_loss
 
         # Loss on deformation field.
-        def_loss = ncf_losses.l2_loss(pred_dict["deform"], squared=True)
+        def_loss = ncf_losses.l2_loss(pred_dict_["deform"], squared=True)
         loss_dict["def_loss"] = def_loss
 
         # Contact prediction loss.
-        contact_loss = F.binary_cross_entropy_with_logits(pred_dict["in_contact_logits"][gt_sdf == 0.0],
+        contact_loss = F.binary_cross_entropy_with_logits(pred_dict_["in_contact_logits"][gt_sdf == 0.0],
                                                           gt_in_contact[gt_sdf == 0.0])
         loss_dict["contact_loss"] = contact_loss
 
         # Chamfer distance loss.
-        chamfer_loss = ncf_losses.surface_chamfer_loss(nominal_coords, nominal_sdf, gt_sdf, pred_dict["nominal"])
+        chamfer_loss = ncf_losses.surface_chamfer_loss(nominal_coords, nominal_sdf, gt_sdf, pred_dict_["nominal"])
         loss_dict["chamfer_loss"] = chamfer_loss
 
         # Calculate total weighted loss.
@@ -75,11 +68,11 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
             loss += float(loss_weights[loss_key]) * loss_dict[loss_key]
         loss_dict["loss"] = loss
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        return loss
 
-        tqdm.tqdm.write("Epoch: %d, Loss: %f" % (ep, loss.item()))
+    z_deform_, _ = inference_by_optimization(model, infer_loss_fn, z_deform_size, 1, trial_dict, device=device,
+                                             verbose=True)
+    z_deform = z_deform_.weight
 
     # Predict with final latent.
     object_idx = torch.from_numpy(trial_dict["object_idx"]).to(device)
@@ -97,7 +90,6 @@ def infer_latent(model: NeuralContactField, trial_dict: dict, loss_weights: dict
 
 
 def infer_latent_from_surface(model: NeuralContactField, trial_dict: dict, loss_weights: dict, device=None):
-    model.eval()
     z_deform_size = model.z_deform_size
 
     def surface_loss_fn(model_, latent, data_dict):
