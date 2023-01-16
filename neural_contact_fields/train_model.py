@@ -30,6 +30,8 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
         print('Loading validation dataset:')
         validation_dataset: ToolDataset = config.get_dataset('validation', cfg)
         print('Validation dataset size: %d' % len(validation_dataset))
+    else:
+        validation_dataset: ToolDataset = None
 
     # Create model:
     print('Loading model:')
