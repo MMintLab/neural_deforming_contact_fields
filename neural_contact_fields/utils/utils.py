@@ -25,3 +25,21 @@ def matrix_to_pose(matrix, axes="rxyz"):
     pose[:3] = matrix[:3, 3]
     pose[3:] = tf3d.euler.mat2euler(matrix, axes=axes)
     return pose
+
+
+def xyzw_to_wxyz(pose):
+    """
+    Convert pose with xyzw quat convention to wxyz convention.
+    """
+    quat = pose[3:]
+    new_quat = np.array([quat[3], quat[0], quat[1], quat[2]])
+    pose[3:] = new_quat
+    return pose
+
+
+def transform_pointcloud(pointcloud: np.ndarray, transform: np.ndarray):
+    points_homogenous = np.ones(shape=[pointcloud.shape[0], 4])
+    points_homogenous[:, :3] = pointcloud
+
+    tf_pc = (transform @ points_homogenous.T).T[:, :3]
+    return tf_pc

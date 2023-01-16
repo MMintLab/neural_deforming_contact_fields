@@ -9,11 +9,14 @@ base_test_dir = "out/experiments/wrench_tests"
 # test_dirs = ["wrench_v4", "wrench_v1", "wrench_v2"]
 # titles = ["l=3", "l=6", "l=12"]
 
-test_dirs = ["wrench_v7", "wrench_v1", "wrench_v3"]
-titles = ["lr=1e-3", "lr=1e-4", "lr=1e-5"]
+# test_dirs = ["wrench_v7", "wrench_v1", "wrench_v3"]
+# titles = ["lr=1e-3", "lr=1e-4", "lr=1e-5"]
 
 # test_dirs = ["wrench_v5", "wrench_v1", "wrench_v6"]
-# titles = ["l2=0.1", "l2=1e-3", "l2=1e-5"]
+# titles = ["l2=0.1", q"l2=1e-3", "l2=1e-5"]
+
+test_dirs = ["wrench_v8", "wrench_v9"]
+titles = ["latent=16", "latent=32"]
 
 for title, test_dir in zip(titles, test_dirs):
     metrics_fn = os.path.join(base_test_dir, test_dir, "metrics.pkl.gzip")
