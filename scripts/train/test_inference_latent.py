@@ -7,6 +7,8 @@ from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.inference import points_inference
 from neural_contact_fields.utils.model_utils import load_model_and_dataset, load_model
 import argparse
+
+from neural_contact_fields.utils.utils import numpy_dict
 from vis_prediction_vs_dataset import vis_prediction_vs_dataset
 import torch.nn as nn
 
@@ -36,16 +38,6 @@ def load_model_dataset_from_args(args):
                                                                model_file=args.model_file)
     model.eval()
     return model_cfg, model, dataset, device
-
-
-def numpy_dict(torch_dict: dict):
-    np_dict = dict()
-    for k, v in torch_dict.items():
-        if type(v) is torch.Tensor:
-            np_dict[k] = v.detach().cpu().numpy()
-        else:
-            np_dict[k] = v
-    return np_dict
 
 
 def test_inference(args):

@@ -1,5 +1,46 @@
 import numpy as np
+import torch
 import transforms3d as tf3d
+import open3d as o3d
+
+
+def pointcloud_to_o3d(pointcloud):
+    """
+    Send pointcloud to open3d.
+    """
+    pointcloud_xyz = pointcloud[:, :3]
+    if pointcloud.shape[1] == 4:
+        color = np.zeros([pointcloud.shape[0], 3], dtype=float)
+        color[:, 0] = pointcloud[:, 3]
+        color[:, 1] = pointcloud[:, 3]
+        color[:, 2] = pointcloud[:, 3]
+    elif pointcloud.shape[1] > 4:
+        color = pointcloud[:, 3:]
+    else:
+        color = None
+
+    points = o3d.geometry.PointCloud()
+    points.points = o3d.utility.Vector3dVector(pointcloud_xyz)
+    if color is not None:
+        points.colors = o3d.utility.Vector3dVector(color)
+    return points
+
+
+def transform_pointcloud(pointcloud, transform):
+    """
+    Transform the given pointcloud by the given matrix transformation T.
+    """
+    pointcloud_pcd: o3d.geometry.PointCloud = pointcloud_to_o3d(pointcloud)
+    pointcloud_pcd.transform(transform)
+    if pointcloud.shape[1] > 3:
+        return np.concatenate([np.asarray(pointcloud_pcd.points), pointcloud[:, 3:]], axis=1)
+    else:
+        return np.asarray(pointcloud_pcd.points)
+
+
+def save_pointcloud(pointcloud, fn: str):
+    pointcloud_pcd: o3d.geometry.PointCloud = pointcloud_to_o3d(pointcloud)
+    o3d.io.write_point_cloud(fn, pointcloud_pcd)
 
 
 def pose_to_matrix(pose, axes="rxyz"):
@@ -37,9 +78,11 @@ def xyzw_to_wxyz(pose):
     return pose
 
 
-def transform_pointcloud(pointcloud: np.ndarray, transform: np.ndarray):
-    points_homogenous = np.ones(shape=[pointcloud.shape[0], 4])
-    points_homogenous[:, :3] = pointcloud
-
-    tf_pc = (transform @ points_homogenous.T).T[:, :3]
-    return tf_pc
+def numpy_dict(torch_dict: dict):
+    np_dict = dict()
+    for k, v in torch_dict.items():
+        if type(v) is torch.Tensor:
+            np_dict[k] = v.detach().cpu().numpy()
+        else:
+            np_dict[k] = v
+    return np_dict

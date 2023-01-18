@@ -1,4 +1,3 @@
-import os
 import argparse
 
 from neural_contact_fields.data.tool_dataset import ToolDataset
@@ -16,7 +15,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     # If any customization is passed via command line - add in here.
     if config_args is not None:
-        cfg = utils.combine_cfg(cfg, config_args)
+        cfg = utils.combine_dict(cfg, config_args)
 
     is_cuda = (torch.cuda.is_available() and not no_cuda)
     device = torch.device("cuda:%d" % cuda_id if is_cuda else "cpu")

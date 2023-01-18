@@ -26,16 +26,27 @@ def get_trainer(cfg, model, device=None):
     Return trainer instance.
 
     Args:
-    - model (nn.Module): model which is used
-    - optimizer (optimizer): pytorch optimizer
     - cfg (dict): training config
-    - logger (tensorboardX.SummaryWriter): logger for tensorboard
-    - vis_dir (str): vis directory
+    - model (nn.Module): model which is used
     - device (device): pytorch device
     """
     method = cfg['method']
     trainer = method_dict[method].config.get_trainer(cfg, model, device)
     return trainer
+
+
+def get_generator(cfg, model, device=None):
+    """
+    Return generator instance.
+
+    Args:
+    - cfg (dict): configuration dict
+    - model (nn.Module): model which is used
+    - device (torch.device): pytorch device
+    """
+    method = cfg['method']
+    generator = method_dict[method].config.get_generator(cfg, model, device)
+    return generator
 
 
 def get_dataset(mode, cfg):

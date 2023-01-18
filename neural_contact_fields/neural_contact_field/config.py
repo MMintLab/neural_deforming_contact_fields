@@ -1,7 +1,6 @@
-from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
-from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
 from neural_contact_fields.neural_contact_field.training import Trainer
+from neural_contact_fields.neural_contact_field.generation import Generator
 
 
 def get_model(cfg, dataset, device=None):
@@ -21,3 +20,8 @@ def get_model(cfg, dataset, device=None):
 def get_trainer(cfg, model, device=None):
     trainer = Trainer(cfg, model, device)
     return trainer
+
+
+def get_generator(cfg, model, device=None):
+    generator = Generator(cfg, model, device)
+    return generator

@@ -11,7 +11,7 @@ from neural_contact_fields.inference import infer_latent_from_surface
 from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.utils.model_utils import load_model_and_dataset
 from neural_contact_fields.utils import mesh_utils
-from scripts.inference.infer_latent import numpy_dict
+from neural_contact_fields.utils.utils import numpy_dict
 from scripts.train.vis_prediction_vs_dataset import vis_prediction_vs_dataset
 from vedo import Plotter, Mesh
 import neural_contact_fields.metrics as ncf_metrics
@@ -23,12 +23,9 @@ def get_model_dataset_arg_parser():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=str, help="Model/data config file.")
-    parser.add_argument("--out", "-o", type=str, default=None, help="Directory to write results to.")
     parser.add_argument("--dataset_config", "-d", type=str, default=None, help="Optional dataset config to use.")
     parser.add_argument("--mode", "-m", type=str, default="test", help="Which split to vis [train, val, test].")
     parser.add_argument("--model_file", "-f", type=str, default="model.pt", help="Which model save file to use.")
-    parser.add_argument("-v", "--vis", dest="vis", action="store_true", help="Visualize.")
-    parser.set_defaults(vis=False)
     return parser
 
 
