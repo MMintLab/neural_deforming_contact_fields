@@ -1,8 +1,8 @@
 import argparse
 import json
 
-from neural_contact_fields.pretrain_model import pretrain_model
-from neural_contact_fields.train_model import train_model
+from pretrain_model import pretrain_model
+from train_model import train_model
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a model.')
