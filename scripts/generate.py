@@ -50,7 +50,7 @@ def generate(model_cfg, model, dataset, device, out_dir):
             contact_patch, metadata_cp = generator.generate_contact_patch(data_dict, metadata)
             metadata = mmint_utils.combine_dict(metadata, metadata_cp)
 
-            # Write contact patch to file (as pointcloud). TODO: Is this the write representation?
+            # Write contact patch to file (as pointcloud). TODO: Is this the right representation?
             if out_dir is not None:
                 cp_fn = os.path.join(out_dir, "contact_patch_%d.ply" % idx)
                 utils.save_pointcloud(contact_patch, cp_fn)

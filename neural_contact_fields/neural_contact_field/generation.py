@@ -101,7 +101,7 @@ class Generator(BaseGenerator):
 
         # Get the surface points from the ground truth.
         surface_coords = torch.from_numpy(data["surface_points"]).to(self.device).float().unsqueeze(0)
-        surface_pred_dict = self.model.forward(surface_coords, z_object, latent, z_wrench)
-        surface_in_contact = surface_pred_dict["in_contact"]
+        surface_pred_dict = self.model.forward(surface_coords, latent, z_object, z_wrench)
+        surface_in_contact = surface_pred_dict["in_contact"].squeeze(0)
 
         return surface_in_contact, {"latent": latent}
