@@ -3,7 +3,6 @@ import trimesh
 import pytorch3d.loss
 
 
-# TODO: Unit test.
 def precision_recall(pred: torch.Tensor, gt: torch.Tensor):
     """
     For a set of binary predictions/GT, determine the precision recall
@@ -70,3 +69,7 @@ def mesh_chamfer_distance(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, 
     chamfer_dist = pytorch3d.loss.chamfer_distance(torch.from_numpy(pred_pc).unsqueeze(0).float().to(device),
                                                    torch.from_numpy(gt_pc).unsqueeze(0).float().to(device))
     return chamfer_dist
+
+
+def mesh_iou(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, n: int = 10000, device=None):
+    return 0.0

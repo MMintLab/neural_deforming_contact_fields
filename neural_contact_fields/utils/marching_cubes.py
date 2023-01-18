@@ -7,7 +7,7 @@ import trimesh
 
 # From the DeepSDF repository https://github.com/facebookresearch/DeepSDF
 
-def create_mesh(decoder, N=256, max_batch=40 ** 3, offset=None, scale=None):
+def create_mesh(decoder, n=256, max_batch=40 ** 3, offset=None, scale=None):
     start = time.time()
 
     # TODO: How best to determine these?
@@ -17,16 +17,16 @@ def create_mesh(decoder, N=256, max_batch=40 ** 3, offset=None, scale=None):
 
     # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
     voxel_origin = min_bounds
-    voxel_size = diff / (N - 1)
+    voxel_size = diff / (n - 1)
 
-    overall_index = torch.arange(0, N ** 3, 1, out=torch.LongTensor())
-    samples = torch.zeros(N ** 3, 4)
+    overall_index = torch.arange(0, n ** 3, 1, out=torch.LongTensor())
+    samples = torch.zeros(n ** 3, 4)
 
     # transform first 3 columns
     # to be the x, y, z index
-    samples[:, 2] = overall_index % N
-    samples[:, 1] = torch.div(overall_index.long(), N, rounding_mode="floor") % N
-    samples[:, 0] = torch.div(torch.div(overall_index.long(), N, rounding_mode="floor"), N, rounding_mode="floor") % N
+    samples[:, 2] = overall_index % n
+    samples[:, 1] = torch.div(overall_index.long(), n, rounding_mode="floor") % n
+    samples[:, 0] = torch.div(torch.div(overall_index.long(), n, rounding_mode="floor"), n, rounding_mode="floor") % n
 
     # transform first 3 columns
     # to be the x, y, z coordinate
@@ -34,7 +34,7 @@ def create_mesh(decoder, N=256, max_batch=40 ** 3, offset=None, scale=None):
     samples[:, 1] = (samples[:, 1] * voxel_size) + voxel_origin[1]
     samples[:, 2] = (samples[:, 2] * voxel_size) + voxel_origin[2]
 
-    num_samples = N ** 3
+    num_samples = n ** 3
 
     samples.requires_grad = False
 
@@ -55,7 +55,7 @@ def create_mesh(decoder, N=256, max_batch=40 ** 3, offset=None, scale=None):
         torch.cuda.empty_cache()
 
     sdf_values = samples[:, 3]
-    sdf_values = sdf_values.reshape(N, N, N)
+    sdf_values = sdf_values.reshape(n, n, n)
 
     end = time.time()
     # print("sampling takes: %f" % (end - start))
