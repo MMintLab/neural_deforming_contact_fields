@@ -1,3 +1,4 @@
+from neural_contact_fields.neural_contact_field.models.mlp_ncf import MLPNCF
 from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
 from neural_contact_fields.neural_contact_field.training import Trainer
 from neural_contact_fields.neural_contact_field.generation import Generator
@@ -13,8 +14,15 @@ def get_model(cfg, dataset, device=None):
     except:
         raise Exception("Training with unexpected dataset type: %s." % str(type(dataset)))
 
-    model = VirdoNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
-                     model_cfg["z_wrench_size"], device)
+    model_method = cfg["model"]["method"]
+    if model_method == "neural_contact_field":
+        model = VirdoNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
+                         model_cfg["z_wrench_size"], device)
+    elif model_method == "mlp_ncf":
+        model = MLPNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
+                       model_cfg["z_wrench_size"], device)
+    else:
+        raise Exception("Unknown model method: %s" % model_method)
     return model
 
 
