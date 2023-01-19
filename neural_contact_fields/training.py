@@ -7,6 +7,8 @@ from torch.utils.data import Dataset
 class BaseTrainer(object):
     """
     Base trainer class.
+
+    Defines very basic training structure and some helpers common to multiple models.
     """
 
     def __init__(self, cfg, model, device=None):

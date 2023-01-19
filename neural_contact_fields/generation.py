@@ -3,6 +3,12 @@ import torch.nn as nn
 
 
 class BaseGenerator(object):
+    """
+    Base generator class.
+
+    Generator is responsible for implementing an API generating the shared representations from
+    various model classes. Not all representations need to necessarily be implemented.
+    """
 
     def __init__(self, cfg: dict, model: nn.Module, device: torch.device = None):
         self.cfg = cfg

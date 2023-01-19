@@ -49,6 +49,20 @@ def get_generator(cfg, model, device=None):
     return generator
 
 
+def get_visualizer(cfg, model, device=None, visualizer_args=None):
+    """
+    Return visualizer instance.
+
+    Args:
+    - cfg (dict): configuration dict
+    - model (nn.Module): model which is used
+    - device (torch.device): pytorch device
+    """
+    method = cfg['method']
+    visualizer = method_dict[method].config.get_visualizer(cfg, model, device, visualizer_args)
+    return visualizer
+
+
 def get_dataset(mode, cfg):
     """
     Args:

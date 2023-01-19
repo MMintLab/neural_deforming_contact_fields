@@ -161,7 +161,7 @@ class Trainer(BaseTrainer):
         trial_idcs = np.arange(len(validation_dataset))
         trial_idcs = torch.from_numpy(trial_idcs).to(self.device)
 
-        def validation_loss_fn(model, latent, data_dict):
+        def validation_loss_fn(model, latent, data_dict, device):
             loss_dict, _ = self.compute_train_loss_from_latent(data_dict, latent)
             return loss_dict["loss"]
 

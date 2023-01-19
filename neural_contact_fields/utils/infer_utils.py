@@ -14,7 +14,7 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
 
     Args:
     - model (nn.Module): network model
-    - loss_fn (Callable): loss function. Should take in model, current latent, and data dictionary and return loss.
+    - loss_fn (Callable): loss function. Should take in model, current latent, data dictionary, and device and return loss.
     - latent_size (int): specify latent space size.
     - num_examples (int): number of examples to run inference on.
     - data_dict (dict): data dictionary for example(s) we are inferring for.
@@ -47,7 +47,7 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
     for _ in range_:
         optimizer.zero_grad()
 
-        loss = loss_fn(model, z, data_dict)
+        loss = loss_fn(model, z, data_dict, device)
 
         loss.backward()
         optimizer.step()
@@ -57,5 +57,5 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
     if verbose:
         range_.close()
 
-    final_loss = loss_fn(model, z, data_dict)
+    final_loss = loss_fn(model, z, data_dict, device)
     return z_, final_loss

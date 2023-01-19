@@ -22,7 +22,7 @@ class PretrainObjectModuleDataset(torch.utils.data.Dataset):
         data_dict = mmint_utils.load_gzip_pickle(self.dataset_fn)
 
         # Load dataset files and sort according to example number.
-        data_fns = sorted([f for f in os.listdir(os.path.dirname(self.dataset_fn)) if "out" in f],
+        data_fns = sorted([f for f in os.listdir(os.path.dirname(self.dataset_fn)) if "out" in f and "pkl.gzip" in f],
                           key=lambda x: int(x.split(".")[0].split("_")[-1]))
         self.num_trials = len(data_fns)
 
