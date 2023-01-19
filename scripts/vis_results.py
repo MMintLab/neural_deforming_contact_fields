@@ -34,26 +34,20 @@ def vis_mesh_prediction(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, pr
     plt.interactive().close()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Visualize generated results.")
-    parser.add_argument("dataset_config", type=str, help="Dataset config.")
-    parser.add_argument("gen_dir", type=str, help="Generation directory.")
-    parser.add_argument("--mode", "-m", type=str, default="test", help="Dataset mode [train, val, test].")
-    args = parser.parse_args()
-
+def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
     # Load dataset.
-    dataset_cfg, dataset = load_dataset_from_config(args.dataset_config, dataset_mode=args.mode)
+    dataset_cfg, dataset = load_dataset_from_config(dataset_cfg, dataset_mode=mode)
 
     # Load ground truth meshes. # TODO: Consider case where GT mesh not available.
     gt_meshes = []
-    dataset_dir = dataset_cfg["data"][args.mode]["dataset_dir"]
+    dataset_dir = dataset_cfg["data"][mode]["dataset_dir"]
     for trial_idx in range(len(dataset)):
         mesh_fn = os.path.join(dataset_dir, "out_%d_mesh.obj" % trial_idx)
         mesh = trimesh.load(mesh_fn)
         gt_meshes.append(mesh)
 
     # Load predicted data.
-    gen_dir = args.gen_dir
+    gen_dir = gen_dir
     pred_meshes = []
     surface_pred_dicts = []
     for trial_idx in range(len(dataset)):
@@ -72,3 +66,13 @@ if __name__ == '__main__':
         vis_mesh_prediction(pred_meshes[trial_idx], gt_meshes[trial_idx],
                             trial_dict["surface_points"][surface_pred_dict.cpu() > 0.5],
                             trial_dict["surface_points"][trial_dict["surface_in_contact"]])
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Visualize generated results.")
+    parser.add_argument("dataset_config", type=str, help="Dataset config.")
+    parser.add_argument("gen_dir", type=str, help="Generation directory.")
+    parser.add_argument("--mode", "-m", type=str, default="test", help="Dataset mode [train, val, test].")
+    args = parser.parse_args()
+
+    vis_results(args.dataset_config, args.gen_dir, args.mode)
