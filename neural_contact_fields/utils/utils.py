@@ -43,6 +43,15 @@ def save_pointcloud(pointcloud, fn: str):
     o3d.io.write_point_cloud(fn, pointcloud_pcd)
 
 
+def load_pointcloud(fn: str):
+    pointcloud_pcd = o3d.io.read_point_cloud(fn)
+
+    if pointcloud_pcd.has_colors():
+        return np.concatenate([np.asarray(pointcloud_pcd.points), np.asarray(pointcloud_pcd.colors)], axis=1)
+    else:
+        return np.asarray(pointcloud_pcd.points)
+
+
 def pose_to_matrix(pose, axes="rxyz"):
     """
     Pose to matrix.

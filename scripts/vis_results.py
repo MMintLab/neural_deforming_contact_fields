@@ -52,7 +52,10 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
     surface_pred_dicts = []
     for trial_idx in range(len(dataset)):
         pred_mesh_fn = os.path.join(gen_dir, "mesh_%d.obj" % trial_idx)
-        pred_mesh = trimesh.load(pred_mesh_fn)
+        if os.path.exists(pred_mesh_fn):
+            pred_mesh = trimesh.load(pred_mesh_fn)
+        else:
+            pred_mesh = None
         pred_meshes.append(pred_mesh)
 
         surface_pred_fn = os.path.join(gen_dir, "contact_labels_%d.pkl.gzip" % trial_idx)
