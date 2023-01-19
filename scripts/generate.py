@@ -45,7 +45,7 @@ def generate(model_cfg, model, dataset, device, out_dir):
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
 
-        write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels)
+        write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
 
 
 if __name__ == '__main__':
