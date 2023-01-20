@@ -1,10 +1,10 @@
 data:
   pretrain:
     dataset: PretrainObjectModuleDataset
-    dataset_fn: out/datasets/sim_12_6_22/nominal_0.pkl.gzip
+    dataset_fn: out/datasets/sim_1_20_23_v1/nominal_0.pkl.gzip
   train:
     dataset: ToolDataset
-    dataset_dir: out/datasets/sim_12_6_22/
+    dataset_dir: out/datasets/sim_1_20_23_v1/
 training:
   out_dir: out/models/example_b1
   learning_rate: 0.0001

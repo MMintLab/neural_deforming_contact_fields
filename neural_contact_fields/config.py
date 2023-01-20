@@ -19,7 +19,9 @@ def get_model(cfg, dataset, device=None):
     - device (device): pytorch device.
     """
     method = cfg['method']
+    print("cpt1")
     model = method_dict[method].config.get_model(cfg, dataset, device=device)
+    print("cpt2")
     return model
 
 
