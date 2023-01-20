@@ -3,9 +3,11 @@ from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
 from torchvision import transforms
 from neural_contact_fields import neural_contact_field
+from neural_contact_fields import explicit_baseline
 
 method_dict = {
     'neural_contact_field': neural_contact_field,
+    'explicit_baseline': explicit_baseline,
 }
 
 

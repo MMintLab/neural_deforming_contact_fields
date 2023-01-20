@@ -1,0 +1,3 @@
+[submodule "neural_contact_fields/explicit_baseline/grnet"]
+	path = neural_contact_fields/explicit_baseline/grnet
+	url = https://github.com/hzxie/GRNet.git

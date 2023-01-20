@@ -71,3 +71,32 @@ To test inferring latent variables given *surface samples*:
 ```
 python scripts/inference/infer_latent_from_surface.py cfg/example_v1.yaml -d cfg/dataset/example_gen.yaml
 ```
+
+## Running Baseline
+### Clone baseline backbone
+``` 
+git clone https://github.com/hzxie/GRNet neural_contact_fields/neural_contact_fields/explicit_baseline/grnet
+```
+### Installation
+
+Build prerequisites and extensions as [readme](https://github.com/hzxie/GRNet#prerequisites).
+
+#### Troubleshooting
+
+* When you have trouble with ```openexr``` installation
+``` 
+conda install -c conda-forge cudatoolkit-dev 
+```
+and
+```angular2html
+sudo apt-get install openexr
+sudo apt-get install libopenexr-dev
+```
+
+
+* When you meet CUB compatibility error as follows:
+```angular2html
+#error The version of CUB in your include path is not compatible with this release of Thrust. CUB is now included in the CUDA Toolkit, so you no longer need to use your own checkout of CUB. Define THRUST_IGNORE_CUB_VERSION_CHECK to ignore this.
+```
+Go to ``` '~/miniconda3/envs/ncf/include/thrust/system/cuda/config.h' ``` and add this line
+``` #define THRUST_IGNORE_CUB_VERSION_CHECK true ```  before ```#ifndef THRUST_IGNORE_CUB_VERSION_CHECK```.
