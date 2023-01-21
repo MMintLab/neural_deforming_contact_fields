@@ -245,7 +245,7 @@ class Trainer(BaseTrainer):
             print('[Epoch %02d] it=%03d, loss=%.4f'
                   % (epoch_it, it, loss))
 
-            if epoch_it % epochs_per_validation == 0:
+            if epoch_it % epochs_per_validation == 0 and validation_dataset is not None:
                 print("Validating model...")
                 self.validation(validation_dataset, logger, epoch_it, it)
 
