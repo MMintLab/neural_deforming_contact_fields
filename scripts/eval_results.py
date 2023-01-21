@@ -20,7 +20,7 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str):
     dataset_dir = dataset_config["data"][dataset_mode]["dataset_dir"]
 
     # Load specific ground truth results needed for evaluation.
-    gt_meshes, _, _, gt_contact_labels = load_gt_results(dataset, dataset_dir, num_trials)
+    gt_meshes, _, _, gt_contact_labels, points_iou, gt_occ_iou = load_gt_results(dataset, dataset_dir, num_trials)
 
     # Load predicted results.
     pred_meshes, _, _, pred_contact_labels = load_pred_results(out_dir, num_trials)
@@ -33,11 +33,15 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str):
         pr = ncf_metrics.precision_recall(pred_contact_labels[trial_idx] > 0.5,
                                           torch.from_numpy(gt_contact_labels[trial_idx]).to(device))
         chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx], device=device)
+        iou = ncf_metrics.mesh_iou(torch.from_numpy(points_iou[trial_idx]).to(device),
+                                   torch.from_numpy(gt_occ_iou[trial_idx]).to(device),
+                                   pred_meshes[trial_idx], device=device)
 
         metrics_results.append({
             "binary_accuracy": binary_accuracy,
             "pr": pr,
             "chamfer_distance": chamfer_dist,
+            "iou": iou.item(),
         })
 
     # Write all metrics to file.
