@@ -1,6 +1,7 @@
 import torch
 import trimesh
 import pytorch3d.loss
+from neural_contact_fields.utils.mesh_utils import occupancy_check
 
 
 def precision_recall(pred: torch.Tensor, gt: torch.Tensor):
@@ -100,8 +101,8 @@ def mesh_iou(points_iou: torch.Tensor, occ_tgt: torch.Tensor, pred_mesh: trimesh
     - pred_mesh (trimesh.Trimesh):
     """
     # Check occupancy of target points.
-    query_points = points_iou.numpy()
-    occ_pred = pred_mesh.contains(query_points)
+    query_points = points_iou.cpu().numpy()
+    occ_pred = occupancy_check(pred_mesh, query_points)
     occ_pred = torch.from_numpy(occ_pred).to(device)
 
     iou = intersection_over_union(occ_pred, occ_tgt)
