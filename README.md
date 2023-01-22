@@ -74,7 +74,6 @@ python scripts/inference/infer_latent_from_surface.py cfg/example_v1.yaml -d cfg
 ```
 
 ## Running Baseline
-## 
 
 ```angular2html
 conda env create -f environment_b1.yml
