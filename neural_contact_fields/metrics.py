@@ -66,7 +66,7 @@ def mesh_chamfer_distance(pred_mesh: trimesh.Trimesh, gt_mesh: trimesh.Trimesh, 
     pred_pc = pred_mesh.sample(n)
     gt_pc = gt_mesh.sample(n)
 
-    chamfer_dist = pytorch3d.loss.chamfer_distance(torch.from_numpy(pred_pc).unsqueeze(0).float().to(device),
+    chamfer_dist = .chamfer_distance(torch.from_numpy(pred_pc).unsqueeze(0).float().to(device),
                                                    torch.from_numpy(gt_pc).unsqueeze(0).float().to(device))
     return chamfer_dist
 

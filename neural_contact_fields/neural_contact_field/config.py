@@ -1,5 +1,8 @@
 from neural_contact_fields.neural_contact_field.models.mlp_ncf import MLPNCF
-from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
+try:
+    from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
+except:
+    print("VIRDONCF is not loaded")
 from neural_contact_fields.neural_contact_field.training import Trainer
 from neural_contact_fields.neural_contact_field.generation import Generator
 from neural_contact_fields.neural_contact_field.visualization import Visualizer

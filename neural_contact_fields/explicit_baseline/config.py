@@ -1,8 +1,7 @@
-from neural_contact_fields.neural_contact_field.models.mlp_ncf import MLPNCF
-from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
-from neural_contact_fields.neural_contact_field.training import Trainer
-from neural_contact_fields.neural_contact_field.generation import Generator
-from neural_contact_fields.neural_contact_field.visualization import Visualizer
+from neural_contact_fields.explicit_baseline.models.grnet_ncf import Grnet
+from neural_contact_fields.explicit_baseline.training import Trainer
+from neural_contact_fields.explicit_baseline.generation import Generator
+from neural_contact_fields.explicit_baseline.visualization import Visualizer
 
 
 def get_model(cfg, dataset, device=None):
@@ -15,7 +14,7 @@ def get_model(cfg, dataset, device=None):
         raise Exception("Training with unexpected dataset type: %s." % str(type(dataset)))
 
 
-    model = VirdoNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
+    model = Grnet(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
                      model_cfg["z_wrench_size"], device)
     return model
 

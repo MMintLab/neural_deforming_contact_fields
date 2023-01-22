@@ -75,7 +75,6 @@ class ToolDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         object_index = self.object_idcs[index]
-
         data_dict = {
             "object_idx": np.array([object_index]),
             "trial_idx": np.array([self.trial_idcs[index]]),
@@ -85,8 +84,8 @@ class ToolDataset(torch.utils.data.Dataset):
             "in_contact": self.in_contact[index].astype(int),
             "pressure": np.array([self.trial_pressure[index]]),
             "wrist_wrench": self.wrist_wrench[index],
-            "nominal_query_point": self.nominal_query_points[object_index],
-            "nominal_sdf": self.nominal_sdf[object_index],
+            # "nominal_query_point": self.nominal_query_points[object_index],
+            # "nominal_sdf": self.nominal_sdf[object_index],
             "surface_points": self.surface_points[index],
             "surface_in_contact": self.surface_in_contact[index],
         }

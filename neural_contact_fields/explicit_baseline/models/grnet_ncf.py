@@ -1,28 +1,15 @@
 import neural_contact_fields.explicit_baseline.grnet.utils as utils
-import neural_contact_fields.explicit_baseline.grnet.utils.data_loaders
 import neural_contact_fields.explicit_baseline.grnet.utils.helpers
 
-from datetime import datetime
-from time import time
 import torch
-# from tensorboardX import SummaryWriter
-
-from neural_contact_fields.explicit_baseline.grnet.core.test import test_net
-from neural_contact_fields.explicit_baseline.grnet.extensions.gridding_loss import GriddingLoss
 from neural_contact_fields.explicit_baseline.models.grnet_modules import GRNet_encoder, GRNet_decoder
-from neural_contact_fields.explicit_baseline.grnet.utils.average_meter import AverageMeter
-from neural_contact_fields.explicit_baseline.grnet.utils.metrics import Metrics
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 
 
 from neural_contact_fields.explicit_baseline.grnet.config import cfg
 from neural_contact_fields.models import mlp
 
-class VirdoNCF(NeuralContactField):
-    """
-    Neural Contact Field using Virdo sub-modules.
-    """
-
+class Grnet(NeuralContactField):
     def __init__(self, num_objects: int, num_trials: int, z_object_size: int, z_deform_size: int, z_wrench_size: int,
                  device=None):
         super().__init__(z_object_size, z_deform_size, z_wrench_size)
@@ -67,11 +54,10 @@ class VirdoNCF(NeuralContactField):
 
     def forward(self, query_points: torch.Tensor, z_wrench: torch.Tensor):
 
-
-        z_wrench = z_wrench.unsqueeze(0).unsqueeze(2).unsqueeze(3).unsqueeze(4)
+        z_wrench = z_wrench.unsqueeze(2).unsqueeze(3).unsqueeze(4)
         pcd_feat = self.grnet_encoder(query_points)
-        sparse_df_ptcloud, dense_df_ptcloud = self.deform_decoder(pcd_feat, z_wrench, mod='pred')
-        sparse_ct_ptcloud, dense_ct_ptcloud = self.contact_decoder(pcd_feat, z_wrench, mod='pred')
+        sparse_df_ptcloud, dense_df_ptcloud = self.deform_decoder(query_points, z_wrench, pcd_feat)
+        sparse_ct_ptcloud, dense_ct_ptcloud = self.contact_decoder(query_points, z_wrench,  pcd_feat)
 
 
         out_dict = {'sparse_df_cloud': sparse_df_ptcloud,

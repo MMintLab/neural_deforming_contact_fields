@@ -1,22 +1,18 @@
+import os
+from tqdm import tqdm
+
 import mmint_utils
 import numpy as np
 import torch
-from pytorch3d.loss import chamfer_distance
+import open3d as o3d
+from tensorboardX import SummaryWriter
+from torch import optim
 
-import torch.nn as nn
+from torch.utils.data import Dataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.training import BaseTrainer
-import torch.nn.functional as F
-import os
-from neural_contact_fields.utils import model_utils
 from neural_contact_fields.explicit_baseline.grnet.extensions.chamfer_dist import ChamferDistance
-from neural_contact_fields.utils.infer_utils import inference_by_optimization
-from tensorboardX import SummaryWriter
-from torch import optim
-from torch.utils.data import Dataset
-import neural_contact_fields.loss as ncf_losses
-from tqdm import tqdm
 
 
 class Trainer(BaseTrainer):
@@ -43,36 +39,60 @@ class Trainer(BaseTrainer):
 
     def get_loss(self,data_dict):
         # Pull out relevant data.
+        query_points = torch.from_numpy(data_dict["query_point"]).to(self.device).float().unsqueeze(0)
         surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data_dict["sdf"]).to(self.device).float().unsqueeze(0)
         gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(self.device).float().unsqueeze(0)
 
-
-        contact_pcd = gt_in_contact[gt_sdf == 0.0]
+#         print(data_dict.keys(), query_points.shape, surface_coords_.shape, gt_sdf.shape)
+        cnt_indicator = gt_in_contact[gt_sdf == 0.0]
+        cnt_idx = torch.where(gt_in_contact == 1)[1]
+        contact_pcd = query_points[:, cnt_idx, :]
+#        print(cnt_idx)
 
         # We assume we know the object code.
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
-
         # Predict with updated latents.
         pred_dict_ = self.model.forward(surface_coords_, z_wrench_)
 
 
         ## pointcloud reconstruction loss.
         chamfer_dist = ChamferDistance()
-        sparse_loss_df = chamfer_dist(pred_dict_['sparse_df_cloud'], surface_coords_)
-        dense_loss_df = chamfer_dist(pred_dict_['dense_df_ptcloud'], surface_coords_)
+        sparse_loss_df = chamfer_dist(surface_coords_ , pred_dict_['sparse_df_cloud'])
+        dense_loss_df = chamfer_dist( surface_coords_, pred_dict_['dense_df_ptcloud'])
+
 
         sparse_loss_ct = chamfer_dist(pred_dict_['sparse_ct_ptcloud'], contact_pcd)
         dense_loss_ct = chamfer_dist(pred_dict_['dense_ct_ptcloud'], contact_pcd)
+        
+        pcl = o3d.geometry.PointCloud()
+        pcl.points = o3d.utility.Vector3dVector(surface_coords_.squeeze().detach().cpu().numpy())
+        o3d.io.write_point_cloud('gt_surf.ply',pcl )
+        
+        pcl = o3d.geometry.PointCloud()
+        pcl.points = o3d.utility.Vector3dVector(pred_dict_['dense_df_ptcloud'].squeeze().detach().cpu().numpy())
+        o3d.io.write_point_cloud('ds_surf.ply', pcl)
+        
+        pcl = o3d.geometry.PointCloud()
+        pcl.points = o3d.utility.Vector3dVector(contact_pcd.squeeze().detach().cpu().numpy())
+        o3d.io.write_point_cloud('gt_cnt.ply', pcl)
+        
+        pcl = o3d.geometry.PointCloud()
+        pcl.points = o3d.utility.Vector3dVector(pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy())
+        o3d.io.write_point_cloud('ds_cnt.ply', pcl)
 
-        loss_df = sparse_loss_df + dense_loss_df + sparse_loss_ct + dense_loss_ct
+        
+#         print(pred_dict_['sparse_df_cloud'].shape, pred_dict_['dense_df_ptcloud'].shape, pred_dict_['sparse_ct_ptcloud'].shape, pred_dict_['dense_ct_ptcloud'].shape)
+#         print( sparse_loss_df ,dense_loss_df, sparse_loss_ct,+ dense_loss_ct)
+        loss_df =  dense_loss_df + dense_loss_ct
         return loss_df
 
 
 
 
     def validation(self, validation_dataset: ToolDataset, logger: SummaryWriter, epoch_it: int, it: int):
+        return
         trial_idcs = np.arange(len(validation_dataset))
         trial_idcs = torch.from_numpy(trial_idcs).to(self.device)
 
@@ -138,7 +158,7 @@ class Trainer(BaseTrainer):
 
                 # For this training, we use just a single example per run.
                 batch = train_dataset[trial_idx]
-                loss = self.get_loss(batch)
+                loss = self.get_loss(batch)* 1e4
 
                 self.model.zero_grad()
                 loss.backward(retain_graph=True)

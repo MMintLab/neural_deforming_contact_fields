@@ -19,6 +19,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     is_cuda = (torch.cuda.is_available() and not no_cuda)
     device = torch.device("cuda:%d" % cuda_id if is_cuda else "cpu")
+#     device = torch.device('cpu')
 
     # Setup datasets.
     print('Loading train dataset:')

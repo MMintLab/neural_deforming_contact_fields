@@ -68,7 +68,7 @@ class GRNet_encoder(torch.nn.Module):
         )
 
     def forward(self, data):
-        partial_cloud = data['partial_cloud']
+        partial_cloud = data
         # print(partial_cloud.size())     # torch.Size([batch_size, 2048, 3])
         pt_features_64_l = self.gridding(partial_cloud).view(-1, 1, 64, 64, 64)
         # print(pt_features_64_l.size())  # torch.Size([batch_size, 1, 64, 64, 64])
@@ -133,7 +133,7 @@ class GRNet_decoder(torch.nn.Module):
         self.fc14 = torch.nn.Linear(112, 24)
 
     def forward(self, data, feat, features_lst):
-        partial_cloud = data['partial_cloud']
+        partial_cloud = data
         features = features_lst[0]
         pt_features_4_l = features_lst[1]
         pt_features_8_l = features_lst[2]
@@ -145,7 +145,6 @@ class GRNet_decoder(torch.nn.Module):
         pt_features_4_r = self.fc6(features).view(-1, 256, 4, 4, 4) + pt_features_4_l
         # print(pt_features_4_r.size())   # torch.Size([batch_size, 256, 4, 4, 4])
 
-        ## TODO : how does it work ?
         feat_ = feat.repeat((1,1,4,4,4))
         pt_features_4_r = torch.cat( (pt_features_4_r, feat_), 1)
 

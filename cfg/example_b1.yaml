@@ -11,6 +11,7 @@ training:
   betas: (.9, .999)
   weight_decay: 0
   epochs: 10000
+  epochs_per_validation: 100
   update_object_code: false
   epochs_per_save: 100
   load_pretrain:

@@ -25,6 +25,7 @@ force responses, generated with Isaac Gym.
 
 Unzip dataset(s) into `out/datasets/`.
 
+
 ## Training
 
 Model training is split into a *pretraining* and *training* step. Training options are specified by
@@ -73,16 +74,36 @@ python scripts/inference/infer_latent_from_surface.py cfg/example_v1.yaml -d cfg
 ```
 
 ## Running Baseline
+## 
+
+```angular2html
+conda env create -f environment_b1.yml
+conda activate ncf_b1
+```
+Our code also relies on the following libraries. Install each to the `ncf` environment using `pip install`:
+* [mmint_utils](https://github.com/MMintLab/mmint_utils)
+
+Note: Please do not build torchmeta.
+
+
 ### Clone baseline backbone
 ``` 
 git clone https://github.com/hzxie/GRNet neural_contact_fields/neural_contact_fields/explicit_baseline/grnet
 ```
 ### Installation
+Please **skip** ``pip install -r `` step and jump to building extensions in [readme](https://github.com/hzxie/GRNet#prerequisites) via ``pip install -e .`` instead of ``python setup.py`` install command. 
+Please make sure that nvcc is installed via ``$ sudo apt install nvidia-cuda-toolkit`` in your system before building extensions.
 
-Build prerequisites and extensions as [readme](https://github.com/hzxie/GRNet#prerequisites).
 
 #### Troubleshooting
-
+* If you get 
+``
+OSError: /home/young/.local/lib/python3.8/site-packages/torch/lib/../../nvidia/cublas/lib/libcublas.so.11: undefined symbol: cublasLtHSHMatmulAlgoInit, version libcublasLt.so.11
+``
+do
+* ``$ export LD_LIBRARY_PATH=/home/myenv/.local/lib/python3.8/site-packages/nvidia/cublas/lib/
+``
+* 
 * When you have trouble with ```openexr``` installation
 ``` 
 conda install -c conda-forge cudatoolkit-dev 
