@@ -16,8 +16,9 @@ def get_model(cfg, dataset, device=None):
 
     model_method = cfg["model"]["method"]
     if model_method == "neural_contact_field":
+        forward_deformation_input = model_cfg.get("forward_deformation_input", False)
         model = VirdoNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
-                         model_cfg["z_wrench_size"], device)
+                         model_cfg["z_wrench_size"], forward_deformation_input, device)
     elif model_method == "mlp_ncf":
         model = MLPNCF(num_objects, num_trials, model_cfg["z_object_size"], model_cfg["z_deform_size"],
                        model_cfg["z_wrench_size"], device)

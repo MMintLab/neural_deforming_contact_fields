@@ -14,9 +14,10 @@ class VirdoNCF(NeuralContactField):
     """
 
     def __init__(self, num_objects: int, num_trials: int, z_object_size: int, z_deform_size: int, z_wrench_size: int,
-                 device=None):
+                 forward_deformation_input: bool, device=None):
         super().__init__(z_object_size, z_deform_size, z_wrench_size)
         self.device = device
+        self.forward_deformation_input = forward_deformation_input
 
         # Setup sub-models of the VirdoNCF.
         self.object_model = meta_modules.virdo_hypernet(in_features=3, out_features=1,
@@ -25,10 +26,15 @@ class VirdoNCF(NeuralContactField):
             in_features=3, out_features=3,
             hyper_in_features=self.z_object_size + self.z_deform_size + self.z_wrench_size, hl=1
         ).to(self.device)
+
+        combined_latent_size = self.z_object_size + self.z_deform_size + self.z_wrench_size
         self.contact_model = meta_modules.virdo_hypernet(
-            in_features=3, out_features=1,
-            hyper_in_features=self.z_object_size + self.z_deform_size + self.z_wrench_size, hl=2
+            in_features=6 if self.forward_deformation_input else 3,
+            out_features=1,
+            hyper_in_features=combined_latent_size,
+            hl=2
         ).to(self.device)
+
         self.wrench_encoder = mlp.build_mlp(6, self.z_wrench_size, hidden_sizes=[16], device=device)
 
         # Setup latent embeddings (used during training).
@@ -123,8 +129,9 @@ class VirdoNCF(NeuralContactField):
         object_out = self.forward_object_module(object_coords, z_object, deform_out["model_in"])
 
         # Get contact label at each query point.
+        combined_query_points_def = torch.cat([query_points, query_point_defs], dim=-1)
         contact_in = {
-            "coords": query_points,
+            "coords": combined_query_points_def if self.forward_deformation_input else query_points,
             "embedding": combined_embedding,
         }
         contact_out = self.contact_model(contact_in)
