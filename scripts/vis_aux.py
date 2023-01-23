@@ -4,7 +4,7 @@ from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser,
 from tqdm import trange
 
 
-def vis_model_out(model_cfg, model, dataset, device, mode, vis_args):
+def vis_aux(model_cfg, model, dataset, device, mode, vis_args):
     model.eval()
     vis_pretrain = mode == "pretrain"
 
@@ -27,4 +27,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     model_cfg_, model_, dataset_, device_ = load_model_dataset_from_args(args)
-    vis_model_out(model_cfg_, model_, dataset_, device_, mode=args.mode, vis_args=args.vis_args)
+    vis_aux(model_cfg_, model_, dataset_, device_, mode=args.mode, vis_args=args.vis_args)

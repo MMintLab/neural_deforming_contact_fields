@@ -27,7 +27,7 @@ class LatentSDFDecoder(nn.Module):
 def surface_loss_fn(model, latent, data_dict, device):
     # Pull out relevant data.
     object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
-    surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(device).float().unsqueeze(0)
+    surface_coords_ = torch.from_numpy(data_dict["partial_pointcloud"]).to(device).float().unsqueeze(0)
     wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
     # We assume we know the object code.
