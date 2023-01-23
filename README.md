@@ -6,7 +6,7 @@ Model, training, and inference code for *Neural Deforming Contact Fields* projec
 
 Using conda:
 ```bash
-conda create -f environment.yaml
+conda env create -f environment.yaml
 conda activate ncf
 ```
 
@@ -34,40 +34,23 @@ dataset to use for pretraining/training, model choice and hyper-parameters, loss
 ### Pretraining
 
 ```
-python neural_contact_fields/pretrain_model.py cfg/example_v1.yaml
+python scripts/pretrain_model.py cfg/example_v1.yaml
 ```
 
 ### Training
 
 ```
-python neural_contact_fields/train_model.py cfg/example_v1.yaml
+python scripts/train_model.py cfg/example_v1.yaml
 ```
 
 ## Inference
 
-### Training Data Tests
-
-To test how the model performs on pretraining data:
+To generate results:
 ```
-python scripts/train/test_object_module_pretraining.py cfg/example_v1.yaml -v
+python scripts/generate.py cfg/example_v1.yaml -d cfg/dataset/example_gen.yaml
 ```
 
-To test how model performs on training data:
+To evaluate results:
 ```
-python scripts/train/test_inference_latent.py cfg/example_v1.yaml -v -m train
-```
-
-### Inference tests:
-
-To run inference tests on testing data, we pass a config file specifying the test dataset with the `-d` option.
-Removing will test inference procedures on training data.
-
-To test inferring latent variables given *full* supervision:
-```
-python scripts/inference/infer_latent.py cfg/example_v1.yaml -d cfg/dataset/example_gen.yaml
-```
-
-To test inferring latent variables given *surface samples*:
-```
-python scripts/inference/infer_latent_from_surface.py cfg/example_v1.yaml -d cfg/dataset/example_gen.yaml
+python scripts/eval_results.py cfg/dataset/example_gen.yaml <out dir from above>
 ```
