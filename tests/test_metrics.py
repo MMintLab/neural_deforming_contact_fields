@@ -61,6 +61,20 @@ class TestMetrics(unittest.TestCase):
         self.assertTrue(torch.allclose(pr_dict["precision"], torch.tensor(3.0 / 4.0)))
         self.assertTrue(torch.allclose(pr_dict["recall"], torch.tensor(1.0)))
 
+    def test_intersection_over_union(self):
+        gt = torch.from_numpy(np.array([True, False, False, True, True]))
+        pred = torch.from_numpy(np.array([False, True, False, True, True]))
+
+        iou = ncf_metrics.intersection_over_union(gt, gt)
+        self.assertTrue(torch.allclose(iou, torch.tensor(1.0)))
+
+        iou = ncf_metrics.intersection_over_union(pred, gt)
+        self.assertTrue(torch.allclose(iou, torch.tensor(0.5)))
+
+        pred = torch.from_numpy(np.array([True, True, False, True, True]))
+        iou = ncf_metrics.intersection_over_union(pred, gt)
+        self.assertTrue(torch.allclose(iou, torch.tensor(0.75)))
+
 
 if __name__ == '__main__':
     unittest.main()

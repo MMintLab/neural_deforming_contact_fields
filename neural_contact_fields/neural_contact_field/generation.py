@@ -11,12 +11,12 @@ class LatentSDFDecoder(nn.Module):
     Decoder when given latent variables.
     """
 
-    def __init__(self, model: NeuralContactField, z_object, z_deform, z_wrench):
+    def __init__(self, model: NeuralContactField, z_deform, z_object, z_wrench):
         super().__init__()
         self.model: NeuralContactField = model
         self.model.eval()
-        self.z_object = z_object
         self.z_deform = z_deform
+        self.z_object = z_object
         self.z_wrench = z_wrench
 
     def forward(self, query_points: torch.Tensor):
@@ -27,7 +27,7 @@ class LatentSDFDecoder(nn.Module):
 def surface_loss_fn(model, latent, data_dict, device):
     # Pull out relevant data.
     object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
-    surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(device).float().unsqueeze(0)
+    surface_coords_ = torch.from_numpy(data_dict["partial_pointcloud"]).to(device).float().unsqueeze(0)
     wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
     # We assume we know the object code.
@@ -73,7 +73,7 @@ class Generator(BaseGenerator):
         z_object = self.model.encode_object(object_idx_)
         z_wrench = self.model.encode_wrench(wrist_wrench_)
 
-        latent_sdf_decoder = LatentSDFDecoder(self.model, z_object, latent, z_wrench)
+        latent_sdf_decoder = LatentSDFDecoder(self.model, latent, z_object, z_wrench)
         mesh = create_mesh(latent_sdf_decoder)
 
         return mesh, {"latent": latent, "mesh": mesh}
@@ -91,7 +91,7 @@ class Generator(BaseGenerator):
         else:
             # Generate deformation code latent.
             z_deform_size = self.model.z_deform_size
-            z_deform_, _ = inference_by_optimization(self.model, self.surface_loss_fn, z_deform_size, 1, data,
+            z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, z_deform_size, 1, data,
                                                      device=self.device, verbose=True)
             latent = z_deform_.weight
 

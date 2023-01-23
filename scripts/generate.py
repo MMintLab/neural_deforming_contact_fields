@@ -1,8 +1,5 @@
-import os
-
 import mmint_utils
 from neural_contact_fields import config
-from neural_contact_fields.utils import utils
 from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser, load_model_dataset_from_args
 from neural_contact_fields.utils.results_utils import write_results
 from tqdm import trange

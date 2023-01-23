@@ -1,6 +1,7 @@
 import numpy as np
 import trimesh
 from scipy.spatial import KDTree
+import open3d as o3d
 
 
 def find_in_contact_triangles(tri_mesh: trimesh.Trimesh, contact_points: np.ndarray):
@@ -26,3 +27,20 @@ def find_in_contact_triangles(tri_mesh: trimesh.Trimesh, contact_points: np.ndar
     contact_area = contact_triangles.astype(float) @ mesh.area_faces
 
     return contact_vertices, contact_triangles, contact_area
+
+
+def occupancy_check(mesh: trimesh.Trimesh, query_points: np.ndarray):
+    vertices = o3d.utility.Vector3dVector(mesh.vertices)
+    triangles = o3d.utility.Vector3iVector(mesh.faces)
+    mesh_o3d = o3d.geometry.TriangleMesh(vertices, triangles)
+    mesh_o3d_t = o3d.t.geometry.TriangleMesh.from_legacy(mesh_o3d)
+
+    # Create a scene and add the triangle mesh
+    scene = o3d.t.geometry.RaycastingScene()
+    _ = scene.add_triangles(mesh_o3d_t)
+
+    query_points = o3d.core.Tensor(query_points, dtype=o3d.core.Dtype.Float32)
+    occupancy = scene.compute_occupancy(query_points)
+    occupancy = occupancy.numpy() > 0.5
+
+    return occupancy
