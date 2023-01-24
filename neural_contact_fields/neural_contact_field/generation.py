@@ -62,7 +62,7 @@ class Generator(BaseGenerator):
             # Generate deformation code latent.
             z_deform_size = self.model.z_deform_size
             z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, z_deform_size, 1, data,
-                                                     device=self.device, verbose=True)
+                                                     device=self.device, verbose=False)
             latent = z_deform_.weight
 
         # Generate mesh.
@@ -92,7 +92,7 @@ class Generator(BaseGenerator):
             # Generate deformation code latent.
             z_deform_size = self.model.z_deform_size
             z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, z_deform_size, 1, data,
-                                                     device=self.device, verbose=True)
+                                                     device=self.device, verbose=False)
             latent = z_deform_.weight
 
         object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
