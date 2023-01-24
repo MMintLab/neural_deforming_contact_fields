@@ -43,11 +43,11 @@ for title, test_dir in zip(titles, test_dirs):
 
     num_examples = len(metrics_dict)
 
-    chamfer_dists = [example["chamfer_distance"][0].item() for example in metrics_dict]
-    binary_accuracies = [example["binary_accuracy"].item() for example in metrics_dict]
-    precisions = [float(example["pr"]["precision"]) for example in metrics_dict]
-    recalls = [float(example["pr"]["recall"]) for example in metrics_dict]
-    ious = [float(example["iou"]) for example in metrics_dict]
+    chamfer_dists = [example["chamfer_distance"] for example in metrics_dict]
+    binary_accuracies = [example["binary_accuracy"] for example in metrics_dict]
+    precisions = [example["precision"] for example in metrics_dict]
+    recalls = [example["recall"] for example in metrics_dict]
+    ious = [example["iou"] for example in metrics_dict]
 
     # print(
     #     "Title: %s. Binary Accuracy: %f (%f). Chamfer Dist: %f (%f). IoU: %f (%f). Precision: %f (%f). Recall: %f (%f)."

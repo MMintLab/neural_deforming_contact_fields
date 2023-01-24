@@ -2,6 +2,7 @@ import os
 
 import mmint_utils
 import numpy as np
+import torch
 import trimesh
 from neural_contact_fields.utils import utils
 
@@ -24,7 +25,7 @@ def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
         mmint_utils.save_gzip_pickle(contact_labels, cl_fn)
 
 
-def load_pred_results(out_dir, n):
+def load_pred_results(out_dir, n, device=None):
     meshes = []
     pointclouds = []
     contact_patches = []
@@ -51,14 +52,15 @@ def load_pred_results(out_dir, n):
 
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
         if os.path.exists(cl_fn):
-            contact_labels.append(mmint_utils.load_gzip_pickle(cl_fn))
+            contact_labels_ = mmint_utils.load_gzip_pickle(cl_fn)
+            contact_labels.append(contact_labels_.to(device))
         else:
             contact_labels.append(None)
 
     return meshes, pointclouds, contact_patches, contact_labels
 
 
-def load_gt_results(dataset, dataset_dir, n):
+def load_gt_results(dataset, dataset_dir, n, device=None):
     meshes = []
     pointclouds = []
     contact_patches = []
@@ -72,9 +74,9 @@ def load_gt_results(dataset, dataset_dir, n):
         meshes.append(trimesh.load(os.path.join(dataset_dir, "out_%d_mesh.obj" % idx)))
         pointclouds.append(None)
         contact_patches.append(None)
-        contact_labels.append(dataset[idx]["surface_in_contact"])
-        points_iou.append(data_dict["test"]["points_iou"])
-        occ_iou.append(data_dict["test"]["occ_tgt"])
+        contact_labels.append(torch.from_numpy(dataset[idx]["surface_in_contact"]).to(device).int())
+        points_iou.append(torch.from_numpy(data_dict["test"]["points_iou"]).to(device))
+        occ_iou.append(torch.from_numpy(data_dict["test"]["occ_tgt"]).to(device).int())
 
     return meshes, pointclouds, contact_patches, contact_labels, points_iou, occ_iou
 

@@ -29,6 +29,7 @@ def find_in_contact_triangles(tri_mesh: trimesh.Trimesh, contact_points: np.ndar
     return contact_vertices, contact_triangles, contact_area
 
 
+# TODO: Unit test this.
 def occupancy_check(mesh: trimesh.Trimesh, query_points: np.ndarray):
     vertices = o3d.utility.Vector3dVector(mesh.vertices)
     triangles = o3d.utility.Vector3iVector(mesh.faces)

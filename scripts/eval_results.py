@@ -3,11 +3,11 @@ import os
 
 import mmint_utils
 import torch
-import trimesh
 import neural_contact_fields.metrics as ncf_metrics
 from neural_contact_fields import config
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, print_results
 from tqdm import trange
+import torchmetrics
 
 
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False):
@@ -20,27 +20,32 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
     dataset_dir = dataset_config["data"][dataset_mode]["dataset_dir"]
 
     # Load specific ground truth results needed for evaluation.
-    gt_meshes, _, _, gt_contact_labels, points_iou, gt_occ_iou = load_gt_results(dataset, dataset_dir, num_trials)
+    gt_meshes, _, _, gt_contact_labels, points_iou, gt_occ_iou = load_gt_results(dataset, dataset_dir, num_trials,
+                                                                                 device)
 
     # Load predicted results.
-    pred_meshes, _, _, pred_contact_labels = load_pred_results(out_dir, num_trials)
+    pred_meshes, _, _, pred_contact_labels = load_pred_results(out_dir, num_trials, device)
 
     # Calculate metrics.
     metrics_results = []
     for trial_idx in trange(num_trials):
-        binary_accuracy = ncf_metrics.binary_accuracy(pred_contact_labels[trial_idx] > 0.5,
-                                                      torch.from_numpy(gt_contact_labels[trial_idx]).to(device))
-        pr = ncf_metrics.precision_recall(pred_contact_labels[trial_idx] > 0.5,
-                                          torch.from_numpy(gt_contact_labels[trial_idx]).to(device))
-        chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx], device=device)
-        iou = ncf_metrics.mesh_iou(torch.from_numpy(points_iou[trial_idx]).to(device),
-                                   torch.from_numpy(gt_occ_iou[trial_idx]).to(device),
-                                   pred_meshes[trial_idx], device=device)
+        binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels[trial_idx],
+                                                                                 gt_contact_labels[trial_idx],
+                                                                                 threshold=0.5)
+        precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels[trial_idx],
+                                                                            gt_contact_labels[trial_idx], threshold=0.5)
+        recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels[trial_idx],
+                                                                      gt_contact_labels[trial_idx], threshold=0.5)
+        chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx], device=device,
+                                                         vis=verbose)
+        iou = ncf_metrics.mesh_iou(points_iou[trial_idx], gt_occ_iou[trial_idx], pred_meshes[trial_idx], device=device,
+                                   vis=verbose)
 
         metrics_results.append({
-            "binary_accuracy": binary_accuracy,
-            "pr": pr,
-            "chamfer_distance": chamfer_dist,
+            "binary_accuracy": binary_accuracy.item(),
+            "precision": precision.item(),
+            "recall": recall.item(),
+            "chamfer_distance": chamfer_dist.item(),
             "iou": iou.item(),
         })
 
