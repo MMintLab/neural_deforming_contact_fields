@@ -1,5 +1,3 @@
-import pdb
-
 import mmint_utils
 import torch
 import os
@@ -66,8 +64,8 @@ def load_model_from_config(model_config, dataset, model_file="model_best.pt", cu
         'model': model,
     }
     model_file = os.path.join(model_cfg['training']['out_dir'], model_file)
-    _ = load_model(model_dict, model_file)
-    return model_cfg, model, cuda_device
+    load_dict = load_model(model_dict, model_file)
+    return model_cfg, model, cuda_device, load_dict
 
 
 def load_model_and_dataset(model_config, dataset_config=None, dataset_mode="test", model_file='model_best.pt',
@@ -78,6 +76,14 @@ def load_model_and_dataset(model_config, dataset_config=None, dataset_mode="test
 
     # Because some models depend on their train dataset, we load it additionally.
     _, train_dataset = load_dataset_from_config(model_config, dataset_mode="train")
-    model_cfg, model, cuda_device = load_model_from_config(model_config, train_dataset, model_file=model_file,
-                                                           cuda_id=cuda_id, no_cuda=no_cuda)
-    return model_cfg, model, dataset, cuda_device
+    model_cfg, model, cuda_device, load_dict = load_model_from_config(model_config, train_dataset,
+                                                                      model_file=model_file,
+                                                                      cuda_id=cuda_id, no_cuda=no_cuda)
+    return model_cfg, model, dataset, cuda_device, load_dict
+
+
+def load_generation_cfg(model_cfg: dict, model_file="model_best.pt"):
+    model_file = os.path.join(model_cfg['training']['out_dir'], model_file)
+    state_dict = torch.load(model_file, map_location='cpu')
+
+    return state_dict.get("generation", {})

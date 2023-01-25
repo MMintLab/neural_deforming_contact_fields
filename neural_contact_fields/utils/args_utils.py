@@ -19,8 +19,9 @@ def load_model_dataset_from_args(args):
     """
     Load model and dataset from arguments object.
     """
-    model_cfg, model, dataset, device = load_model_and_dataset(args.config, dataset_config=args.dataset_config,
-                                                               dataset_mode=args.mode,
-                                                               model_file=args.model_file)
+    model_cfg, model, dataset, device, load_dict = load_model_and_dataset(args.config,
+                                                                          dataset_config=args.dataset_config,
+                                                                          dataset_mode=args.mode,
+                                                                          model_file=args.model_file)
     model.eval()
     return model_cfg, model, dataset, device

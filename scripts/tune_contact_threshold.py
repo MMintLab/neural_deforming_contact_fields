@@ -13,7 +13,8 @@ from neural_contact_fields.utils.results_utils import load_pred_results, write_r
 from tqdm import trange
 
 
-def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, device=None):
+def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, device=None, load_dict: dict = None,
+                           vis: bool = False):
     model.eval()
     dataset_size = len(val_dataset)
 
@@ -28,7 +29,8 @@ def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, d
 
     # If out directory provided, check if data already exists.
     if out_dir is not None and os.path.exists(out_dir):
-        _, _, _, pred_contact_labels_all = load_pred_results(out_dir, dataset_size, device)
+        _, _, _, pred_contact_dicts_all = load_pred_results(out_dir, dataset_size, device)
+        pred_contact_labels_all = [pred_dict["contact_labels"] for pred_dict in pred_contact_dicts_all]
     elif out_dir is not None and not os.path.exists(out_dir):
         mmint_utils.make_dir(out_dir)
         pred_contact_labels_all = [None] * dataset_size
@@ -49,7 +51,7 @@ def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, d
 
         # Generate contact labels for example.
         pred_contact_labels, _ = generator.generate_contact_labels(data_dict, {})
-        pred_contact_labels_all[idx] = pred_contact_labels
+        pred_contact_labels_all[idx] = pred_contact_labels["contact_labels"]
 
         # Save generated contact labels to file.
         if out_dir is not None:
@@ -60,7 +62,7 @@ def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, d
 
     # Search through contact thresholds for best performance.
     print("Searching thresholds...")
-    thresholds = np.arange(0.01, 1.01, 0.01)
+    thresholds = np.arange(0.0, 1.000000001, 0.005)
 
     # F1 Score.
     f1_scores = []
@@ -68,26 +70,44 @@ def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, d
         f1 = torchmetrics.functional.classification.binary_f1_score(pred_contact_labels_all, gt_contact_labels_all,
                                                                     threshold, multidim_average="global")
         f1_scores.append(f1.item())
-
-    plt.plot(thresholds, f1_scores)
-    plt.xlim(0.0, 1.0)
-    plt.xlabel("Binary Threshold")
-    plt.ylim(0.0, 1.0)
-    plt.ylabel("F1 Score")
-    plt.title("F1 Scores")
-    plt.show()
+    if vis:
+        plt.plot(thresholds, f1_scores)
+        plt.xlim(0.0, 1.0)
+        plt.xlabel("Binary Threshold")
+        plt.ylim(0.0, 1.0)
+        plt.ylabel("F1 Score")
+        plt.title("F1 Scores")
+        plt.show()
 
     # PR Curve.
-    precisions, recalls, _ = torchmetrics.functional.classification.binary_precision_recall_curve(
-        pred_contact_labels_all, gt_contact_labels_all, thresholds=list(thresholds))
-    plt.plot(recalls.cpu().numpy(), precisions.cpu().numpy())
-    plt.scatter(recalls.cpu().numpy(), precisions.cpu().numpy())
-    plt.xlim(0.0, 1.0)
-    plt.xlabel("Recall")
-    plt.ylim(0.0, 1.0)
-    plt.ylabel("Precision")
-    plt.title("PR Curve")
-    plt.show()
+    if vis:
+        precisions, recalls, _ = torchmetrics.functional.classification.binary_precision_recall_curve(
+            pred_contact_labels_all, gt_contact_labels_all, thresholds=list(thresholds))
+        plt.plot(recalls.cpu().numpy(), precisions.cpu().numpy())
+        plt.scatter(recalls.cpu().numpy(), precisions.cpu().numpy())
+        plt.xlim(0.0, 1.0)
+        plt.xlabel("Recall")
+        plt.ylim(0.0, 1.0)
+        plt.ylabel("Precision")
+        plt.title("PR Curve")
+        plt.show()
+
+    # Determine best threshold using f1 scores.
+    best_idx = np.argmax(f1_scores)
+    best_threshold = thresholds[best_idx]
+    best_f1_score = f1_scores[best_idx]
+    print("Best threshold: %f. F1 Score: %f." % (best_threshold, best_f1_score))
+
+    # Save threshold to model file. This allows it to be easily loaded at test time.
+    model_dict = {
+        "model": model,
+        "generation": {
+            "contact_threshold": best_threshold,
+        },
+    }
+    model_dict.update(load_dict)
+    model_dir = model_cfg["training"]["out_dir"]
+    torch.save(model_dict, os.path.join(model_dir, "model_threshold.pt"))
 
 
 if __name__ == '__main__':
@@ -97,11 +117,12 @@ if __name__ == '__main__':
     parser.add_argument("--model_file", "-f", type=str, default="model.pt", help="Which model save file to use.")
     parser.add_argument("--out_dir", "-o", type=str, default=None,
                         help="Optional out dir to load/save generated labels used.")
+    parser.add_argument("--vis", "-v", action='store_true', help="Visualize results.")
+    parser.set_defaults(vis=False)
     args = parser.parse_args()
 
-    model_cfg_, model_, val_dataset_, device_ = load_model_and_dataset(args.config,
-                                                                       dataset_config=args.val_dataset_config,
-                                                                       dataset_mode="val",
-                                                                       model_file=args.model_file)
+    model_cfg_, model_, val_dataset_, device_, load_dict_ = load_model_and_dataset(
+        args.config, dataset_config=args.val_dataset_config, dataset_mode="val", model_file=args.model_file
+    )
 
-    tune_contact_threshold(model_cfg_, model_, val_dataset_, args.out_dir, device_)
+    tune_contact_threshold(model_cfg_, model_, val_dataset_, args.out_dir, device_, load_dict_, args.vis)

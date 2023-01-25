@@ -1,15 +1,19 @@
 import mmint_utils
 from neural_contact_fields import config
 from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser, load_model_dataset_from_args
+from neural_contact_fields.utils.model_utils import load_generation_cfg
 from neural_contact_fields.utils.results_utils import write_results
 from tqdm import trange
 
 
-def generate(model_cfg, model, dataset, device, out_dir):
+def generate(model_cfg, model, model_file, dataset, device, out_dir):
     model.eval()
 
+    # Load generate cfg, if present.
+    generation_cfg = load_generation_cfg(model_cfg, model_file)
+
     # Load generator.
-    generator = config.get_generator(model_cfg, model, device)
+    generator = config.get_generator(model_cfg, model, generation_cfg, device)
 
     # Determine what to generate.
     generate_mesh = generator.generates_mesh
@@ -52,4 +56,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     model_cfg_, model_, dataset_, device_ = load_model_dataset_from_args(args)
-    generate(model_cfg_, model_, dataset_, device_, args.out)
+    generate(model_cfg_, model_, args.model_file, dataset_, device_, args.out)

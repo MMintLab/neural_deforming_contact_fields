@@ -53,7 +53,7 @@ def load_pred_results(out_dir, n, device=None):
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
         if os.path.exists(cl_fn):
             contact_labels_ = mmint_utils.load_gzip_pickle(cl_fn)
-            contact_labels.append(contact_labels_.to(device))
+            contact_labels.append(contact_labels_)
         else:
             contact_labels.append(None)
 

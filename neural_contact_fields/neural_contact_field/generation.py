@@ -45,7 +45,7 @@ def surface_loss_fn(model, latent, data_dict, device):
 
 class Generator(BaseGenerator):
 
-    def __init__(self, cfg: dict, model: NeuralContactField, device: torch.device):
+    def __init__(self, cfg: dict, model: NeuralContactField, generation_cfg: dict, device: torch.device):
         self.model: NeuralContactField
         super().__init__(cfg, model, device)
 
@@ -53,6 +53,8 @@ class Generator(BaseGenerator):
         self.generates_pointcloud = False
         self.generates_contact_patch = False  # TODO: Add this once have a better sense for it.
         self.generates_contact_labels = True
+
+        self.contact_threshold = generation_cfg["contact_threshold"]
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
@@ -103,6 +105,9 @@ class Generator(BaseGenerator):
         # Get the surface points from the ground truth.
         surface_coords = torch.from_numpy(data["surface_points"]).to(self.device).float().unsqueeze(0)
         surface_pred_dict = self.model.forward(surface_coords, latent, z_object, z_wrench)
+        surface_in_contact_logits = surface_pred_dict["in_contact_logits"].squeeze(0)
         surface_in_contact = surface_pred_dict["in_contact"].squeeze(0)
+        surface_binary = surface_in_contact > self.contact_threshold
 
-        return surface_in_contact, {"latent": latent}
+        return {"contact_labels": surface_binary, "contact_prob": surface_in_contact,
+                "contact_logits": surface_in_contact_logits}, {"latent": latent}

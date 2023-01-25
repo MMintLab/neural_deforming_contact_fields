@@ -35,17 +35,18 @@ def get_trainer(cfg, model, device=None):
     return trainer
 
 
-def get_generator(cfg, model, device=None):
+def get_generator(cfg, model, generation_cfg, device=None):
     """
     Return generator instance.
 
     Args:
     - cfg (dict): configuration dict
     - model (nn.Module): model which is used
+    - generation_cfg (dict): generation configuration dict
     - device (torch.device): pytorch device
     """
     method = cfg['method']
-    generator = method_dict[method].config.get_generator(cfg, model, device)
+    generator = method_dict[method].config.get_generator(cfg, model, generation_cfg, device)
     return generator
 
 
