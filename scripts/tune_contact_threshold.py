@@ -19,7 +19,7 @@ def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, d
     dataset_size = len(val_dataset)
 
     # Load generator.
-    generator = config.get_generator(model_cfg, model, device)
+    generator = config.get_generator(model_cfg, model, {}, device)
 
     if not generator.generates_contact_labels:
         print("Selected model does not generate contact labels - nothing to do!")

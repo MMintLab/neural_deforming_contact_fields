@@ -29,25 +29,38 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
     # Calculate metrics.
     metrics_results = []
     for trial_idx in trange(num_trials):
-        binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels[trial_idx],
-                                                                                 gt_contact_labels[trial_idx],
-                                                                                 threshold=0.5)
-        precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels[trial_idx],
-                                                                            gt_contact_labels[trial_idx], threshold=0.5)
-        recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels[trial_idx],
-                                                                      gt_contact_labels[trial_idx], threshold=0.5)
-        chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx], device=device,
-                                                         vis=verbose)
-        iou = ncf_metrics.mesh_iou(points_iou[trial_idx], gt_occ_iou[trial_idx], pred_meshes[trial_idx], device=device,
-                                   vis=verbose)
+        metrics_dict = dict()
 
-        metrics_results.append({
-            "binary_accuracy": binary_accuracy.item(),
-            "precision": precision.item(),
-            "recall": recall.item(),
-            "chamfer_distance": chamfer_dist.item(),
-            "iou": iou.item(),
-        })
+        # Evaluate meshes.
+        if pred_meshes[trial_idx] is not None:
+            chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx],
+                                                             device=device,
+                                                             vis=verbose)
+            iou = ncf_metrics.mesh_iou(points_iou[trial_idx], gt_occ_iou[trial_idx], pred_meshes[trial_idx],
+                                       device=device,
+                                       vis=verbose)
+            metrics_dict.update({
+                "chamfer_distance": chamfer_dist.item(),
+                "iou": iou.item(),
+            })
+
+        # Evaluate binary contact labels.
+        if pred_contact_labels[trial_idx] is not None:
+            binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels[trial_idx],
+                                                                                     gt_contact_labels[trial_idx],
+                                                                                     threshold=0.5)
+            precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels[trial_idx],
+                                                                                gt_contact_labels[trial_idx],
+                                                                                threshold=0.5)
+            recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels[trial_idx],
+                                                                          gt_contact_labels[trial_idx], threshold=0.5)
+            metrics_dict.update({
+                "binary_accuracy": binary_accuracy.item(),
+                "precision": precision.item(),
+                "recall": recall.item(),
+            })
+
+        metrics_results.append(metrics_dict)
 
     if verbose:
         print_results(metrics_results, os.path.dirname(out_dir))

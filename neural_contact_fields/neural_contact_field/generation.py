@@ -54,7 +54,7 @@ class Generator(BaseGenerator):
         self.generates_contact_patch = False  # TODO: Add this once have a better sense for it.
         self.generates_contact_labels = True
 
-        self.contact_threshold = generation_cfg["contact_threshold"]
+        self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
