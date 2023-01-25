@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.training import BaseTrainer
-from neural_contact_fields.explicit_baseline.grnet.extensions.chamfer_dist import ChamferDistance
+from neural_contact_fields.explicit_baseline.grnet.extensions.chamfer_dist import ChamferDistance, ChamferFunction
 
 
 class Trainer(BaseTrainer):
@@ -44,6 +44,7 @@ class Trainer(BaseTrainer):
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
         gt_sdf = torch.from_numpy(data_dict["sdf"]).to(self.device).float().unsqueeze(0)
         gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(self.device).float().unsqueeze(0)
+        partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
 
 #         print(data_dict.keys(), query_points.shape, surface_coords_.shape, gt_sdf.shape)
         cnt_indicator = gt_in_contact[gt_sdf == 0.0]
@@ -54,7 +55,7 @@ class Trainer(BaseTrainer):
         # We assume we know the object code.
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
         # Predict with updated latents.
-        pred_dict_ = self.model.forward(surface_coords_, z_wrench_)
+        pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
 
 
         ## pointcloud reconstruction loss.
@@ -66,6 +67,9 @@ class Trainer(BaseTrainer):
         sparse_loss_ct = chamfer_dist(pred_dict_['sparse_ct_ptcloud'], contact_pcd)
         dense_loss_ct = chamfer_dist(pred_dict_['dense_ct_ptcloud'], contact_pcd)
         
+        ## force contact to be on the surface
+        dist1, dist2 = ChamferFunction.apply(pred_dict_['dense_ct_ptcloud'], pred_dict_['dense_df_ptcloud'])
+                
         pcl = o3d.geometry.PointCloud()
         pcl.points = o3d.utility.Vector3dVector(surface_coords_.squeeze().detach().cpu().numpy())
         o3d.io.write_point_cloud('gt_surf.ply',pcl )
@@ -82,10 +86,8 @@ class Trainer(BaseTrainer):
         pcl.points = o3d.utility.Vector3dVector(pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy())
         o3d.io.write_point_cloud('ds_cnt.ply', pcl)
 
-        
-#         print(pred_dict_['sparse_df_cloud'].shape, pred_dict_['dense_df_ptcloud'].shape, pred_dict_['sparse_ct_ptcloud'].shape, pred_dict_['dense_ct_ptcloud'].shape)
-#         print( sparse_loss_df ,dense_loss_df, sparse_loss_ct,+ dense_loss_ct)
-        loss_df =  dense_loss_df + dense_loss_ct
+
+        loss_df =  dense_loss_df + dense_loss_ct + torch.mean(dist1)
         return loss_df
 
 

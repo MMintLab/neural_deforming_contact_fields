@@ -35,12 +35,12 @@ def generate(model_cfg, model, dataset, device, out_dir):
             metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
 
         if generate_pointcloud:
-            pointcloud, metadata_pc = generator.generate_pointcloud(data_dict, metadata)
-            metadata = mmint_utils.combine_dict(metadata, metadata_pc)
+            pointcloud, _ = generator.generate_pointcloud(data_dict, metadata)
+#             metadata = mmint_utils.combine_dict(metadata, metadata_pc)
 
         if generate_contact_patch:
-            contact_patch, metadata_cp = generator.generate_contact_patch(data_dict, metadata)
-            metadata = mmint_utils.combine_dict(metadata, metadata_cp)
+            contact_patch, _ = generator.generate_contact_patch(data_dict, metadata)
+#             metadata = mmint_utils.combine_dict(metadata, metadata_cp)
 
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)

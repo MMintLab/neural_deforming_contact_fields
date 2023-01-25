@@ -67,14 +67,3 @@ class Grnet(NeuralContactField):
                     }
         return out_dict
 
-
-
-    #
-    # def regularization_loss(self, out_dict: dict):
-    #     def_hypo_params = out_dict["def_hypo_params"]
-    #     def_hypo_loss = ncf_losses.hypo_weight_loss(def_hypo_params)
-    #     sdf_hypo_params = out_dict["sdf_hypo_params"]
-    #     sdf_hypo_loss = ncf_losses.hypo_weight_loss(sdf_hypo_params)
-    #     in_contact_hypo_params = out_dict["in_contact_hypo_params"]
-    #     in_contact_hypo_loss = ncf_losses.hypo_weight_loss(in_contact_hypo_params)
-    #     return def_hypo_loss + sdf_hypo_loss + in_contact_hypo_loss

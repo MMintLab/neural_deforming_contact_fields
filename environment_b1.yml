@@ -1,4 +1,4 @@
-name: ncf_b1
+name: pytorch3d
 channels:
   - bottler
   - pytorch
@@ -214,4 +214,4 @@ dependencies:
       - widgetsnbextension==4.0.5
       - wrapt==1.14.1
       - zipp==3.11.0
-prefix: /home/young/miniconda3/envs/ncf_b1
+prefix: /home/young/miniconda3/envs/pytorch3d

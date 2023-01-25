@@ -32,6 +32,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.wrist_wrench = []  # Wrist wrench.
         self.surface_points = []  # Surface points.
         self.surface_in_contact = []  # Surface point contact labels.
+        self.partial_pointcloud = []  # Partial pointcloud.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
@@ -48,6 +49,7 @@ class ToolDataset(torch.utils.data.Dataset):
             self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
             self.surface_points.append(example_dict["test"]["surface_points"])
             self.surface_in_contact.append(example_dict["test"]["surface_in_contact"])
+            self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
 
         self.num_objects = max(self.object_idcs) + 1
 
@@ -75,6 +77,7 @@ class ToolDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         object_index = self.object_idcs[index]
+
         data_dict = {
             "object_idx": np.array([object_index]),
             "trial_idx": np.array([self.trial_idcs[index]]),
@@ -84,10 +87,11 @@ class ToolDataset(torch.utils.data.Dataset):
             "in_contact": self.in_contact[index].astype(int),
             "pressure": np.array([self.trial_pressure[index]]),
             "wrist_wrench": self.wrist_wrench[index],
-            # "nominal_query_point": self.nominal_query_points[object_index],
-            # "nominal_sdf": self.nominal_sdf[object_index],
+#             "nominal_query_point": self.nominal_query_points[object_index],
+#             "nominal_sdf": self.nominal_sdf[object_index],
             "surface_points": self.surface_points[index],
             "surface_in_contact": self.surface_in_contact[index],
+            "partial_pointcloud": self.partial_pointcloud[index],
         }
 
         return data_dict

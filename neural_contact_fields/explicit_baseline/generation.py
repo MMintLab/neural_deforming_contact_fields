@@ -49,60 +49,49 @@ class Generator(BaseGenerator):
         self.model: NeuralContactField
         super().__init__(cfg, model, device)
 
-        self.generates_mesh = True
-        self.generates_pointcloud = False
-        self.generates_contact_patch = False  # TODO: Add this once have a better sense for it.
-        self.generates_contact_labels = True
+        self.generates_mesh = False
+        self.generates_pointcloud = True
+        self.generates_contact_patch = True  # TODO: Add this once have a better sense for it.
+        self.generates_contact_labels = False
 
     def generate_mesh(self, data, meta_data):
-        # Check if we have been provided with the latent already.
-        if "latent" in meta_data:
-            latent = meta_data["latent"]
-        else:
-            # Generate deformation code latent.
-            z_deform_size = self.model.z_deform_size
-            z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, z_deform_size, 1, data,
-                                                     device=self.device, verbose=True)
-            latent = z_deform_.weight
+        raise Exception("Selected generator does not generate mesh.")
 
-        # Generate mesh.
-        object_idx_ = torch.from_numpy(data["object_idx"]).to(self.device)
-        wrist_wrench_ = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+
+    def generate_pointcloud(self, data_dict, meta_data):
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+        partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
+
+#         cnt_indicator = gt_in_contact[gt_sdf == 0.0]
+#         cnt_idx = torch.where(gt_in_contact == 1)[1]
+#         contact_pcd = query_points[:, cnt_idx, :]
 
         # We assume we know the object code.
-        z_object = self.model.encode_object(object_idx_)
-        z_wrench = self.model.encode_wrench(wrist_wrench_)
+    
+        z_wrench_ = self.model.encode_wrench(wrist_wrench_)
+        
+        # Predict with updated latents.
+        pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
 
-        latent_sdf_decoder = LatentSDFDecoder(self.model, z_object, latent, z_wrench)
-        mesh = create_mesh(latent_sdf_decoder)
+        return pred_dict_['sparse_df_cloud'].squeeze().detach().cpu().numpy(), -1
 
-        return mesh, {"latent": latent, "mesh": mesh}
+    def generate_contact_patch(self, data_dict, meta_data):
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+        partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
+#         cnt_indicator = gt_in_contact[gt_sdf == 0.0]
+#         cnt_idx = torch.where(gt_in_contact == 1)[1]
+#         contact_pcd = query_points[:, cnt_idx, :]
 
-    def generate_pointcloud(self, data, meta_data):
-        raise Exception("Selected generator does not generate point clouds.")
+        # We assume we know the object code.
+    
+        z_wrench_ = self.model.encode_wrench(wrist_wrench_)
+        # Predict with updated latents.
+        pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
 
-    def generate_contact_patch(self, data, meta_data):
-        raise Exception("Selected generator does not generate contact patch.")
+        return pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy(), -1
+    
 
     def generate_contact_labels(self, data, meta_data):
-        # Check if we have been provided with the latent already.
-        if "latent" in meta_data:
-            latent = meta_data["latent"]
-        else:
-            # Generate deformation code latent.
-            z_deform_size = self.model.z_deform_size
-            z_deform_, _ = inference_by_optimization(self.model, self.surface_loss_fn, z_deform_size, 1, data,
-                                                     device=self.device, verbose=True)
-            latent = z_deform_.weight
+        raise Exception("Selected generator does not generate contact label.")
 
-        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
-        wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
-        z_object = self.model.encode_object(object_idx)
-        z_wrench = self.model.encode_wrench(wrist_wrench)
-
-        # Get the surface points from the ground truth.
-        surface_coords = torch.from_numpy(data["surface_points"]).to(self.device).float().unsqueeze(0)
-        surface_pred_dict = self.model.forward(surface_coords, latent, z_object, z_wrench)
-        surface_in_contact = surface_pred_dict["in_contact"].squeeze(0)
-
-        return surface_in_contact, {"latent": latent}
+     

@@ -87,11 +87,11 @@ Note: Please do not build torchmeta.
 
 ### Clone baseline backbone
 ``` 
-git clone https://github.com/hzxie/GRNet neural_contact_fields/neural_contact_fields/explicit_baseline/grnet
+git clone https://github.com/hzxie/GRNet neural_contact_fields/explicit_baseline/grnet
 ```
 ### Installation
-Please **skip** ``pip install -r `` step and jump to building extensions in [readme](https://github.com/hzxie/GRNet#prerequisites) via ``pip install -e .`` instead of ``python setup.py`` install command. 
-Please make sure that nvcc is installed via ``$ sudo apt install nvidia-cuda-toolkit`` in your system before building extensions.
+Please **skip** ``pip install -r `` step and jump to building extensions in [readme](https://github.com/hzxie/GRNet#prerequisites) via ``pip install -e .``.
+[Important] Please make sure that nvcc is installed via ``$ sudo apt install nvidia-cuda-toolkit`` in your system before building extensions.
 
 
 ### Troubleshooting
@@ -100,9 +100,9 @@ Please make sure that nvcc is installed via ``$ sudo apt install nvidia-cuda-too
 OSError: /home/young/.local/lib/python3.8/site-packages/torch/lib/../../nvidia/cublas/lib/libcublas.so.11: undefined symbol: cublasLtHSHMatmulAlgoInit, version libcublasLt.so.11
 ``
 do
-* ``$ export LD_LIBRARY_PATH=/home/myenv/.local/lib/python3.8/site-packages/nvidia/cublas/lib/
+``$ export LD_LIBRARY_PATH=/home/myenv/.local/lib/python3.8/site-packages/nvidia/cublas/lib/
 ``
-* When you have trouble with ```openexr``` installation
+* If you have trouble with ```openexr``` installation
 ``` 
 conda install -c conda-forge cudatoolkit-dev 
 ```
@@ -117,5 +117,5 @@ sudo apt-get install libopenexr-dev
 ```angular2html
 #error The version of CUB in your include path is not compatible with this release of Thrust. CUB is now included in the CUDA Toolkit, so you no longer need to use your own checkout of CUB. Define THRUST_IGNORE_CUB_VERSION_CHECK to ignore this.
 ```
-Go to ``` '~/miniconda3/envs/ncf/include/thrust/system/cuda/config.h' ``` and add this line
+, go to ``` '~/miniconda3/envs/ncf/include/thrust/system/cuda/config.h' ``` and add this line
 ``` #define THRUST_IGNORE_CUB_VERSION_CHECK true ```  before ```#ifndef THRUST_IGNORE_CUB_VERSION_CHECK```.

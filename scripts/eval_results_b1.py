@@ -4,7 +4,7 @@ import os
 import mmint_utils
 import torch
 import trimesh
-import neural_contact_fields.metrics as ncf_metrics
+from neural_contact_fields.explicit_baseline.grnet.extensions.chamfer_dist import ChamferDistance
 from neural_contact_fields import config
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, print_results
 from tqdm import trange
@@ -23,25 +23,17 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
     gt_meshes, _, _, gt_contact_labels, points_iou, gt_occ_iou = load_gt_results(dataset, dataset_dir, num_trials)
 
     # Load predicted results.
-    pred_meshes, _, _, pred_contact_labels = load_pred_results(out_dir, num_trials)
+    _, pred_pcds, pred_contact_patches, _ = load_pred_results(out_dir, num_trials)
 
     # Calculate metrics.
     metrics_results = []
     for trial_idx in trange(num_trials):
-        binary_accuracy = ncf_metrics.binary_accuracy(pred_contact_labels[trial_idx] > 0.5,
-                                                      torch.from_numpy(gt_contact_labels[trial_idx]).to(device))
-        pr = ncf_metrics.precision_recall(pred_contact_labels[trial_idx] > 0.5,
-                                          torch.from_numpy(gt_contact_labels[trial_idx]).to(device))
-        chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx], device=device)
-        iou = ncf_metrics.mesh_iou(torch.from_numpy(points_iou[trial_idx]).to(device),
-                                   torch.from_numpy(gt_occ_iou[trial_idx]).to(device),
-                                   pred_meshes[trial_idx], device=device)
 
+        pcd_chamfer_distance = ChamferDistance()
+        chamfer_dist = pcd_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx], device=device)
+        
         metrics_results.append({
-            "binary_accuracy": binary_accuracy,
-            "pr": pr,
             "chamfer_distance": chamfer_dist,
-            "iou": iou.item(),
         })
 
     if verbose:
