@@ -3,100 +3,102 @@ import os
 
 import mmint_utils
 import numpy as np
+import pytorch3d.loss
 import torch
-import torchmetrics.functional.classification
 import tqdm
 from matplotlib import pyplot as plt
 from neural_contact_fields import config
 from neural_contact_fields.utils.model_utils import load_model_and_dataset
-from neural_contact_fields.utils.results_utils import load_pred_results, write_results
+from neural_contact_fields.utils.results_utils import load_pred_results, write_results, load_gt_results
 from tqdm import trange
 
 
-def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, device=None, load_dict: dict = None,
-                           vis: bool = False):
+def tune_contact_threshold(model_cfg, model, val_dataset_cfg, val_dataset, out_dir: str = None, device=None,
+                           load_dict: dict = None, vis: bool = False):
     model.eval()
     dataset_size = len(val_dataset)
 
     # Load generator.
     generator = config.get_generator(model_cfg, model, {}, device)
 
-    if not generator.generates_contact_labels:
-        print("Selected model does not generate contact labels - nothing to do!")
-        return
+    print("Loading/Generating contact meshes for patch evaluation...")
 
-    print("Loading/Generating contact labels...")
+    # Load ground truth.
+    _, _, gt_contact_patches, _, _, _ = load_gt_results(val_dataset, val_dataset_cfg["data"]["val"]["dataset_dir"],
+                                                        dataset_size, device)
 
     # If out directory provided, check if data already exists.
     if out_dir is not None and os.path.exists(out_dir):
-        _, _, _, pred_contact_dicts_all = load_pred_results(out_dir, dataset_size, device)
-        pred_contact_labels_all = [pred_dict["contact_labels"] for pred_dict in pred_contact_dicts_all]
+        pred_meshes, _, _, _ = load_pred_results(out_dir, dataset_size, device)
+
+        # Also load latent values, if present.
+        pred_latents = []
+        for idx in range(dataset_size):
+            latent_fn = os.path.join(out_dir, "latent_%d.pkl.gzip" % idx)
+            if os.path.exists(latent_fn):
+                pred_latents.append(mmint_utils.load_gzip_pickle(latent_fn))
+            else:
+                pred_latents.append(None)
     elif out_dir is not None and not os.path.exists(out_dir):
         mmint_utils.make_dir(out_dir)
-        pred_contact_labels_all = [None] * dataset_size
+        pred_meshes = [None] * dataset_size
+        pred_latents = [None] * dataset_size
     else:
-        pred_contact_labels_all = [None] * dataset_size
+        pred_meshes = [None] * dataset_size
+        pred_latents = [None] * dataset_size
 
-    # Go through validation dataset and generate contact labels.
-    gt_contact_labels_all = []
+    # Generate meshes/latents.
     for idx in trange(dataset_size):
         data_dict = val_dataset[idx]
 
-        # Get GT contact labels from dataset.
-        gt_contact_labels_all.append(torch.from_numpy(data_dict["surface_in_contact"]).int().to(device))
-
         # If data has already been generated, skip generation step.
-        if pred_contact_labels_all[idx] is not None:
+        if pred_meshes[idx] is not None:
             continue
 
         # Generate contact labels for example.
-        pred_contact_labels, _ = generator.generate_contact_labels(data_dict, {})
-        pred_contact_labels_all[idx] = pred_contact_labels["contact_labels"]
+        pred_mesh, metadata = generator.generate_mesh(data_dict, {})
+        pred_meshes[idx] = pred_mesh
+        pred_latents[idx] = metadata["latent"]
 
         # Save generated contact labels to file.
         if out_dir is not None:
-            write_results(out_dir, None, None, None, pred_contact_labels, idx)
-
-    pred_contact_labels_all = torch.cat(pred_contact_labels_all, dim=0)
-    gt_contact_labels_all = torch.cat(gt_contact_labels_all, dim=0)
+            write_results(out_dir, pred_mesh, None, None, None, idx)
+            latent_fn = os.path.join(out_dir, "latent_%d.pkl.gzip" % idx)
+            mmint_utils.save_gzip_pickle(metadata["latent"], latent_fn)
 
     # Search through contact thresholds for best performance.
     print("Searching thresholds...")
-    thresholds = np.arange(0.0, 1.000000001, 0.005)
+    thresholds = np.arange(0.0, 1.000000001, 0.01)
+    chamfer_dists = []
 
-    # F1 Score.
-    f1_scores = []
     for threshold in tqdm.tqdm(thresholds):
-        f1 = torchmetrics.functional.classification.binary_f1_score(pred_contact_labels_all, gt_contact_labels_all,
-                                                                    threshold, multidim_average="global")
-        f1_scores.append(f1.item())
+        # Set threshold.
+        generator.contact_threshold = threshold
+
+        threshold_chamfer_dists = []
+        for idx in range(dataset_size):
+            data_dict = val_dataset[idx]
+
+            pred_cp, _ = generator.generate_contact_patch(data_dict,
+                                                          {"mesh": pred_meshes[idx], "latent": pred_latents[idx]})
+
+            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(torch.from_numpy(pred_cp).float().to(device).unsqueeze(0),
+                                                              gt_contact_patches[idx].unsqueeze(0))
+            threshold_chamfer_dists.append(chamfer_dist.item())
+        chamfer_dists.append(np.mean(threshold_chamfer_dists))
+
     if vis:
-        plt.plot(thresholds, f1_scores)
+        plt.plot(thresholds, chamfer_dists)
         plt.xlim(0.0, 1.0)
-        plt.xlabel("Binary Threshold")
-        plt.ylim(0.0, 1.0)
-        plt.ylabel("F1 Score")
-        plt.title("F1 Scores")
+        plt.xlabel("Binary Thresholds")
+        plt.ylabel("Chamfer Distance")
         plt.show()
 
-    # PR Curve.
-    if vis:
-        precisions, recalls, _ = torchmetrics.functional.classification.binary_precision_recall_curve(
-            pred_contact_labels_all, gt_contact_labels_all, thresholds=list(thresholds))
-        plt.plot(recalls.cpu().numpy(), precisions.cpu().numpy())
-        plt.scatter(recalls.cpu().numpy(), precisions.cpu().numpy())
-        plt.xlim(0.0, 1.0)
-        plt.xlabel("Recall")
-        plt.ylim(0.0, 1.0)
-        plt.ylabel("Precision")
-        plt.title("PR Curve")
-        plt.show()
-
-    # Determine best threshold using f1 scores.
-    best_idx = np.argmax(f1_scores)
+    # Determine best threshold using scores.
+    best_idx = np.argmin(chamfer_dists)
     best_threshold = thresholds[best_idx]
-    best_f1_score = f1_scores[best_idx]
-    print("Best threshold: %f. F1 Score: %f." % (best_threshold, best_f1_score))
+    best_score = chamfer_dists[best_idx]
+    print("Best threshold: %f. Score: %f." % (best_threshold, best_score))
 
     # Save threshold to model file. This allows it to be easily loaded at test time.
     model_dict = {
@@ -124,5 +126,7 @@ if __name__ == '__main__':
     model_cfg_, model_, val_dataset_, device_, load_dict_ = load_model_and_dataset(
         args.config, dataset_config=args.val_dataset_config, dataset_mode="val", model_file=args.model_file
     )
+    val_dataset_cfg_ = mmint_utils.load_cfg(args.val_dataset_config)
 
-    tune_contact_threshold(model_cfg_, model_, val_dataset_, args.out_dir, device_, load_dict_, args.vis)
+    tune_contact_threshold(model_cfg_, model_, val_dataset_cfg_, val_dataset_, args.out_dir, device_, load_dict_,
+                           args.vis)

@@ -1,4 +1,5 @@
 data:
   val:
     dataset: ToolDataset
-    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/sim_1_20_23_val/
+    # dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/sim_1_20_23_val/
+    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/sim_1_27_23_val/
