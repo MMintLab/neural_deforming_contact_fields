@@ -28,10 +28,12 @@ base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
 # ]
 
 titles = [
-    "32", "32 (big)", "64", "64 (big)", "no wrench", "no wrench (big)"
+    "32", "32 (big)", "64", "64 (big)", "16", "16 (big)", "8", "8 (big)", "no wrench", "no wrench (big)",
+    "forward deform"
 ]
 test_dirs = [
-    "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4", "no_wrench_v1", "no_wrench_v2"
+    "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4", "wrench_v5", "wrench_v6", "wrench_v7", "wrench_v8",
+    "no_wrench_v1", "no_wrench_v2", "forward_def_v1"
 ]
 
 out_fn = "out/experiments/wrench_v2_tests/partial_pointcloud/out.csv"

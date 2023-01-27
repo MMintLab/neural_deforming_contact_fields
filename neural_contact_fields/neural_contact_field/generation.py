@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from neural_contact_fields.generation import BaseGenerator
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
+from neural_contact_fields.utils import mesh_utils
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from neural_contact_fields.utils.marching_cubes import create_mesh
 
@@ -51,7 +52,7 @@ class Generator(BaseGenerator):
 
         self.generates_mesh = True
         self.generates_pointcloud = False
-        self.generates_contact_patch = False  # TODO: Add this once have a better sense for it.
+        self.generates_contact_patch = True
         self.generates_contact_labels = True
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
@@ -84,7 +85,36 @@ class Generator(BaseGenerator):
         raise Exception("Selected generator does not generate point clouds.")
 
     def generate_contact_patch(self, data, meta_data):
-        raise Exception("Selected generator does not generate contact patch.")
+        # If mesh has not already been generated, go ahead and generate it.
+        if "mesh" not in meta_data:
+            mesh, mesh_meta_data = self.generate_mesh(data, meta_data)
+            latent = mesh_meta_data["latent"]
+        else:
+            mesh = meta_data["mesh"]
+            latent = meta_data["latent"]
+
+        object_idx_ = torch.from_numpy(data["object_idx"]).to(self.device)
+        wrist_wrench_ = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+
+        # We assume we know the object code.
+        z_object = self.model.encode_object(object_idx_)
+        z_wrench = self.model.encode_wrench(wrist_wrench_)
+
+        # Predict which surface points of the mesh are in contact.
+        surface_points = torch.from_numpy(mesh.vertices).float().to(self.device).unsqueeze(0)
+        surface_pred_dict = self.model.forward(surface_points, latent, z_object, z_wrench)
+
+        # Pull out binary surface predictions.
+        surface_in_contact_logits = surface_pred_dict["in_contact_logits"].squeeze(0)
+        surface_in_contact = surface_pred_dict["in_contact"].squeeze(0)
+        surface_binary = surface_in_contact > self.contact_threshold
+        surface_binary_np = surface_binary.cpu().numpy()
+
+        # Surface from surface accordingly.
+        _, pred_contact_triangles, _ = mesh_utils.find_in_contact_triangles(mesh, mesh.vertices[surface_binary_np])
+        contact_patch = mesh_utils.sample_surface_points_in_contact(mesh, pred_contact_triangles, n=10000)
+
+        return contact_patch, {}
 
     def generate_contact_labels(self, data, meta_data):
         # Check if we have been provided with the latent already.

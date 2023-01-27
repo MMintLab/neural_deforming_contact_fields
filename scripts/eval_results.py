@@ -8,6 +8,7 @@ from neural_contact_fields import config
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, print_results
 from tqdm import trange
 import torchmetrics
+import pytorch3d.loss
 
 
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False):
@@ -20,11 +21,14 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
     dataset_dir = dataset_config["data"][dataset_mode]["dataset_dir"]
 
     # Load specific ground truth results needed for evaluation.
-    gt_meshes, _, _, gt_contact_labels, points_iou, gt_occ_iou = load_gt_results(dataset, dataset_dir, num_trials,
-                                                                                 device)
+    gt_meshes, gt_pointclouds, gt_contact_patches, gt_contact_labels, points_iou, gt_occ_iou = \
+        load_gt_results(
+            dataset, dataset_dir, num_trials, device
+        )
 
     # Load predicted results.
-    pred_meshes, _, _, pred_contact_labels = load_pred_results(out_dir, num_trials, device)
+    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = \
+        load_pred_results(out_dir, num_trials, device)
 
     # Calculate metrics.
     metrics_results = []
@@ -44,15 +48,33 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
                 "iou": iou.item(),
             })
 
+        # Evaluate pointclouds.
+        if pred_pointclouds[trial_idx] is not None:
+            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointclouds[trial_idx], gt_pointclouds[trial_idx])
+
+            metrics_dict.update({
+                "chamfer_distance": chamfer_dist.item(),
+            })
+
+        # Evaluate contact patches.
+        if pred_contact_patches[trial_idx] is not None:
+            patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_contact_patches[trial_idx],
+                                                                    gt_contact_patches[trial_idx])
+
+            metrics_dict.update({
+                "patch_chamfer_distance": patch_chamfer_dist.item(),
+            })
+
         # Evaluate binary contact labels.
         if pred_contact_labels[trial_idx] is not None:
-            binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels[trial_idx],
+            pred_contact_labels_trial = pred_contact_labels[trial_idx]["contact_labels"].float()
+            binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels_trial,
                                                                                      gt_contact_labels[trial_idx],
                                                                                      threshold=0.5)
-            precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels[trial_idx],
+            precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels_trial,
                                                                                 gt_contact_labels[trial_idx],
                                                                                 threshold=0.5)
-            recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels[trial_idx],
+            recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels_trial,
                                                                           gt_contact_labels[trial_idx], threshold=0.5)
             metrics_dict.update({
                 "binary_accuracy": binary_accuracy.item(),

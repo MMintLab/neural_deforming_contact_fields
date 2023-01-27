@@ -45,3 +45,15 @@ def occupancy_check(mesh: trimesh.Trimesh, query_points: np.ndarray):
     occupancy = occupancy.numpy() > 0.5
 
     return occupancy
+
+
+def sample_surface_points_in_contact(mesh: trimesh.Trimesh, contact_triangles: np.ndarray, n: int = 1000):
+    mesh.fix_normals()
+
+    # Weight sampling to only be on triangles in contact, weighted by the area of those triangles.
+    face_weight = mesh.area_faces * contact_triangles
+
+    # Sample on the surface.
+    contact_points, _ = trimesh.sample.sample_surface(mesh, count=n, face_weight=face_weight)
+
+    return contact_points

@@ -100,7 +100,7 @@ def tune_contact_threshold(model_cfg, model, val_dataset, out_dir: str = None, d
 
     # Save threshold to model file. This allows it to be easily loaded at test time.
     model_dict = {
-        "model": model,
+        "model": model.state_dict(),
         "generation": {
             "contact_threshold": best_threshold,
         },
