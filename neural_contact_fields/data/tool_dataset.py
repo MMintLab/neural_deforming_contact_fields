@@ -33,6 +33,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.surface_points = []  # Surface points.
         self.surface_in_contact = []  # Surface point contact labels.
         self.partial_pointcloud = []  # Partial pointcloud.
+        self.contact_patch = []  # Contact patch.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
@@ -46,9 +47,18 @@ class ToolDataset(torch.utils.data.Dataset):
             self.normals.append(example_dict["train"]["normals"])
             self.in_contact.append(example_dict["train"]["in_contact"])
             self.trial_pressure.append(example_dict["train"]["pressure"])
-            self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
             self.surface_points.append(example_dict["test"]["surface_points"])
             self.surface_in_contact.append(example_dict["test"]["surface_in_contact"])
+            try:
+                self.contact_patch.append(example_dict["test"]["contact_patch"])
+            except:
+                self.contact_patch.append(
+                    self.surface_points[-1][self.surface_in_contact[-1]]
+                )
+            try:
+                self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
+            except:
+                self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
             self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
 
         self.num_objects = max(self.object_idcs) + 1

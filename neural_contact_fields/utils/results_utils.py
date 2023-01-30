@@ -17,9 +17,8 @@ def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
         utils.save_pointcloud(pointcloud, pc_fn)
 
     if contact_patch is not None:
-        cp_fn = os.path.join(out_dir, "contact_patch_%d.pkl.gzip" % idx)
-        # utils.save_pointcloud(contact_patch, cp_fn)
-        mmint_utils.save_gzip_pickle(contact_patch, cp_fn)
+        cp_fn = os.path.join(out_dir, "contact_patch_%d.ply" % idx)
+        utils.save_pointcloud(contact_patch, cp_fn)
 
     if contact_labels is not None:
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
@@ -47,7 +46,6 @@ def load_pred_results(out_dir, n, device=None):
 
         cp_fn = os.path.join(out_dir, "contact_patch_%d.ply" % idx)
         if os.path.exists(cp_fn):
-            # contact_patches.append(mmint_utils.load_gzip_pickle(cp_fn))
             contact_patches.append(torch.from_numpy(utils.load_pointcloud(cp_fn)).to(device))
         else:
             contact_patches.append(None)

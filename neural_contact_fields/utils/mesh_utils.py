@@ -56,4 +56,4 @@ def sample_surface_points_in_contact(mesh: trimesh.Trimesh, contact_triangles: n
     # Sample on the surface.
     contact_points, _ = trimesh.sample.sample_surface(mesh, count=n, face_weight=face_weight)
 
-    return contact_points
+    return np.array(contact_points)

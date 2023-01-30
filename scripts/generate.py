@@ -1,9 +1,12 @@
 import mmint_utils
+import numpy as np
+import torch
 from neural_contact_fields import config
 from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser, load_model_dataset_from_args
 from neural_contact_fields.utils.model_utils import load_generation_cfg
 from neural_contact_fields.utils.results_utils import write_results
 from tqdm import trange
+import random
 
 
 def generate(model_cfg, model, model_file, dataset, device, out_dir):
@@ -54,6 +57,11 @@ if __name__ == '__main__':
     parser.add_argument("--out", "-o", type=str, help="Optional out directory to write generated results to.")
     # TODO: Add visualization?
     args = parser.parse_args()
+
+    # Seed for repeatability.
+    torch.manual_seed(10)
+    np.random.seed(10)
+    random.seed(10)
 
     model_cfg_, model_, dataset_, device_ = load_model_dataset_from_args(args)
     generate(model_cfg_, model_, args.model_file, dataset_, device_, args.out)
