@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 import open3d as o3d
+import vedo
+import trimesh
 from neural_contact_fields.generation import BaseGenerator
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
@@ -91,10 +93,8 @@ class Generator(BaseGenerator):
         # We assume we know the object code.
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
         
-        
         # Predict with updated latents.
         pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
-        
                 
         chamfer_dist = ChamferDistance()
         gt_idx = np.random.choice ( np.arange(len(contact_pcd[0])),  500, replace = False)
@@ -103,9 +103,24 @@ class Generator(BaseGenerator):
         dense_loss_df = chamfer_dist( pred_dict_['dense_ct_ptcloud'][:,est_idx,:], contact_pcd[:,gt_idx,:])
 
         return pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy(), dense_loss_df.detach().cpu()
-    
 
     def generate_contact_labels(self, data, meta_data):
         raise Exception("Selected generator does not generate contact label.")
 
+    def generate_mesh_from_pointcloud(self, pcd : np.ndarray):
+        pcd_v = vedo.pointcloud.Points(pcd)
+        pcd_v= pcd_v.clean()
+        pcd_v = pcd_v.remove_outliers(0.005,  neighbors= 20)
+        # pcd_v = pcd_v.compute_connections(0.01, mode = 2)
+
+        mesh = pcd_v.reconstruct_surface(radius = 0.015)
+        mesh = mesh.clean()
+        plt = vedo.Plotter(shape=(1, 2))
+        plt.at(0).show(pcd_v)
+        plt.at(1).show(mesh)
+        plt.interactive()
+
+        breakpoint()
+        mesh_t = trimesh.Trimesh(vertices=mesh.points(), faces=mesh.faces())
+        return mesh_t
      

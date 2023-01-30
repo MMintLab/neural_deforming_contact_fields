@@ -33,27 +33,34 @@ def generate(model_cfg, model, dataset, device, out_dir):
         metadata = {}
         mesh = pointcloud = contact_patch = contact_labels = None
 
-        if generate_mesh:
-            mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
-            metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
 
         if generate_pointcloud:
             pointcloud, cd = generator.generate_pointcloud(data_dict, metadata)
 
             ## TODO : Delete below
             cd_hist['pcd'].append(cd)
-            pcl = o3d.geometry.PointCloud()
-            pcl.points = o3d.utility.Vector3dVector(pointcloud)
-            o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
+            # pcl = o3d.geometry.PointCloud()
+            # pcl.points = o3d.utility.Vector3dVector(pointcloud)
+            # o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
+
+        if generate_mesh:
+            mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
+            metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
+
+        else:
+            # Generate mesh from the pointcloud.
+            mesh = generator.generate_mesh_from_pointcloud(pointcloud)
+
 
         if generate_contact_patch:
             contact_patch, cd = generator.generate_contact_patch(data_dict, metadata)
 
             ## TODO : Delete below
             cd_hist['pcd_cnt'].append(cd)
-            pcl = o3d.geometry.PointCloud()
-            pcl.points = o3d.utility.Vector3dVector(contact_patch)
-            o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
+            # pcl = o3d.geometry.PointCloud()
+            # pcl.points = o3d.utility.Vector3dVector(contact_patch)
+            # o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
+
 
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
