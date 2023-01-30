@@ -1,7 +1,9 @@
 import argparse
 import os
+import random
 
 import mmint_utils
+import numpy as np
 import torch
 import neural_contact_fields.metrics as ncf_metrics
 from neural_contact_fields import config
@@ -50,7 +52,8 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
 
         # Evaluate pointclouds.
         if pred_pointclouds[trial_idx] is not None:
-            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointclouds[trial_idx], gt_pointclouds[trial_idx])
+            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointclouds[trial_idx].unsqueeze(0).float(),
+                                                              gt_pointclouds[trial_idx].unsqueeze(0).float())
 
             metrics_dict.update({
                 "chamfer_distance": chamfer_dist.item(),
@@ -58,8 +61,9 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
 
         # Evaluate contact patches.
         if pred_contact_patches[trial_idx] is not None:
-            patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_contact_patches[trial_idx],
-                                                                    gt_contact_patches[trial_idx])
+            patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
+                pred_contact_patches[trial_idx].unsqueeze(0).float(),
+                gt_contact_patches[trial_idx].unsqueeze(0).float())
 
             metrics_dict.update({
                 "patch_chamfer_distance": patch_chamfer_dist.item(),
@@ -76,10 +80,13 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
                                                                                 threshold=0.5)
             recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels_trial,
                                                                           gt_contact_labels[trial_idx], threshold=0.5)
+            f1 = torchmetrics.functional.classification.binary_f1_score(pred_contact_labels_trial,
+                                                                        gt_contact_labels[trial_idx], threshold=0.5)
             metrics_dict.update({
                 "binary_accuracy": binary_accuracy.item(),
                 "precision": precision.item(),
                 "recall": recall.item(),
+                "f1": f1.item(),
             })
 
         metrics_results.append(metrics_dict)
@@ -100,5 +107,10 @@ if __name__ == '__main__':
     parser.add_argument("--verbose", "-v", dest='verbose', action='store_true', help='Be verbose.')
     parser.set_defaults(verbose=False)
     args = parser.parse_args()
+
+    # Seed for repeatability.
+    torch.manual_seed(10)
+    np.random.seed(10)
+    random.seed(10)
 
     calculate_metrics(args.dataset_cfg, args.mode, args.out_dir, args.verbose)
