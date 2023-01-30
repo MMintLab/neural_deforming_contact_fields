@@ -40,25 +40,25 @@ class GRNet_encoder(torch.nn.Module):
         self.gridding = Gridding(scale=64)
         self.conv1 = torch.nn.Sequential(
             torch.nn.Conv3d(1, 32, kernel_size=4, padding=2),
-            torch.nn.BatchNorm3d(32),
+            # torch.nn.BatchNorm3d(32),
             torch.nn.LeakyReLU(0.2),
             torch.nn.MaxPool3d(kernel_size=2)
         )
         self.conv2 = torch.nn.Sequential(
             torch.nn.Conv3d(32, 64, kernel_size=4, padding=2),
-            torch.nn.BatchNorm3d(64),
+            # torch.nn.BatchNorm3d(64),
             torch.nn.LeakyReLU(0.2),
             torch.nn.MaxPool3d(kernel_size=2)
         )
         self.conv3 = torch.nn.Sequential(
             torch.nn.Conv3d(64, 128, kernel_size=4, padding=2),
-            torch.nn.BatchNorm3d(128),
+            # torch.nn.BatchNorm3d(128),
             torch.nn.LeakyReLU(0.2),
             torch.nn.MaxPool3d(kernel_size=2)
         )
         self.conv4 = torch.nn.Sequential(
             torch.nn.Conv3d(128, 256, kernel_size=4, padding=2),
-            torch.nn.BatchNorm3d(256),
+            # torch.nn.BatchNorm3d(256),
             torch.nn.LeakyReLU(0.2),
             torch.nn.MaxPool3d(kernel_size=2)
         )
@@ -97,22 +97,22 @@ class GRNet_decoder(torch.nn.Module):
         )
         self.dconv7 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(256 + z_deform_size, 128, kernel_size=4, stride=2, bias=False, padding=1),
-            torch.nn.BatchNorm3d(128),
+            # torch.nn.BatchNorm3d(128),
             torch.nn.ReLU()
         )
         self.dconv8 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(128, 64, kernel_size=4, stride=2, bias=False, padding=1),
-            torch.nn.BatchNorm3d(64),
+            # torch.nn.BatchNorm3d(64),
             torch.nn.ReLU()
         )
         self.dconv9 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(64, 32, kernel_size=4, stride=2, bias=False, padding=1),
-            torch.nn.BatchNorm3d(32),
+            # torch.nn.BatchNorm3d(32),
             torch.nn.ReLU()
         )
         self.dconv10 = torch.nn.Sequential(
             torch.nn.ConvTranspose3d(32, 1, kernel_size=4, stride=2, bias=False, padding=1),
-            torch.nn.BatchNorm3d(1),
+            # torch.nn.BatchNorm3d(1),
             torch.nn.ReLU()
         )
         self.gridding_rev = GriddingReverse(scale=64)

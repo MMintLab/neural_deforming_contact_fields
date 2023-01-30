@@ -70,11 +70,14 @@ def load_gt_results(dataset, dataset_dir, n):
     for idx in range(n):
         data_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, "out_%d.pkl.gzip" % idx))
         meshes.append(trimesh.load(os.path.join(dataset_dir, "out_%d_mesh.obj" % idx)))
-        pointclouds.append(None)
-        contact_patches.append(None)
+        pointclouds.append(dataset[idx])
+        contact_patches.append(dataset[idx])
         contact_labels.append(dataset[idx]["surface_in_contact"])
-        points_iou.append(data_dict["test"]["points_iou"])
-        occ_iou.append(data_dict["test"]["occ_tgt"])
+        try:
+            points_iou.append(data_dict["test"]["points_iou"])
+            occ_iou.append(data_dict["test"]["occ_tgt"])
+        except:
+            pass
 
     return meshes, pointclouds, contact_patches, contact_labels, points_iou, occ_iou
 

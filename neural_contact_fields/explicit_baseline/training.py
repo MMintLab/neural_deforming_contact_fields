@@ -37,7 +37,7 @@ class Trainer(BaseTrainer):
     #  Main training loop                                                    #
     ##########################################################################
 
-    def get_loss(self,data_dict):
+    def get_loss(self,data_dict, trial_idx):
         # Pull out relevant data.
         query_points = torch.from_numpy(data_dict["query_point"]).to(self.device).float().unsqueeze(0)
         surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
@@ -69,23 +69,6 @@ class Trainer(BaseTrainer):
         
         ## force contact to be on the surface
         dist1, dist2 = ChamferFunction.apply(pred_dict_['dense_ct_ptcloud'], pred_dict_['dense_df_ptcloud'])
-                
-        pcl = o3d.geometry.PointCloud()
-        pcl.points = o3d.utility.Vector3dVector(surface_coords_.squeeze().detach().cpu().numpy())
-        o3d.io.write_point_cloud('gt_surf.ply',pcl )
-        
-        pcl = o3d.geometry.PointCloud()
-        pcl.points = o3d.utility.Vector3dVector(pred_dict_['dense_df_ptcloud'].squeeze().detach().cpu().numpy())
-        o3d.io.write_point_cloud('ds_surf.ply', pcl)
-        
-        pcl = o3d.geometry.PointCloud()
-        pcl.points = o3d.utility.Vector3dVector(contact_pcd.squeeze().detach().cpu().numpy())
-        o3d.io.write_point_cloud('gt_cnt.ply', pcl)
-        
-        pcl = o3d.geometry.PointCloud()
-        pcl.points = o3d.utility.Vector3dVector(pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy())
-        o3d.io.write_point_cloud('ds_cnt.ply', pcl)
-
 
         loss_df =  dense_loss_df + dense_loss_ct + torch.mean(dist1)
         return loss_df
@@ -95,19 +78,6 @@ class Trainer(BaseTrainer):
 
     def validation(self, validation_dataset: ToolDataset, logger: SummaryWriter, epoch_it: int, it: int):
         return
-        trial_idcs = np.arange(len(validation_dataset))
-        trial_idcs = torch.from_numpy(trial_idcs).to(self.device)
-
-        trial_losses = torch.zeros(len(validation_dataset)).to(self.device)
-        for trial_idx in tqdm(trial_idcs):
-            data = validation_dataset[trial_idx]
-
-            loss = self.get_loss(data)
-            trial_losses[trial_idx] = loss
-
-        # Log average validation loss.
-        val_loss = torch.mean(trial_losses)
-        logger.add_scalar("val_loss", val_loss, it)
 
 
     def train(self, train_dataset: ToolDataset, validation_dataset: ToolDataset):
@@ -160,7 +130,7 @@ class Trainer(BaseTrainer):
 
                 # For this training, we use just a single example per run.
                 batch = train_dataset[trial_idx]
-                loss = self.get_loss(batch)* 1e4
+                loss = self.get_loss(batch, trial_idx)* 1e4
 
                 self.model.zero_grad()
                 loss.backward(retain_graph=True)

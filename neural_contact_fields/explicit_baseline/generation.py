@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
+import numpy as np
+import open3d as o3d
 from neural_contact_fields.generation import BaseGenerator
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from neural_contact_fields.utils.marching_cubes import create_mesh
-
+from neural_contact_fields.explicit_baseline.grnet.extensions.chamfer_dist import ChamferDistance
 
 class LatentSDFDecoder(nn.Module):
     """
@@ -53,42 +55,54 @@ class Generator(BaseGenerator):
         self.generates_pointcloud = True
         self.generates_contact_patch = True  # TODO: Add this once have a better sense for it.
         self.generates_contact_labels = False
+        self.output_length = 10000
 
     def generate_mesh(self, data, meta_data):
         raise Exception("Selected generator does not generate mesh.")
 
-
     def generate_pointcloud(self, data_dict, meta_data):
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
         partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
-
-#         cnt_indicator = gt_in_contact[gt_sdf == 0.0]
-#         cnt_idx = torch.where(gt_in_contact == 1)[1]
-#         contact_pcd = query_points[:, cnt_idx, :]
-
-        # We assume we know the object code.
-    
+        surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
+        
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
         
         # Predict with updated latents.
         pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
 
-        return pred_dict_['sparse_df_cloud'].squeeze().detach().cpu().numpy(), -1
 
+        chamfer_dist = ChamferDistance()
+        gt_idx = np.random.choice ( np.arange(len(surface_coords_[0])), self.output_length , replace = False)
+        est_idx = np.random.choice ( np.arange(len(pred_dict_['dense_df_ptcloud'][0])), self.output_length , replace = False)
+
+        dense_loss_df = chamfer_dist(pred_dict_['dense_df_ptcloud'][:,est_idx,:], surface_coords_[:,gt_idx,:])
+
+        return pred_dict_['dense_df_ptcloud'].squeeze().detach().cpu().numpy(), dense_loss_df.detach().cpu()
+    #
     def generate_contact_patch(self, data_dict, meta_data):
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
         partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
-#         cnt_indicator = gt_in_contact[gt_sdf == 0.0]
-#         cnt_idx = torch.where(gt_in_contact == 1)[1]
-#         contact_pcd = query_points[:, cnt_idx, :]
+        query_points = torch.from_numpy(data_dict["query_point"]).to(self.device).float().unsqueeze(0)
+        gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(self.device).float().unsqueeze(0)
+        cnt_idx = torch.where(gt_in_contact == 1)[1]
+        contact_pcd = query_points[:, cnt_idx, :]
+
 
         # We assume we know the object code.
-    
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
+        
+        
         # Predict with updated latents.
         pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
+        
+                
+        chamfer_dist = ChamferDistance()
+        gt_idx = np.random.choice ( np.arange(len(contact_pcd[0])),  500, replace = False)
+        est_idx = np.random.choice ( np.arange(len(pred_dict_['dense_ct_ptcloud'][0])),  500, replace = False)
 
-        return pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy(), -1
+        dense_loss_df = chamfer_dist( pred_dict_['dense_ct_ptcloud'][:,est_idx,:], contact_pcd[:,gt_idx,:])
+
+        return pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy(), dense_loss_df.detach().cpu()
     
 
     def generate_contact_labels(self, data, meta_data):

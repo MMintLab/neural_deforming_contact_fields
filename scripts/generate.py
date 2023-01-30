@@ -1,12 +1,13 @@
 import os
 
+import open3d as o3d
 import mmint_utils
 from neural_contact_fields import config
 from neural_contact_fields.utils import utils
 from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser, load_model_dataset_from_args
 from neural_contact_fields.utils.results_utils import write_results
 from tqdm import trange
-
+import numpy as np
 
 def generate(model_cfg, model, dataset, device, out_dir):
     model.eval()
@@ -25,6 +26,8 @@ def generate(model_cfg, model, dataset, device, out_dir):
         mmint_utils.make_dir(out_dir)
 
     # Go through dataset and generate!
+    cd_hist = {'pcd': [] , 'pcd_cnt': []} ## TODO : Delete
+    N = 10000 # Length of grnet output
     for idx in trange(len(dataset)):
         data_dict = dataset[idx]
         metadata = {}
@@ -35,17 +38,28 @@ def generate(model_cfg, model, dataset, device, out_dir):
             metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
 
         if generate_pointcloud:
-            pointcloud, _ = generator.generate_pointcloud(data_dict, metadata)
-#             metadata = mmint_utils.combine_dict(metadata, metadata_pc)
+            pointcloud, cd = generator.generate_pointcloud(data_dict, metadata)
+
+            ## TODO : Delete below
+            cd_hist['pcd'].append(cd)
+            pcl = o3d.geometry.PointCloud()
+            pcl.points = o3d.utility.Vector3dVector(pointcloud)
+            o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
 
         if generate_contact_patch:
-            contact_patch, _ = generator.generate_contact_patch(data_dict, metadata)
-#             metadata = mmint_utils.combine_dict(metadata, metadata_cp)
+            contact_patch, cd = generator.generate_contact_patch(data_dict, metadata)
+
+            ## TODO : Delete below
+            cd_hist['pcd_cnt'].append(cd)
+            pcl = o3d.geometry.PointCloud()
+            pcl.points = o3d.utility.Vector3dVector(contact_patch)
+            o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
 
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
-
         write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
+
+    print( np.mean( cd_hist['pcd']) , np.mean( cd_hist['pcd_cnt']) ) ## TODO : Delete
 
 
 if __name__ == '__main__':
