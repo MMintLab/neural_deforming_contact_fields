@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 
 import mmint_utils
 import numpy as np
@@ -122,6 +123,11 @@ if __name__ == '__main__':
     parser.add_argument("--vis", "-v", action='store_true', help="Visualize results.")
     parser.set_defaults(vis=False)
     args = parser.parse_args()
+
+    # Seed for repeatability.
+    torch.manual_seed(10)
+    np.random.seed(10)
+    random.seed(10)
 
     model_cfg_, model_, val_dataset_, device_, load_dict_ = load_model_and_dataset(
         args.config, dataset_config=args.val_dataset_config, dataset_mode="val", model_file=args.model_file

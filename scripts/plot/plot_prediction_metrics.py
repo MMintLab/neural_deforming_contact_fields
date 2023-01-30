@@ -29,15 +29,18 @@ base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
 
 titles = [
     "32", "32 (big)", "64", "64 (big)", "16", "16 (big)", "8", "8 (big)", "no wrench", "no wrench (big)",
-    "forward deform"
+    "forward deform", "GR-Net"
 ]
 test_dirs = [
     "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4", "wrench_v5", "wrench_v6", "wrench_v7", "wrench_v8",
-    "no_wrench_v1", "no_wrench_v2", "forward_def_v1"
+    "no_wrench_v1", "no_wrench_v2", "forward_def_v1", "b1_test_final"
 ]
 
-out_fn = "out/experiments/wrench_v2_tests/partial_pointcloud/out.csv"
+out_fn = os.path.join(base_test_dir, "out.csv")
 csv_str = ""
+
+csv_str += "Config, Run, Geometry CD, Std., IoU, Std., Patch CD, Std., Binary Acc., Std., Precision, Std., Recall," \
+           " Std., F1, Std.\n"
 
 for title, test_dir in zip(titles, test_dirs):
     metrics_fn = os.path.join(base_test_dir, test_dir, "metrics.pkl.gzip")
@@ -45,26 +48,26 @@ for title, test_dir in zip(titles, test_dirs):
 
     num_examples = len(metrics_dict)
 
+    # Both of these should be defined for all models.
     chamfer_dists = [example["chamfer_distance"] for example in metrics_dict]
-    binary_accuracies = [example["binary_accuracy"] for example in metrics_dict]
-    precisions = [example["precision"] for example in metrics_dict]
-    recalls = [example["recall"] for example in metrics_dict]
-    ious = [example["iou"] for example in metrics_dict]
+    patch_chamfer_dists = [example["patch_chamfer_distance"] for example in metrics_dict]
 
-    # print(
-    #     "Title: %s. Binary Accuracy: %f (%f). Chamfer Dist: %f (%f). IoU: %f (%f). Precision: %f (%f). Recall: %f (%f)."
-    #     % (title, np.mean(binary_accuracies), np.std(binary_accuracies),
-    #        np.mean(chamfer_dists), np.std(chamfer_dists),
-    #        np.mean(ious), np.std(ious),
-    #        np.mean(precisions), np.std(precisions),
-    #        np.mean(recalls), np.std(recalls)
-    #        ))
-    csv_str += "%s, %f (%f), %f (%f), %f (%f), %f (%f), %f (%f)\n" % \
-               (title, np.mean(binary_accuracies), np.std(binary_accuracies),
+    # The following are specific to certain models.
+    binary_accuracies = [example.get("binary_accuracy", -1.0) for example in metrics_dict]
+    precisions = [example.get("precision", -1.0) for example in metrics_dict]
+    recalls = [example.get("recall", -1.0) for example in metrics_dict]
+    f1 = [example.get("f1", -1.0) for example in metrics_dict]
+    ious = [example.get("iou", -1.0) for example in metrics_dict]
+
+    csv_str += "%s, %s, %f, %f, %f,%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f,\n" % \
+               (test_dir, title,
                 np.mean(chamfer_dists), np.std(chamfer_dists),
                 np.mean(ious), np.std(ious),
+                np.mean(patch_chamfer_dists), np.std(patch_chamfer_dists),
+                np.mean(binary_accuracies), np.std(binary_accuracies),
                 np.mean(precisions), np.std(precisions),
-                np.mean(recalls), np.std(recalls)
+                np.mean(recalls), np.std(recalls),
+                np.mean(f1), np.std(f1),
                 )
 
 with open(out_fn, "w") as f:
