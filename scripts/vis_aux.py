@@ -1,7 +1,8 @@
+import numpy as np
 import yaml
 from neural_contact_fields import config
 from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser, load_model_dataset_from_args
-from tqdm import trange
+from tqdm import trange, tqdm
 
 
 def vis_aux(model_cfg, model, dataset, device, mode, vis_args):
@@ -11,8 +12,11 @@ def vis_aux(model_cfg, model, dataset, device, mode, vis_args):
     # Load visualizer.
     visualizer = config.get_visualizer(model_cfg, model, device, vis_args)
 
+    dataset_indices = np.arange(len(dataset))
+    np.random.shuffle(dataset_indices)
+
     # Go through dataset and generate!
-    for idx in trange(len(dataset)):
+    for idx in tqdm(dataset_indices):
         data_dict = dataset[idx]
 
         if vis_pretrain:
