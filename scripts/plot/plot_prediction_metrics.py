@@ -4,7 +4,8 @@ import pdb
 import mmint_utils
 import numpy as np
 
-base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
+# base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
+base_test_dir = "out/experiments/terrain_tests/partial_pointcloud"
 
 # test_dirs = ["wrench_v4", "wrench_v1", "wrench_v2"]
 # titles = ["l=3", "l=6", "l=12"]
@@ -27,13 +28,20 @@ base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
 #     "wrench_v8", "wrench_v9", "wrench_v10", "no_wrench_v1", "mlp_v1"
 # ]
 
+# titles = [
+#     "32", "32 (big)", "64", "64 (big)", "16", "16 (big)", "8", "8 (big)", "no wrench", "no wrench (big)",
+#     "forward deform", "GR-Net"
+# ]
+# test_dirs = [
+#     "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4", "wrench_v5", "wrench_v6", "wrench_v7", "wrench_v8",
+#     "no_wrench_v1", "no_wrench_v2", "forward_def_v1", "b1_test_final"
+# ]
+
 titles = [
-    "32", "32 (big)", "64", "64 (big)", "16", "16 (big)", "8", "8 (big)", "no wrench", "no wrench (big)",
-    "forward deform", "GR-Net"
+    "8", "16", "32", "64"
 ]
 test_dirs = [
-    "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4", "wrench_v5", "wrench_v6", "wrench_v7", "wrench_v8",
-    "no_wrench_v1", "no_wrench_v2", "forward_def_v1", "b1_test_final"
+    "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4"
 ]
 
 out_fn = os.path.join(base_test_dir, "out.csv")
