@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from neural_contact_fields.neural_contact_field.generation import surface_loss_fn
+from neural_contact_fields.neural_contact_field.generation import get_surface_loss_fn
 from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 
@@ -14,6 +14,8 @@ class Visualizer(BaseVisualizer):
     def __init__(self, cfg: dict, model: nn.Module, device: torch.device = None, visualizer_args: dict = None):
         super().__init__(cfg, model, device, visualizer_args)
         self.train_infer_latent = self.visualizer_args.get("train_infer_latent", True)
+        self.embed_weight = self.visualizer_args.get("embed_weight", 0.0)
+        self.def_weight = self.visualizer_args.get("def_weight", 0.0)
 
     def visualize_pretrain(self, data: dict):
         """
@@ -80,7 +82,9 @@ class Visualizer(BaseVisualizer):
                                                         torch.from_numpy(trial_index).to(self.device))
         else:
             z_object = self.model.encode_object(torch.from_numpy(object_index).to(self.device))
-            z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, self.model.z_deform_size, 1, data,
+            z_deform_, _ = inference_by_optimization(self.model,
+                                                     get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                     self.model.z_deform_size, 1, data,
                                                      device=self.device, verbose=True)
             z_trial = z_deform_.weight
         z_wrench = self.model.encode_wrench(wrist_wrench)
@@ -97,7 +101,8 @@ class Visualizer(BaseVisualizer):
 
         # Encode object idx/trial idx.
         z_object = self.model.encode_object(torch.from_numpy(object_index).to(self.device))
-        z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, self.model.z_deform_size, 1, data,
+        z_deform_, _ = inference_by_optimization(self.model, get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                 self.model.z_deform_size, 1, data,
                                                  device=self.device, verbose=True)
         z_trial = z_deform_.weight
         z_wrench = self.model.encode_wrench(wrist_wrench)

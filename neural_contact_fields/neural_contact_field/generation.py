@@ -5,6 +5,7 @@ from neural_contact_fields.neural_contact_field.models.neural_contact_field impo
 from neural_contact_fields.utils import mesh_utils
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from neural_contact_fields.utils.marching_cubes import create_mesh
+import neural_contact_fields.loss as ncf_losses
 
 
 class LatentSDFDecoder(nn.Module):
@@ -25,23 +26,35 @@ class LatentSDFDecoder(nn.Module):
         return out_dict["sdf"].squeeze(0)
 
 
-def surface_loss_fn(model, latent, data_dict, device):
-    # Pull out relevant data.
-    object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
-    surface_coords_ = torch.from_numpy(data_dict["partial_pointcloud"]).to(device).float().unsqueeze(0)
-    wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
+def get_surface_loss_fn(embed_weight: float, def_weight: float):
+    def surface_loss_fn(model, latent, data_dict, device):
+        # Pull out relevant data.
+        object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
+        surface_coords_ = torch.from_numpy(data_dict["partial_pointcloud"]).to(device).float().unsqueeze(0)
+        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
-    # We assume we know the object code.
-    z_object_ = model.encode_object(object_idx_)
-    z_wrench_ = model.encode_wrench(wrist_wrench_)
+        # We assume we know the object code.
+        z_object_ = model.encode_object(object_idx_)
+        z_wrench_ = model.encode_wrench(wrist_wrench_)
 
-    # Predict with updated latents.
-    pred_dict_ = model.forward(surface_coords_, latent, z_object_, z_wrench_)
+        # Predict with updated latents.
+        pred_dict_ = model.forward(surface_coords_, latent, z_object_, z_wrench_)
 
-    # Loss: all points on surface should have SDF = 0.0.
-    loss = torch.mean(torch.abs(pred_dict_["sdf"]))
+        # loss = 0.0
 
-    return loss
+        # Loss: all points on surface should have SDF = 0.0.
+        sdf_loss = torch.mean(torch.abs(pred_dict_["sdf"]))
+
+        # Latent embedding loss: shouldn't drift too far from data.
+        embedding_loss = ncf_losses.l2_loss(pred_dict_["embedding"], squared=True)
+
+        # Prefer smaller deformations.
+        def_loss = ncf_losses.l2_loss(pred_dict_["deform"], squared=True)
+
+        loss = sdf_loss + (embed_weight * embedding_loss) + (def_weight * def_loss)
+        return loss
+
+    return surface_loss_fn
 
 
 class Generator(BaseGenerator):
@@ -56,6 +69,8 @@ class Generator(BaseGenerator):
         self.generates_contact_labels = False
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
+        self.embed_weight = generation_cfg.get("embed_weight", 0.0)
+        self.def_weight = generation_cfg.get("def_weight", 0.0)
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
@@ -64,7 +79,9 @@ class Generator(BaseGenerator):
         else:
             # Generate deformation code latent.
             z_deform_size = self.model.z_deform_size
-            z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, z_deform_size, 1, data,
+            z_deform_, _ = inference_by_optimization(self.model,
+                                                     get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                     z_deform_size, 1, data,
                                                      device=self.device, verbose=False)
             latent = z_deform_.weight
 
@@ -123,7 +140,9 @@ class Generator(BaseGenerator):
         else:
             # Generate deformation code latent.
             z_deform_size = self.model.z_deform_size
-            z_deform_, _ = inference_by_optimization(self.model, surface_loss_fn, z_deform_size, 1, data,
+            z_deform_, _ = inference_by_optimization(self.model,
+                                                     get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                     z_deform_size, 1, data,
                                                      device=self.device, verbose=False)
             latent = z_deform_.weight
 
