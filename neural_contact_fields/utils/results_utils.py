@@ -76,17 +76,26 @@ def load_gt_results(dataset, dataset_dir, n, device=None):
         pointclouds.append(torch.from_numpy(dataset_dict["surface_points"]).to(device))
 
         # Load contact patch.
-        query_points = torch.from_numpy(dataset_dict["query_point"]).to(device).float()
-        gt_in_contact = torch.from_numpy(dataset_dict["in_contact"]).to(device).float()
-        cnt_idx = torch.where(gt_in_contact == 1)[0]
-        contact_pcd = query_points[cnt_idx, :]
-        contact_patches.append(contact_pcd)
+        contact_patches.append(torch.from_numpy(dataset_dict["contact_patch"]).to(device))
 
         contact_labels.append(torch.from_numpy(dataset_dict["surface_in_contact"]).to(device).int())
         points_iou.append(torch.from_numpy(data_dict["test"]["points_iou"]).to(device))
         occ_iou.append(torch.from_numpy(data_dict["test"]["occ_tgt"]).to(device).int())
 
     return meshes, pointclouds, contact_patches, contact_labels, points_iou, occ_iou
+
+
+def load_gt_results_real(dataset, dataset_dir, n, device=None):
+    contact_patches = []
+
+    # Load ground truth meshes and surface contact labels.
+    for idx in range(n):
+        dataset_dict = dataset[idx]
+
+        # Load contact patch.
+        query_points = torch.from_numpy(dataset_dict["contact_patch"]).to(device).float()
+
+    return contact_patches
 
 
 def print_results(metrics_dict, title):

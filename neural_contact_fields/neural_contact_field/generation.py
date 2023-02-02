@@ -53,7 +53,7 @@ class Generator(BaseGenerator):
         self.generates_mesh = True
         self.generates_pointcloud = False
         self.generates_contact_patch = True
-        self.generates_contact_labels = True
+        self.generates_contact_labels = False
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
 

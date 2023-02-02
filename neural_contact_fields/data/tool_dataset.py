@@ -102,6 +102,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "surface_points": self.surface_points[index],
             "surface_in_contact": self.surface_in_contact[index],
             "partial_pointcloud": self.partial_pointcloud[index],
+            "contact_patch": self.contact_patch[index],
         }
 
         return data_dict
