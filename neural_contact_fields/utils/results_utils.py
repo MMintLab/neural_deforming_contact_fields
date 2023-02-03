@@ -93,7 +93,8 @@ def load_gt_results_real(dataset, dataset_dir, n, device=None):
         dataset_dict = dataset[idx]
 
         # Load contact patch.
-        query_points = torch.from_numpy(dataset_dict["contact_patch"]).to(device).float()
+        contact_patch = torch.from_numpy(dataset_dict["contact_patch"]).to(device).float()
+        contact_patches.append(contact_patch)
 
     return contact_patches
 
