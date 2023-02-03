@@ -97,8 +97,12 @@ class Generator(BaseGenerator):
         pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
                 
         chamfer_dist = ChamferDistance()
-        gt_idx = np.random.choice ( np.arange(len(contact_pcd[0])),  500, replace = False)
-        est_idx = np.random.choice ( np.arange(len(pred_dict_['dense_ct_ptcloud'][0])),  500, replace = False)
+        N = 300
+        rep = False
+        est_idx = np.random.choice ( np.arange(len(pred_dict_['dense_ct_ptcloud'][0])),  300, replace = rep)
+        if len(contact_pcd[0]) < N:
+            rep = True
+        gt_idx = np.random.choice ( np.arange(len(contact_pcd[0])),  300, replace = rep)
 
         dense_loss_df = chamfer_dist( pred_dict_['dense_ct_ptcloud'][:,est_idx,:], contact_pcd[:,gt_idx,:])
 
@@ -110,17 +114,14 @@ class Generator(BaseGenerator):
     def generate_mesh_from_pointcloud(self, pcd : np.ndarray):
         pcd_v = vedo.pointcloud.Points(pcd)
         pcd_v= pcd_v.clean()
-        pcd_v = pcd_v.remove_outliers(0.005,  neighbors= 20)
-        # pcd_v = pcd_v.compute_connections(0.01, mode = 2)
 
-        mesh = pcd_v.reconstruct_surface(radius = 0.015)
+        mesh = pcd_v.reconstruct_surface(radius = 0.005)
         mesh = mesh.clean()
-        plt = vedo.Plotter(shape=(1, 2))
-        plt.at(0).show(pcd_v)
-        plt.at(1).show(mesh)
-        plt.interactive()
+        # plt = vedo.Plotter(shape=(1, 2))
+        # plt.at(0).show(pcd_v)
+        # plt.at(1).show(mesh)
+        # plt.interactive()
 
-        breakpoint()
         mesh_t = trimesh.Trimesh(vertices=mesh.points(), faces=mesh.faces())
         return mesh_t
      

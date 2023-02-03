@@ -24,7 +24,7 @@ def get_trainer(cfg, model, device=None):
     return trainer
 
 
-def get_generator(cfg, model, device=None):
+def get_generator(cfg, model, generation_cfg, device=None):
     generator = Generator(cfg, model, device)
     return generator
 
