@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import neural_contact_fields.metrics as ncf_metrics
 from neural_contact_fields import config
+from neural_contact_fields.utils import utils
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, print_results
 from tqdm import trange
 import torchmetrics
@@ -46,27 +47,33 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
                                        device=device,
                                        vis=verbose)
             metrics_dict.update({
-                "chamfer_distance": chamfer_dist.item(),
+                "chamfer_distance": chamfer_dist.item() * 1e6,
                 "iou": iou.item(),
             })
 
         # Evaluate pointclouds.
         if pred_pointclouds[trial_idx] is not None:
-            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointclouds[trial_idx].unsqueeze(0).float(),
-                                                              gt_pointclouds[trial_idx].unsqueeze(0).float())
+            pred_pc = utils.sample_pointcloud(pred_pointclouds[trial_idx], 10000)
+            gt_pc = utils.sample_pointcloud(gt_pointclouds[trial_idx], 10000)
+            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
+                                                              gt_pc.unsqueeze(0).float())
 
             metrics_dict.update({
-                "chamfer_distance": chamfer_dist.item(),
+                "chamfer_distance": chamfer_dist.item() * 1e6,
             })
 
         # Evaluate contact patches.
         if pred_contact_patches[trial_idx] is not None:
+            # Sample each to 300 - makes evaluation of CD more fair.
+            pred_pc = utils.sample_pointcloud(pred_contact_patches[trial_idx], 300)
+            # pred_pc = pred_contact_patches[trial_idx]
+            gt_pc = utils.sample_pointcloud(gt_contact_patches[trial_idx], 300)
             patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
-                pred_contact_patches[trial_idx].unsqueeze(0).float(),
-                gt_contact_patches[trial_idx].unsqueeze(0).float())
+                pred_pc.unsqueeze(0).float(),
+                gt_pc.unsqueeze(0).float())
 
             metrics_dict.update({
-                "patch_chamfer_distance": patch_chamfer_dist.item(),
+                "patch_chamfer_distance": patch_chamfer_dist.item() * 1e6,
             })
 
         # Evaluate binary contact labels.

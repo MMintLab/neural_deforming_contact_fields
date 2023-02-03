@@ -4,7 +4,7 @@ import os
 import mmint_utils
 import numpy as np
 import trimesh
-from neural_contact_fields.utils import mesh_utils, vedo_utils
+from neural_contact_fields.utils import mesh_utils, vedo_utils, utils
 from neural_contact_fields.utils.model_utils import load_dataset_from_config
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results
 from vedo import Plotter, Mesh, Points, LegendBox
@@ -90,8 +90,9 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", partial: boo
 
         vis_mesh_prediction(pc,
                             pred_meshes[trial_idx], gt_meshes[trial_idx],
-                            pred_pointclouds[trial_idx], gt_pointclouds[trial_idx],
-                            pred_contact_patches[trial_idx], gt_contact_patches[trial_idx],
+                            pred_pointclouds[trial_idx], utils.sample_pointcloud(gt_pointclouds[trial_idx], 10000),
+                            utils.sample_pointcloud(pred_contact_patches[trial_idx], 300),
+                            utils.sample_pointcloud(gt_contact_patches[trial_idx], 300),
                             trial_dict["surface_points"], surface_label, trial_dict["surface_in_contact"])
 
 

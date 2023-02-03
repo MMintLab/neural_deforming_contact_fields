@@ -16,6 +16,8 @@ import pytorch3d.loss
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str):
     device = torch.device("cuda:0")
 
+    raise Exception("Setup sampling properly!")
+
     # Load dataset.
     dataset_config = mmint_utils.load_cfg(dataset_cfg_fn)
     dataset = config.get_dataset(dataset_mode, dataset_config)

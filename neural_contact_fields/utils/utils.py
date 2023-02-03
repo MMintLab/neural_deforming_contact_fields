@@ -38,6 +38,17 @@ def transform_pointcloud(pointcloud, transform):
         return np.asarray(pointcloud_pcd.points)
 
 
+def sample_pointcloud(pointcloud, n):
+    """
+    Draw n samples from given pointcloud.
+    """
+    pointcloud_size = len(pointcloud)
+    indices = np.arange(pointcloud_size)
+    sample_indices = np.random.choice(indices, size=n)
+
+    return pointcloud[sample_indices]
+
+
 def save_pointcloud(pointcloud, fn: str):
     pointcloud_pcd: o3d.geometry.PointCloud = pointcloud_to_o3d(pointcloud)
     o3d.io.write_point_cloud(fn, pointcloud_pcd)

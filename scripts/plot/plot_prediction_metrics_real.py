@@ -5,7 +5,7 @@ import mmint_utils
 import numpy as np
 
 # base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
-base_test_dir = "out/experiments/real_world_test/test_loss_weights"
+base_test_dir = "out/experiments/real_world_test/test_loss_weights_sim"
 
 # test_dirs = ["wrench_v4", "wrench_v1", "wrench_v2"]
 # titles = ["l=3", "l=6", "l=12"]

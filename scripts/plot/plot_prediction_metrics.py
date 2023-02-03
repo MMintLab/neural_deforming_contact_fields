@@ -5,7 +5,7 @@ import mmint_utils
 import numpy as np
 
 # base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
-base_test_dir = "out/experiments/terrain_tests/partial_pointcloud"
+base_test_dir = "out/experiments/terrain_tests_v2/partial_pointcloud"
 
 # test_dirs = ["wrench_v4", "wrench_v1", "wrench_v2"]
 # titles = ["l=3", "l=6", "l=12"]
@@ -38,10 +38,16 @@ base_test_dir = "out/experiments/terrain_tests/partial_pointcloud"
 # ]
 
 titles = [
-    "8", "16", "32", "64"
+    # "8", "16",
+    # "32", "64",
+    "16",
+    "Baseline"
 ]
 test_dirs = [
-    "wrench_v1", "wrench_v2", "wrench_v3", "wrench_v4"
+    # "wrench_v1", "wrench_v2",
+    # "wrench_v3", "wrench_v4",
+    "wrench_v2",
+    "baseline"
 ]
 
 out_fn = os.path.join(base_test_dir, "out.csv")
