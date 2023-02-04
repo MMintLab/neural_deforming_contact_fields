@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from neural_contact_fields.generation import BaseGenerator
@@ -69,8 +70,9 @@ class Generator(BaseGenerator):
         self.generates_contact_labels = False
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
-        self.embed_weight = generation_cfg.get("embed_weight", 0.0)
+        self.embed_weight = generation_cfg.get("embed_weight", 1.0)
         self.def_weight = generation_cfg.get("def_weight", 0.0)
+        self.contact_patch_size = generation_cfg.get("contact_patch_size", 10000)
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
@@ -117,20 +119,25 @@ class Generator(BaseGenerator):
         z_object = self.model.encode_object(object_idx_)
         z_wrench = self.model.encode_wrench(wrist_wrench_)
 
-        # Predict which surface points of the mesh are in contact.
-        surface_points = torch.from_numpy(mesh.vertices).float().to(self.device).unsqueeze(0)
-        surface_pred_dict = self.model.forward(surface_points, latent, z_object, z_wrench)
+        # We sample contact patch by sampling points on the surface of the mesh and finding any on contact until desired
+        # number is met.
+        contact_patch = []
+        num_contacts_found = 0
 
-        # Pull out binary surface predictions.
-        surface_in_contact_logits = surface_pred_dict["in_contact_logits"].squeeze(0)
-        surface_in_contact = surface_pred_dict["in_contact"].squeeze(0)
-        surface_binary = surface_in_contact > self.contact_threshold
-        surface_binary_np = surface_binary.cpu().numpy()
+        while num_contacts_found < self.contact_patch_size:
+            surface_point_samples_np = mesh.sample(100000)
+            surface_point_samples = torch.from_numpy(surface_point_samples_np).float().to(self.device).unsqueeze(0)
+            surface_pred_dict = self.model.forward(surface_point_samples, latent, z_object, z_wrench)
+            surface_in_contact = surface_pred_dict["in_contact"].squeeze(0)
+            surface_binary = surface_in_contact > self.contact_threshold
+            surface_binary_np = surface_binary.cpu().numpy()
 
-        # Surface from surface accordingly.
-        _, pred_contact_triangles, _ = mesh_utils.find_in_contact_triangles(mesh, mesh.vertices[surface_binary_np])
-        contact_patch = mesh_utils.sample_surface_points_in_contact(mesh, pred_contact_triangles,
-                                                                    n=10000)  # TODO: Parameterize
+            contact_patch.append(surface_point_samples_np[surface_binary_np])
+            num_contacts_found += surface_binary_np.sum()
+        contact_patch = np.concatenate(contact_patch, axis=0)
+
+        # We may have estimated more than desired, so we select down.
+        contact_patch = contact_patch[:self.contact_patch_size]
 
         return contact_patch, {}
 
