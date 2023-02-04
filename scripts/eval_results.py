@@ -14,8 +14,8 @@ import torchmetrics
 import pytorch3d.loss
 
 
-def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False):
-    # TODO: Add flag to decide whether to subsample from pointcloud.
+def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False,
+                      sample: bool = False):
     device = torch.device("cuda:0")
 
     # Load dataset.
@@ -54,7 +54,8 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
 
         # Evaluate pointclouds.
         if pred_pointclouds[trial_idx] is not None:
-            pred_pc = utils.sample_pointcloud(pred_pointclouds[trial_idx], 10000)
+            if sample:
+                pred_pc = utils.sample_pointcloud(pred_pointclouds[trial_idx], 10000)
             gt_pc = utils.sample_pointcloud(gt_pointclouds[trial_idx], 10000)
             chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
                                                               gt_pc.unsqueeze(0).float())
@@ -66,8 +67,10 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
         # Evaluate contact patches.
         if pred_contact_patches[trial_idx] is not None:
             # Sample each to 300 - makes evaluation of CD more fair.
-            pred_pc = utils.sample_pointcloud(pred_contact_patches[trial_idx], 300)
-            # pred_pc = pred_contact_patches[trial_idx]
+            if sample:
+                pred_pc = utils.sample_pointcloud(pred_contact_patches[trial_idx], 300)
+            else:
+                pred_pc = pred_contact_patches[trial_idx]
             gt_pc = utils.sample_pointcloud(gt_contact_patches[trial_idx], 300)
             patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
                 pred_pc.unsqueeze(0).float(),
@@ -114,6 +117,9 @@ if __name__ == '__main__':
     parser.add_argument("--mode", "-m", type=str, default="test", help="Dataset mode [train, val, test]")
     parser.add_argument("--verbose", "-v", dest='verbose', action='store_true', help='Be verbose.')
     parser.set_defaults(verbose=False)
+    parser.add_argument("--sample", "-s", dest='sample', action='store_true',
+                        help='Sample pointclouds to set number before evaluation.')
+    parser.set_defaults(sample=False)
     args = parser.parse_args()
 
     # Seed for repeatability.
@@ -121,4 +127,4 @@ if __name__ == '__main__':
     np.random.seed(10)
     random.seed(10)
 
-    calculate_metrics(args.dataset_cfg, args.mode, args.out_dir, args.verbose)
+    calculate_metrics(args.dataset_cfg, args.mode, args.out_dir, args.verbose, args.sample)
