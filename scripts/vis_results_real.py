@@ -1,11 +1,14 @@
 import argparse
 import os
 import pdb
+import random
 
 import mmint_utils
 import numpy as np
+import pytorch3d.loss
+import torch
 import trimesh
-from neural_contact_fields.utils import mesh_utils, vedo_utils
+from neural_contact_fields.utils import mesh_utils, vedo_utils, utils
 from neural_contact_fields.utils.model_utils import load_dataset_from_config
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, load_gt_results_real
 from vedo import Plotter, Mesh, Points, LegendBox
@@ -61,6 +64,14 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
         # Load the conditioning pointcloud used.
         pc = trial_dict["partial_pointcloud"]
 
+        pred_pc = pred_contact_patches[trial_idx]
+        gt_pc = utils.sample_pointcloud(gt_contact_patches[trial_idx], 300)
+
+        patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
+            pred_pc.unsqueeze(0).float(),
+            gt_pc.unsqueeze(0).float())
+        print(patch_chamfer_dist.item() * 1e6)
+
         vis_mesh_prediction_real(pc, pred_meshes[trial_idx], pred_pointclouds[trial_idx],
                                  pred_contact_patches[trial_idx], gt_contact_patches[trial_idx])
 
@@ -71,5 +82,9 @@ if __name__ == '__main__':
     parser.add_argument("gen_dir", type=str, help="Generation directory.")
     parser.add_argument("--mode", "-m", type=str, default="test", help="Dataset mode [train, val, test].")
     args = parser.parse_args()
+
+    torch.manual_seed(10)
+    np.random.seed(10)
+    random.seed(10)
 
     vis_results(args.dataset_config, args.gen_dir, args.mode)

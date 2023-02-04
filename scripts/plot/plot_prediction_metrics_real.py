@@ -5,7 +5,8 @@ import mmint_utils
 import numpy as np
 
 # base_test_dir = "out/experiments/wrench_v2_tests/partial_pointcloud"
-base_test_dir = "out/experiments/real_world_test/test_loss_weights_sim"
+# base_test_dir = "out/experiments/real_world_test/test_loss_weights_sim"
+base_test_dir = "out/experiments/real_terrain_test/partial_pointcloud"
 
 # test_dirs = ["wrench_v4", "wrench_v1", "wrench_v2"]
 # titles = ["l=3", "l=6", "l=12"]
@@ -37,11 +38,18 @@ base_test_dir = "out/experiments/real_world_test/test_loss_weights_sim"
 #     "no_wrench_v1", "no_wrench_v2", "forward_def_v1", "b1_test_final"
 # ]
 
+# titles = [
+#     "W=0.01", "W=0.1", "W=1.0", "W=10.0", "W=100.0", "W=1000.0"
+# ]
+# test_dirs = [
+#     "exp_v1", "exp_v2", "exp_v3", "exp_v4", "exp_v5", "exp_v6"
+# ]
+
 titles = [
-    "W=0.01", "W=0.1", "W=1.0", "W=10.0", "W=100.0", "W=1000.0"
+    "Ours (l=16)", "Baseline"
 ]
 test_dirs = [
-    "exp_v1", "exp_v2", "exp_v3", "exp_v4", "exp_v5", "exp_v6"
+    "wrench_v2", "baseline"
 ]
 
 out_fn = os.path.join(base_test_dir, "out.csv")
@@ -57,6 +65,7 @@ for title, test_dir in zip(titles, test_dirs):
 
     # Both of these should be defined for all models.
     patch_chamfer_dists = [example["patch_chamfer_distance"] for example in metrics_dict]
+    print(patch_chamfer_dists)
 
     csv_str += "%s, %s, %f, %f,\n" % \
                (test_dir, title,

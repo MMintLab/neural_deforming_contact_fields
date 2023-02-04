@@ -129,7 +129,8 @@ class Generator(BaseGenerator):
 
         # Surface from surface accordingly.
         _, pred_contact_triangles, _ = mesh_utils.find_in_contact_triangles(mesh, mesh.vertices[surface_binary_np])
-        contact_patch = mesh_utils.sample_surface_points_in_contact(mesh, pred_contact_triangles, n=300)
+        contact_patch = mesh_utils.sample_surface_points_in_contact(mesh, pred_contact_triangles,
+                                                                    n=10000)  # TODO: Parameterize
 
         return contact_patch, {}
 

@@ -15,6 +15,7 @@ import pytorch3d.loss
 
 
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False):
+    # TODO: Add flag to decide whether to subsample from pointcloud.
     device = torch.device("cuda:0")
 
     # Load dataset.

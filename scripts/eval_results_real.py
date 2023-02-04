@@ -7,16 +7,15 @@ import numpy as np
 import torch
 import neural_contact_fields.metrics as ncf_metrics
 from neural_contact_fields import config
+from neural_contact_fields.utils import utils
 from neural_contact_fields.utils.results_utils import load_gt_results_real, print_results, load_pred_results
 from tqdm import trange
 import torchmetrics
 import pytorch3d.loss
 
 
-def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str):
+def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, sample: bool):
     device = torch.device("cuda:0")
-
-    raise Exception("Setup sampling properly!")
 
     # Load dataset.
     dataset_config = mmint_utils.load_cfg(dataset_cfg_fn)
@@ -37,12 +36,19 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str):
 
         # Evaluate contact patches.
         if pred_contact_patches[trial_idx] is not None:
+            # Sample each to 300 - makes evaluation of CD more fair.
+            if sample:
+                pred_pc = utils.sample_pointcloud(pred_contact_patches[trial_idx], 300)
+            else:
+                pred_pc = pred_contact_patches[trial_idx]
+            gt_pc = utils.sample_pointcloud(gt_contact_patches[trial_idx], 300)
+
             patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
-                pred_contact_patches[trial_idx].unsqueeze(0).float(),
-                gt_contact_patches[trial_idx].unsqueeze(0).float())
+                pred_pc.unsqueeze(0).float(),
+                gt_pc.unsqueeze(0).float())
 
             metrics_dict.update({
-                "patch_chamfer_distance": patch_chamfer_dist.item(),
+                "patch_chamfer_distance": patch_chamfer_dist.item() * 1e6,
             })
 
         metrics_results.append(metrics_dict)
@@ -57,6 +63,8 @@ if __name__ == '__main__':
     parser.add_argument("dataset_cfg", type=str, help="Dataset configuration.")
     parser.add_argument("out_dir", type=str, help="Out directory where results are written to.")
     parser.add_argument("--mode", "-m", type=str, default="test", help="Dataset mode [train, val, test]")
+    parser.add_argument('-s', '--sample', dest='sample', action='store_true', help='Downsample pointclouds.')
+    parser.set_defaults(sample=False)
     args = parser.parse_args()
 
     # Seed for repeatability.
@@ -64,4 +72,4 @@ if __name__ == '__main__':
     np.random.seed(10)
     random.seed(10)
 
-    calculate_metrics(args.dataset_cfg, args.mode, args.out_dir)
+    calculate_metrics(args.dataset_cfg, args.mode, args.out_dir, args.sample)
