@@ -12,7 +12,7 @@ from vedo import Plotter, Mesh, Points, LegendBox
 
 dataset_cfg = "cfg/dataset/sim_terrain_test_v2.yaml"
 mode = "test"
-base_test_dir = "out/experiments/terrain_tests_v2/partial_pointcloud"
+base_test_dir = "out/experiments/terrain_tests_v3/partial_pointcloud"
 
 titles = [
     "Ours",
@@ -41,8 +41,7 @@ for title, test_dir in zip(titles, test_dirs):
     pred_meshes_all.append(pred_meshes)
 
 # Build plots.
-# for index in trange(num_trials):
-for index in [47]:
+for index in trange(num_trials):
     trial_dict = dataset[index]
     pc = trial_dict["partial_pointcloud"]
 

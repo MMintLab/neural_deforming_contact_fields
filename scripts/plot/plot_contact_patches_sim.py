@@ -12,7 +12,7 @@ from vedo import Plotter, Mesh, Points, LegendBox
 
 dataset_cfg = "cfg/dataset/sim_terrain_test_v2.yaml"
 mode = "test"
-base_test_dir = "out/experiments/terrain_tests_v2/partial_pointcloud_vis/"
+base_test_dir = "out/experiments/terrain_tests_v3/partial_pointcloud/"
 
 titles = [
     "Ours",
