@@ -15,16 +15,21 @@ from tqdm import trange
 from vedo import Plotter, Mesh, Points, LegendBox
 
 
+def vis_inputs(partial_pointcloud: np.ndarray, gt_contact_patch: np.ndarray):
+    plt = Plotter(shape=(1, 1))
+    plt.at(0).show(Points(partial_pointcloud), Points(gt_contact_patch), vedo_utils.draw_origin())
+    plt.interactive().close()
+
+
 def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
                              pred_mesh: trimesh.Trimesh,
                              pred_pointcloud: np.ndarray,
                              pred_contact_patch: np.ndarray,
                              gt_contact_patch: np.ndarray,
                              ):
-    plt = Plotter(shape=(1, 4))
+    plt = Plotter(shape=(1, 3))
 
     # First show the input pointcloud used.
-    # plt.at(0).show(vedo_utils.draw_origin(), Points(partial_pointcloud), "Partial PC (Input)")
     plt.at(0).show(Points(partial_pointcloud))
 
     # Show predicted mesh, if provided.
@@ -32,20 +37,36 @@ def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
         pred_patch_pc = Points(pred_contact_patch, c="red").legend("Predicted")
         pred_geom_mesh = Mesh([pred_mesh.vertices, pred_mesh.faces])
         # plt.at(1).show(pred_geom_mesh, vedo_utils.draw_origin(), "Pred. Mesh", pred_patch_pc)
-        plt.at(1).show(pred_geom_mesh)
+        plt.at(1).show(pred_geom_mesh, pred_patch_pc)
 
     # Show predicted pointcloud, if provided.
-    # if pred_pointcloud is not None:
-    #     pred_geom_pc = Points(pred_pointcloud)
-    #     plt.at(1).show(pred_geom_pc, vedo_utils.draw_origin(), "Pred. PC")
+    if pred_pointcloud is not None:
+        pred_geom_pc = Points(pred_pointcloud)
+        plt.at(1).show(pred_geom_pc, vedo_utils.draw_origin(), "Pred. PC")
 
     if pred_contact_patch is not None:
-        pred_patch_pc = Points(pred_contact_patch, c="red").legend("Predicted")
-        gt_patch_pc = Points(gt_contact_patch, c="blue").legend("Ground Truth")
+        pred_patch_pc = Points(pred_contact_patch, c="red", alpha=0.3).legend("Predicted")
+        gt_patch_pc = Points(gt_contact_patch, c="blue", alpha=0.4).legend("Ground Truth")
         # leg = LegendBox([pred_patch_pc, gt_patch_pc])
         # plt.at(2).show(pred_patch_pc, gt_patch_pc, leg, vedo_utils.draw_origin(), "Pred. Contact Patch")
-        plt.at(2).show(pred_patch_pc)
-        plt.at(3).show(gt_patch_pc)
+        # plt.at(2).show(pred_patch_pc)
+        pred_geom_mesh = Mesh([pred_mesh.vertices, pred_mesh.faces])
+        plt.at(2).show(gt_patch_pc, pred_patch_pc)
+
+    plt.interactive().close()
+
+
+def vis_real_baseline_predictions(pred_contact_patch: np.ndarray, gt_contact_patch: np.ndarray):
+    plt = Plotter(shape=(1, 3))
+
+    pred_patch_pc = Points(pred_contact_patch, c="red", alpha=0.1).legend("Predicted")
+    gt_patch_pc = Points(gt_contact_patch, c="blue").legend("Ground Truth")
+    # leg = LegendBox([pred_patch_pc, gt_patch_pc])
+    # plt.at(2).show(pred_patch_pc, gt_patch_pc, leg, vedo_utils.draw_origin(), "Pred. Contact Patch")
+    plt.at(0).show(pred_patch_pc)
+    plt.at(1).show(gt_patch_pc)
+
+    plt.at(2).show(pred_patch_pc, gt_patch_pc)
 
     plt.interactive().close()
 
@@ -64,7 +85,9 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
     pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
 
     # for trial_idx in trange(len(dataset)):
-    for trial_idx in [26, 27, 39]:
+    for trial_idx in [27, 41]:
+        print(trial_idx)
+
         trial_dict = dataset[trial_idx]
 
         # Load the conditioning pointcloud used.
@@ -72,6 +95,8 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
 
         vis_mesh_prediction_real(pc, pred_meshes[trial_idx], pred_pointclouds[trial_idx],
                                  pred_contact_patches[trial_idx], gt_contact_patches[trial_idx])
+        # vis_inputs(pc, gt_contact_patches[trial_idx])
+        # vis_real_baseline_predictions(pred_contact_patches[trial_idx], gt_contact_patches[trial_idx])
 
 
 if __name__ == '__main__':

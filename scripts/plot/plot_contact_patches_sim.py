@@ -46,7 +46,7 @@ for title, test_dir in zip(titles, test_dirs):
 # Build plots.
 for index in trange(num_trials):
     trial_dict = dataset[index]
-    # pc = trial_dict["partial_pointcloud"]
+    pc = trial_dict["partial_pointcloud"]
 
     plt = Plotter(shape=(1, 3))
 
@@ -54,5 +54,5 @@ for index in trange(num_trials):
         pred_patch = pred_patches_all[method_idx][index]
         plt.at(method_idx).show(Points(pred_patch, c="red"))
 
-    plt.at(len(titles)).show(Points(gt_contact_patches[index], c="blue"))
+    plt.at(len(titles)).show(Points(gt_contact_patches[index], c="blue"), Points(pc, c="black"))
     plt.interactive().close()

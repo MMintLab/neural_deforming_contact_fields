@@ -5,9 +5,9 @@ import torch
 import os
 
 
-class RealToolDataset(torch.utils.data.Dataset):
+class PokeDataset(torch.utils.data.Dataset):
     """
-    Real tool dataset - no ground truth except for contact patch.
+    Poke trial dataset. Not contact patch labels.
     """
 
     def __init__(self, dataset_dir: str, transform=None):
@@ -25,7 +25,6 @@ class RealToolDataset(torch.utils.data.Dataset):
         self.trial_idcs = []  # Trial index: which trial is used in this example?
         self.wrist_wrench = []  # Wrist wrench.
         self.partial_pointcloud = []  # Partial pointcloud.
-        self.gt_contact_patch = []  # GT contact patch.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
@@ -36,7 +35,6 @@ class RealToolDataset(torch.utils.data.Dataset):
             self.trial_idcs.append(trial_idx)
             self.wrist_wrench.append(np.array(example_dict["input"]["wrist_wrench"]))
             self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"][:, :3])
-            self.gt_contact_patch.append(example_dict["test"]["contact_patch"][:, :3])
 
     def __len__(self):
         return self.num_trials
@@ -49,7 +47,6 @@ class RealToolDataset(torch.utils.data.Dataset):
             "trial_idx": np.array([self.trial_idcs[index]]),
             "wrist_wrench": self.wrist_wrench[index],
             "partial_pointcloud": self.partial_pointcloud[index],
-            "contact_patch": self.gt_contact_patch[index],
         }
 
         return data_dict

@@ -1,3 +1,4 @@
+from neural_contact_fields.data.poke_dataset import PokeDataset
 from neural_contact_fields.data.real_tool_dataset import RealToolDataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
@@ -81,6 +82,8 @@ def get_dataset(mode, cfg):
         dataset = PretrainObjectModuleDataset(cfg["data"][mode]["dataset_fn"], transform=transforms_)
     elif dataset_type == "RealToolDataset":
         dataset = RealToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
+    elif dataset_type == "PokeDataset":
+        dataset = PokeDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
     else:
         raise Exception("Unknown requested dataset type: %s" % dataset_type)
 
