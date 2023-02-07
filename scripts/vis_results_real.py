@@ -37,7 +37,7 @@ def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
         pred_patch_pc = Points(pred_contact_patch, c="red").legend("Predicted")
         pred_geom_mesh = Mesh([pred_mesh.vertices, pred_mesh.faces])
         # plt.at(1).show(pred_geom_mesh, vedo_utils.draw_origin(), "Pred. Mesh", pred_patch_pc)
-        plt.at(1).show(pred_geom_mesh, pred_patch_pc)
+        plt.at(1).show(pred_geom_mesh)
 
     # Show predicted pointcloud, if provided.
     if pred_pointcloud is not None:
@@ -85,7 +85,7 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
     pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
 
     # for trial_idx in trange(len(dataset)):
-    for trial_idx in [27, 41]:
+    for trial_idx in [14]:
         print(trial_idx)
 
         trial_dict = dataset[trial_idx]
