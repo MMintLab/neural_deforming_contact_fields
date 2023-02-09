@@ -41,13 +41,17 @@ titles = [
     # "8", "16",
     # "32", "64",
     "Ours",
-    "Baseline"
+    "Baseline",
+    # "No Wrench",
+    # "Forward Deformation"
 ]
 test_dirs = [
     # "wrench_v1", "wrench_v2",
     # "wrench_v3", "wrench_v4",
     "wrench_v2",
-    "baseline"
+    "baseline",
+    # "no_wrench_v1",
+    # "forward_def_v1",
 ]
 
 out_fn = os.path.join(base_test_dir, "out.csv")
@@ -65,6 +69,11 @@ for title, test_dir in zip(titles, test_dirs):
     # Both of these should be defined for all models.
     chamfer_dists = [example["chamfer_distance"] for example in metrics_dict]
     patch_chamfer_dists = [example["patch_chamfer_distance"] for example in metrics_dict]
+
+    print(title)
+    print("Discrete: %f (%f)" % (np.mean(patch_chamfer_dists[:16]), np.std(patch_chamfer_dists[:16])))
+    print("Wave: %f (%f)" % (np.mean(patch_chamfer_dists[16:32]), np.std(patch_chamfer_dists[16:32])))
+    print("Flat: %f (%f)" % (np.mean(patch_chamfer_dists[32:]), np.std(patch_chamfer_dists[32:])))
 
     # The following are specific to certain models.
     binary_accuracies = [example.get("binary_accuracy", -1.0) for example in metrics_dict]
@@ -84,5 +93,5 @@ for title, test_dir in zip(titles, test_dirs):
                 np.mean(f1), np.std(f1),
                 )
 
-with open(out_fn, "w") as f:
-    f.write(csv_str)
+# with open(out_fn, "w") as f:
+#     f.write(csv_str)

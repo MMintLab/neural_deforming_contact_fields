@@ -1,0 +1,4 @@
+data:
+  test:
+    dataset: RealToolDataset
+    dataset_dir: /home/markvdm/RobotSetup/catkin_ws/src/ncf_real/out/video/round_v1_proc/

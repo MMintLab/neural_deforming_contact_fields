@@ -53,6 +53,9 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, samp
 
         metrics_results.append(metrics_dict)
 
+    chamfer_dists = [example["patch_chamfer_distance"] for example in metrics_results]
+    print("Patch Chamfer dist: %f (%f)" % (np.mean(chamfer_dists), np.std(chamfer_dists)))
+
     # Write all metrics to file.
     if out_dir is not None:
         mmint_utils.save_gzip_pickle(metrics_results, os.path.join(out_dir, "metrics.pkl.gzip"))
