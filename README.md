@@ -75,7 +75,7 @@ python scripts/inference/infer_latent_from_surface.py cfg/example_v1.yaml -d cfg
 
 ## Running Baseline
 ### Setup
-
+We recommend creating a different conda environment for running the baseline.
 ```angular2html
 conda env create -f environment_b1.yml
 conda activate ncf_b1
@@ -90,9 +90,19 @@ Note: Please do not build torchmeta.
 git clone https://github.com/hzxie/GRNet neural_contact_fields/explicit_baseline/grnet
 ```
 ### Installation
-Please **skip** ``pip install -r `` step and jump to building extensions in [readme](https://github.com/hzxie/GRNet#prerequisites) via ``pip install -e .``.
+Please **skip** ``pip install -r `` step as all the requirements should be in environment_b1.yml.
+Jump to building extensions in [readme](https://github.com/hzxie/GRNet#prerequisites) via ``pip install -e .``.
 [Important] Please make sure that nvcc is installed via ``$ sudo apt install nvidia-cuda-toolkit`` in your system before building extensions.
 
+### Training Baseline Model from Scratch
+```
+python scripts/train_model.py cfg/example_b1.yaml
+```
+
+### Generating Results
+```
+python scripts/generate.py cfg/example_b1.yaml -d cfg/dataset/**.yaml -o output/**
+```
 
 ### Troubleshooting
 * If you get 
