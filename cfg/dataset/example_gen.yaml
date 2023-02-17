@@ -1,4 +1,4 @@
 data:
   test:
     dataset: ToolDataset
-    dataset_dir: out/datasets/sim_1_20_23_v1/
+    dataset_dir: out/datasets/combined_train/

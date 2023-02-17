@@ -26,8 +26,8 @@ def generate(model_cfg, model, dataset, device, out_dir):
         mmint_utils.make_dir(out_dir)
 
     # Go through dataset and generate!
-    cd_hist = {'pcd': [] , 'pcd_cnt': []} ## TODO : Delete
-    N = 10000 # Length of grnet output
+    cd_hist = {'pcd': [] , 'pcd_cnt': []}
+
     for idx in trange(len(dataset)):
         data_dict = dataset[idx]
         metadata = {}
@@ -37,11 +37,7 @@ def generate(model_cfg, model, dataset, device, out_dir):
         if generate_pointcloud:
             pointcloud, cd = generator.generate_pointcloud(data_dict, metadata)
 
-            ## TODO : Delete below
             cd_hist['pcd'].append(cd)
-            # pcl = o3d.geometry.PointCloud()
-            # pcl.points = o3d.utility.Vector3dVector(pointcloud)
-            # o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
 
         if generate_mesh:
             mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
@@ -54,19 +50,11 @@ def generate(model_cfg, model, dataset, device, out_dir):
 
         if generate_contact_patch:
             contact_patch, cd = generator.generate_contact_patch(data_dict, metadata)
-
-            ## TODO : Delete below
             cd_hist['pcd_cnt'].append(cd)
-            # pcl = o3d.geometry.PointCloud()
-            # pcl.points = o3d.utility.Vector3dVector(contact_patch)
-            # o3d.io.write_point_cloud(f'gt_surf_{idx}.ply',pcl )
-
 
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
         write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
-
-    print( np.mean( cd_hist['pcd']) , np.mean( cd_hist['pcd_cnt']) ) ## TODO : Delete
 
 
 if __name__ == '__main__':

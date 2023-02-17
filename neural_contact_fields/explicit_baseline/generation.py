@@ -63,31 +63,19 @@ class Generator(BaseGenerator):
         raise Exception("Selected generator does not generate mesh.")
 
     def generate_pointcloud(self, data_dict, meta_data):
+        self.device = 'cuda'
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
         partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
-        surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
-        
+
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
         
         # Predict with updated latents.
         pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
-
-
-        chamfer_dist = ChamferDistance()
-        gt_idx = np.random.choice ( np.arange(len(surface_coords_[0])), self.output_length , replace = False)
-        est_idx = np.random.choice ( np.arange(len(pred_dict_['dense_df_ptcloud'][0])), self.output_length , replace = False)
-
-        dense_loss_df = chamfer_dist(pred_dict_['dense_df_ptcloud'][:,est_idx,:], surface_coords_[:,gt_idx,:])
-
-        return pred_dict_['dense_df_ptcloud'].squeeze().detach().cpu().numpy(), dense_loss_df.detach().cpu()
+        return pred_dict_['dense_df_ptcloud'].squeeze().detach().cpu().numpy(), torch.tensor([0])
     #
     def generate_contact_patch(self, data_dict, meta_data):
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
         partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
-        query_points = torch.from_numpy(data_dict["query_point"]).to(self.device).float().unsqueeze(0)
-        gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(self.device).float().unsqueeze(0)
-        cnt_idx = torch.where(gt_in_contact == 1)[1]
-        contact_pcd = query_points[:, cnt_idx, :]
 
 
         # We assume we know the object code.
@@ -95,18 +83,8 @@ class Generator(BaseGenerator):
         
         # Predict with updated latents.
         pred_dict_ = self.model.forward(partial_pcd, z_wrench_)
-                
-        chamfer_dist = ChamferDistance()
-        N = 300
-        rep = False
-        est_idx = np.random.choice ( np.arange(len(pred_dict_['dense_ct_ptcloud'][0])),  300, replace = rep)
-        if len(contact_pcd[0]) < N:
-            rep = True
-        gt_idx = np.random.choice ( np.arange(len(contact_pcd[0])),  300, replace = rep)
 
-        dense_loss_df = chamfer_dist( pred_dict_['dense_ct_ptcloud'][:,est_idx,:], contact_pcd[:,gt_idx,:])
-
-        return pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy(), dense_loss_df.detach().cpu()
+        return pred_dict_['dense_ct_ptcloud'].squeeze().detach().cpu().numpy(), torch.tensor([0])
 
     def generate_contact_labels(self, data, meta_data):
         raise Exception("Selected generator does not generate contact label.")
@@ -117,11 +95,6 @@ class Generator(BaseGenerator):
 
         mesh = pcd_v.reconstruct_surface(radius = 0.005)
         mesh = mesh.clean()
-        # plt = vedo.Plotter(shape=(1, 2))
-        # plt.at(0).show(pcd_v)
-        # plt.at(1).show(mesh)
-        # plt.interactive()
-
         mesh_t = trimesh.Trimesh(vertices=mesh.points(), faces=mesh.faces())
         return mesh_t
      

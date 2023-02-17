@@ -4,9 +4,9 @@ data:
     dataset_fn: out/datasets/sim_1_20_23_v1/nominal_0.pkl.gzip
   train:
     dataset: ToolDataset
-    dataset_dir: out/datasets/sim_1_20_23_v1/
+    dataset_dir: out/datasets/combined_train/
 training:
-  out_dir: out/models/example_b1_dummy
+  out_dir: out/models/example_b1_full
   learning_rate: 0.0001
   betas: (.9, .999)
   weight_decay: 0
