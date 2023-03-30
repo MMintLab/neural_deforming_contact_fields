@@ -3,6 +3,7 @@ import numpy as np
 import torch.utils.data
 import torch
 import os
+import tqdm
 
 
 class RealToolDataset(torch.utils.data.Dataset):
@@ -28,7 +29,7 @@ class RealToolDataset(torch.utils.data.Dataset):
         self.gt_contact_patch = []  # GT contact patch.
 
         # Load all data.
-        for trial_idx, data_fn in enumerate(data_fns):
+        for trial_idx, data_fn in enumerate(tqdm.tqdm(data_fns)):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
 
             # Populate example info.
