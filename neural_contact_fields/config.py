@@ -4,6 +4,7 @@ from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
 from torchvision import transforms
 from neural_contact_fields import neural_contact_field
+from neural_contact_fields.data.tool_rotate_dataset import ToolRotateDataset
 
 method_dict = {
     'neural_contact_field': neural_contact_field,
@@ -78,6 +79,8 @@ def get_dataset(mode, cfg):
 
     if dataset_type == "ToolDataset":
         dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
+    elif dataset_type == "ToolRotateDataset":
+        dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
     elif dataset_type == "PretrainObjectModuleDataset":
         dataset = PretrainObjectModuleDataset(cfg["data"][mode]["dataset_fn"], transform=transforms_)
     elif dataset_type == "RealToolDataset":

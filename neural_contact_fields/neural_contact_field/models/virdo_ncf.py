@@ -21,7 +21,7 @@ class VirdoNCF(NeuralContactField):
 
         # Setup sub-models of the VirdoNCF.
         self.object_model = meta_modules.virdo_hypernet(in_features=3, out_features=1,
-                                                        hyper_in_features=self.z_object_size, hl=2).to(self.device)
+        hyper_in_features=self.z_object_size, hl=2).to(self.device)
         self.deformation_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=3,
             hyper_in_features=self.z_object_size + self.z_deform_size + self.z_wrench_size, hl=1
