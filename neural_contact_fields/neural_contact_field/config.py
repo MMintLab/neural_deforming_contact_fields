@@ -9,8 +9,8 @@ def get_model(cfg, dataset, device=None):
     model_cfg = cfg["model"]
 
     try:
-        num_objects = dataset.num_objects
-        num_trials = dataset.num_trials
+        num_objects = dataset.get_num_objects()
+        num_trials = dataset.get_num_trials()
     except:
         raise Exception("Training with unexpected dataset type: %s." % str(type(dataset)))
 
