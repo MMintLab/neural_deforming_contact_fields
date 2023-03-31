@@ -79,6 +79,8 @@ class ToolDataset(torch.utils.data.Dataset):
             self.nominal_query_points.append(example_dict["query_points"])
             self.nominal_sdf.append(example_dict["sdf"])
 
+        assert len(self.nominal_query_points) == self.num_objects
+
     def get_num_objects(self):
         return self.num_objects
 
