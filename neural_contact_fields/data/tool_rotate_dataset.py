@@ -11,6 +11,19 @@ class ToolRotateDataset(ToolDataset):
     def get_num_trials(self):
         return self.num_trials * 4
 
+    def get_example_mesh(self, example_idx):
+        trial_index = torch.div(example_idx, 4, rounding_mode="floor")
+        rotation_index = example_idx % 4  # Which of the 4 rotations to use.
+        mesh = super().get_example_mesh(trial_index)
+
+        # Build transform around z vector based on rotation index.
+        rotation = np.pi / 2.0 * rotation_index
+        transform = pk.Transform3d(rot=tf.euler_angles_to_matrix(torch.tensor([0.0, 0.0, rotation]), "XYZ"),
+                                   dtype=self.dtype)
+
+        mesh.apply_transform(transform.get_matrix().cpu().numpy()[0])
+        return mesh
+
     def __len__(self):
         return self.num_trials * 4
 
@@ -51,6 +64,9 @@ class ToolRotateDataset(ToolDataset):
                 torch.tensor(self.partial_pointcloud[trial_index], dtype=self.dtype)).cpu().numpy(),
             "contact_patch": transform.transform_points(
                 torch.tensor(self.contact_patch[trial_index], dtype=self.dtype)).cpu().numpy(),
+            "points_iou": transform.transform_points(
+                torch.tensor(self.points_iou[trial_index], dtype=self.dtype)).cpu().numpy(),
+            "occ_tgt": self.occ_tgt[trial_index],
         }
 
         return data_dict

@@ -1,4 +1,5 @@
 import tqdm
+import trimesh
 
 import mmint_utils
 import numpy as np
@@ -44,6 +45,8 @@ class ToolDataset(torch.utils.data.Dataset):
         self.surface_in_contact = []  # Surface point contact labels.
         self.partial_pointcloud = []  # Partial pointcloud.
         self.contact_patch = []  # Contact patch.
+        self.points_iou = []  # Points used to calculated IoU.
+        self.occ_tgt = []  # Occupancy target for IoU points.
 
         # Load all data.
         for trial_idx, data_fn in enumerate(tqdm.tqdm(data_fns)):
@@ -70,6 +73,8 @@ class ToolDataset(torch.utils.data.Dataset):
             except:
                 self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
             self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
+            self.points_iou.append(example_dict["test"]["points_iou"])
+            self.occ_tgt.append(example_dict["test"]["occ_tgt"])
 
         # Load nominal geometry info.
         self.nominal_query_points = []
@@ -89,6 +94,11 @@ class ToolDataset(torch.utils.data.Dataset):
 
     def get_num_trials(self):
         return self.num_trials
+
+    def get_example_mesh(self, example_idx):
+        mesh_fn = os.path.join(self.dataset_dir, "out_%d_mesh.obj" % example_idx)
+        mesh = trimesh.load(mesh_fn)
+        return mesh
 
     def __len__(self):
         return self.num_trials
@@ -111,6 +121,8 @@ class ToolDataset(torch.utils.data.Dataset):
             "surface_in_contact": self.surface_in_contact[index],
             "partial_pointcloud": self.partial_pointcloud[index],
             "contact_patch": self.contact_patch[index],
+            "points_iou": self.points_iou[index],
+            "occ_tgt": self.occ_tgt[index],
         }
 
         return data_dict

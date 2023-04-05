@@ -1,2 +1,2 @@
-python scripts/generate.py cfg/primitives/model_v2.yaml -d cfg/primitives/dataset/test.yaml -m test -o out/experiments/primitives/model_v2/test_v2/ --gen_args "{"embed_weight": 1.0, "def_loss": 0.0}" --offset 90
+# python scripts/generate.py cfg/primitives/model_v2.yaml -d cfg/primitives/dataset/test.yaml -m test -o out/experiments/primitives/model_v2/test_v2/ --gen_args "{"embed_weight": 1.0, "def_loss": 0.0}" --offset 90
 python scripts/generate.py cfg/primitives/model_v2.yaml -d cfg/primitives/dataset/test_partial.yaml -m test -o out/experiments/primitives/model_v2/test_v2_partial/ --gen_args "{"embed_weight": 1.0, "def_loss": 0.0}"

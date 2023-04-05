@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from tqdm import trange
+
 import mmint_utils
 import numpy as np
 import trimesh
@@ -59,7 +61,7 @@ def vis_mesh_prediction(partial_pointcloud: np.ndarray,
     plt.interactive().close()
 
 
-def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", partial: bool = False):
+def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", partial: bool = False, offset: int = 0):
     # Load dataset.
     dataset_cfg, dataset = load_dataset_from_config(dataset_cfg, dataset_mode=mode)
     num_trials = len(dataset)
@@ -72,7 +74,7 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", partial: boo
     # Load predicted results.
     pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
 
-    for trial_idx in range(len(dataset)):
+    for trial_idx in trange(offset, len(dataset)):
         trial_dict = dataset[trial_idx]
 
         # Load the conditioning pointcloud used.
@@ -105,6 +107,7 @@ if __name__ == '__main__':
     parser.add_argument("--mode", "-m", type=str, default="test", help="Dataset mode [train, val, test].")
     parser.add_argument("--partial", "-p", dest="partial", action='store_true', help='Generated with partial pc.')
     parser.set_defaults(partial=False)
+    parser.add_argument("--offset", "-o", type=int, default=0, help="Offset to start from.")
     args = parser.parse_args()
 
-    vis_results(args.dataset_config, args.gen_dir, args.mode, args.partial)
+    vis_results(args.dataset_config, args.gen_dir, args.mode, args.partial, args.offset)

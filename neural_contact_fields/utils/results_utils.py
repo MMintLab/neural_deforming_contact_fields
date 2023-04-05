@@ -71,16 +71,15 @@ def load_gt_results(dataset, dataset_dir, n, device=None):
     # Load ground truth meshes and surface contact labels.
     for idx in range(n):
         dataset_dict = dataset[idx]
-        data_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, "out_%d.pkl.gzip" % idx))
-        meshes.append(trimesh.load(os.path.join(dataset_dir, "out_%d_mesh.obj" % idx)))
+        meshes.append(dataset.get_example_mesh(idx))
         pointclouds.append(torch.from_numpy(dataset_dict["surface_points"]).to(device))
 
         # Load contact patch.
         contact_patches.append(torch.from_numpy(dataset_dict["contact_patch"]).to(device))
 
         contact_labels.append(torch.from_numpy(dataset_dict["surface_in_contact"]).to(device).int())
-        points_iou.append(torch.from_numpy(data_dict["test"]["points_iou"]).to(device))
-        occ_iou.append(torch.from_numpy(data_dict["test"]["occ_tgt"]).to(device).int())
+        points_iou.append(torch.from_numpy(dataset_dict["points_iou"]).to(device))
+        occ_iou.append(torch.from_numpy(dataset_dict["occ_tgt"]).to(device).int())
 
     return meshes, pointclouds, contact_patches, contact_labels, points_iou, occ_iou
 
