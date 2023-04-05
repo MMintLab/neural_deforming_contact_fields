@@ -7,7 +7,8 @@ from tqdm import trange
 
 
 def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: int, num_examples: int, data_dict: dict,
-                              inf_params=None, device: torch.device = None, verbose: bool = False):
+                              inf_params=None, device: torch.device = None, epsilon: float = 1e-6,
+                              verbose: bool = False):
     """
     Helper with basic inference by optimization structure. Repeatedly calls loss function with the specified
     data/loss function and updates latent inputs accordingly.
@@ -20,6 +21,7 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
     - data_dict (dict): data dictionary for example(s) we are inferring for.
     - inf_params (dict): inference hyper-parameters.
     - device (torch.device): pytorch device.
+    - epsilon (float): convergence threshold.
     - verbose (bool): be verbose.
     """
     if inf_params is None:
@@ -51,6 +53,10 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
 
         loss.backward()
         optimizer.step()
+
+        # Check for convergence.
+        if torch.allclose(z.grad, torch.zeros_like(z.grad), atol=epsilon):
+            break
 
         if verbose:
             range_.set_postfix(loss=loss.item())
