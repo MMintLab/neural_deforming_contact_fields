@@ -41,10 +41,10 @@ def load_model(model_dict, model_file):
     return load_dict
 
 
-def load_dataset_from_config(dataset_config, dataset_mode="test"):
+def load_dataset_from_config(dataset_config, dataset_mode="test", **kwargs):
     # Load dataset.
     dataset_cfg = mmint_utils.load_cfg(dataset_config)
-    dataset = config.get_dataset(dataset_mode, dataset_cfg)
+    dataset = config.get_dataset(dataset_mode, dataset_cfg, **kwargs)
     return dataset_cfg, dataset
 
 
@@ -75,7 +75,7 @@ def load_model_and_dataset(model_config, dataset_config=None, dataset_mode="test
     _, dataset = load_dataset_from_config(dataset_config, dataset_mode)
 
     # Because some models depend on their train dataset, we load it additionally.
-    _, train_dataset = load_dataset_from_config(model_config, dataset_mode="train")
+    _, train_dataset = load_dataset_from_config(model_config, dataset_mode="train", load_data=dataset_config is None)
     model_cfg, model, cuda_device, load_dict = load_model_from_config(model_config, train_dataset,
                                                                       model_file=model_file,
                                                                       cuda_id=cuda_id, no_cuda=no_cuda)

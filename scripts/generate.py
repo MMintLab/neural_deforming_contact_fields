@@ -12,7 +12,7 @@ from tqdm import trange
 import random
 
 
-def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: dict):
+def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: dict, offset: int):
     model.eval()
 
     # Load generate cfg, if present.
@@ -37,7 +37,7 @@ def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: d
     mmint_utils.dump_cfg(os.path.join(out_dir, "metadata.yaml"), generation_cfg)
 
     # Go through dataset and generate!
-    for idx in trange(len(dataset)):
+    for idx in trange(offset, len(dataset)):
         data_dict = dataset[idx]
         metadata = {}
         mesh = pointcloud = contact_patch = contact_labels = None
@@ -65,6 +65,7 @@ if __name__ == '__main__':
     parser.add_argument("--out", "-o", type=str, help="Optional out directory to write generated results to.")
     # TODO: Add visualization?
     parser.add_argument("--gen_args", type=yaml.safe_load, default=None, help="Generation args.")
+    parser.add_argument("--offset", type=int, default=0, help="Offset to add to config indices.")
     args = parser.parse_args()
 
     # Seed for repeatability.
@@ -73,4 +74,4 @@ if __name__ == '__main__':
     random.seed(10)
 
     model_cfg_, model_, dataset_, device_ = load_model_dataset_from_args(args)
-    generate(model_cfg_, model_, args.model_file, dataset_, device_, args.out, args.gen_args)
+    generate(model_cfg_, model_, args.model_file, dataset_, device_, args.out, args.gen_args, args.offset)

@@ -66,7 +66,7 @@ def get_visualizer(cfg, model, device=None, visualizer_args=None):
     return visualizer
 
 
-def get_dataset(mode, cfg):
+def get_dataset(mode, cfg, **kwargs):
     """
     Args:
     - mode (str): dataset mode [train, val, test].
@@ -80,7 +80,7 @@ def get_dataset(mode, cfg):
     if dataset_type == "ToolDataset":
         dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
     elif dataset_type == "ToolRotateDataset":
-        dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
+        dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
     elif dataset_type == "PretrainObjectModuleDataset":
         dataset = PretrainObjectModuleDataset(cfg["data"][mode]["dataset_fn"], transform=transforms_)
     elif dataset_type == "RealToolDataset":

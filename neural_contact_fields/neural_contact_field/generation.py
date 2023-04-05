@@ -84,7 +84,7 @@ class Generator(BaseGenerator):
             z_deform_, _ = inference_by_optimization(self.model,
                                                      get_surface_loss_fn(self.embed_weight, self.def_weight),
                                                      z_deform_size, 1, data,
-                                                     device=self.device, verbose=False)
+                                                     device=self.device, verbose=True)
             latent = z_deform_.weight
 
         # Generate mesh.
@@ -124,7 +124,9 @@ class Generator(BaseGenerator):
         contact_patch = []
         num_contacts_found = 0
 
+        iters = 0
         while num_contacts_found < self.contact_patch_size:
+            iters += 1
             surface_point_samples_np = mesh.sample(100000)
             surface_point_samples = torch.from_numpy(surface_point_samples_np).float().to(self.device).unsqueeze(0)
             surface_pred_dict = self.model.forward(surface_point_samples, latent, z_object, z_wrench)
@@ -134,6 +136,9 @@ class Generator(BaseGenerator):
 
             contact_patch.append(surface_point_samples_np[surface_binary_np])
             num_contacts_found += surface_binary_np.sum()
+
+            if iters > 100:
+                break
         contact_patch = np.concatenate(contact_patch, axis=0)
 
         # We may have estimated more than desired, so we select down.

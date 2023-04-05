@@ -13,7 +13,7 @@ class ToolDataset(torch.utils.data.Dataset):
     Each example in this dataset is all sample points for a given trial.
     """
 
-    def __init__(self, dataset_dir: str, transform=None):
+    def __init__(self, dataset_dir: str, load_data: bool = True, transform=None):
         super().__init__()
         self.dataset_dir = dataset_dir
         self.transform = transform
@@ -23,6 +23,13 @@ class ToolDataset(torch.utils.data.Dataset):
         data_fns = sorted([f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f],
                           key=lambda x: int(x.split(".")[0].split("_")[-1]))
         self.num_trials = len(data_fns)
+
+        nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
+                             key=lambda x: int(x.split(".")[0].split("_")[-1]))
+        self.num_objects = len(nominal_fns)
+
+        if not load_data:
+            return
 
         # Data arrays.
         self.object_idcs = []  # Object index: what tool is used in this example?
@@ -64,13 +71,9 @@ class ToolDataset(torch.utils.data.Dataset):
                 self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
             self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
 
-        self.num_objects = max(self.object_idcs) + 1
-
         # Load nominal geometry info.
         self.nominal_query_points = []
         self.nominal_sdf = []
-        nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
-                             key=lambda x: int(x.split(".")[0].split("_")[-1]))
 
         for object_idx, nominal_fn in enumerate(nominal_fns):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, nominal_fn))
@@ -79,7 +82,7 @@ class ToolDataset(torch.utils.data.Dataset):
             self.nominal_query_points.append(example_dict["query_points"])
             self.nominal_sdf.append(example_dict["sdf"])
 
-        assert len(self.nominal_query_points) == self.num_objects
+        assert len(self.nominal_query_points) == max(self.object_idcs) + 1
 
     def get_num_objects(self):
         return self.num_objects
