@@ -34,7 +34,7 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
     init_std = inf_params.get("init_std", 0.001)
     lr = inf_params.get("lr", 3e-2)
     num_steps = inf_params.get("iter_limit", 300)
-    epsilon = inf_params.get("epsilon", 0.0)
+    epsilon = inf_params.get("conv_eps", 0.0)
 
     # Initialize latent code as noise.
     z_ = nn.Embedding(num_examples, latent_size, dtype=torch.float32).requires_grad_(True).to(device)
