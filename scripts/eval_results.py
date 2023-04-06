@@ -31,7 +31,7 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
         )
 
     # Load predicted results.
-    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = \
+    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels, pred_iou_labels = \
         load_pred_results(out_dir, num_trials, device)
 
     # Calculate metrics.
@@ -98,6 +98,17 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
                 "precision": precision.item(),
                 "recall": recall.item(),
                 "f1": f1.item(),
+            })
+
+        if pred_iou_labels[trial_idx] is not None:
+            pred_iou_labels_trial = pred_iou_labels[trial_idx]["iou_labels"].float()
+            gt_iou_labels_trial = gt_occ_iou[trial_idx].float()
+
+            iou = torchmetrics.functional.classification.binary_jaccard_index(pred_iou_labels_trial,
+                                                                              gt_iou_labels_trial, threshold=0.5)
+
+            metrics_dict.update({
+                "model_iou": iou.item(),
             })
 
         metrics_results.append(metrics_dict)

@@ -1,0 +1,4 @@
+data:
+  test:
+    dataset: ToolDataset
+    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/combine_test_v4_proc_v2/

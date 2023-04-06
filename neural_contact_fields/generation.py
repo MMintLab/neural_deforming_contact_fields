@@ -19,6 +19,7 @@ class BaseGenerator(object):
         self.generates_pointcloud = False
         self.generates_contact_patch = False
         self.generates_contact_labels = False
+        self.generates_iou_labels = False
 
     def generate_mesh(self, data, metadata):
         raise NotImplementedError()
@@ -30,4 +31,7 @@ class BaseGenerator(object):
         raise NotImplementedError()
 
     def generate_contact_labels(self, data, metadata):
+        raise NotImplementedError()
+
+    def generate_iou_labels(self, data, metadata):
         raise NotImplementedError()

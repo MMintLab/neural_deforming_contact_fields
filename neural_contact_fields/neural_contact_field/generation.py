@@ -68,6 +68,7 @@ class Generator(BaseGenerator):
         self.generates_pointcloud = False
         self.generates_contact_patch = True
         self.generates_contact_labels = False
+        self.generates_iou_labels = True
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
         self.embed_weight = generation_cfg.get("embed_weight", 0.0)
@@ -75,7 +76,7 @@ class Generator(BaseGenerator):
         self.contact_patch_size = generation_cfg.get("contact_patch_size", 10000)
 
         self.iter_limit = generation_cfg.get("iter_limit", 1000)
-        self.conv_eps = float(generation_cfg.get("conv_eps", 1e-4))
+        self.conv_eps = float(generation_cfg.get("conv_eps", 0.0))
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
@@ -177,3 +178,31 @@ class Generator(BaseGenerator):
 
         return {"contact_labels": surface_binary, "contact_prob": surface_in_contact,
                 "contact_logits": surface_in_contact_logits}, {"latent": latent}
+
+    def generate_iou_labels(self, data, metadata):
+        # Check if we have been provided with the latent already.
+        if "latent" in metadata:
+            latent = metadata["latent"]
+        else:
+            # Generate deformation code latent.
+            z_deform_size = self.model.z_deform_size
+            z_deform_, _ = inference_by_optimization(self.model,
+                                                     get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                     z_deform_size, 1, data,
+                                                     device=self.device, verbose=False)
+            latent = z_deform_.weight
+
+        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
+        wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+        z_object = self.model.encode_object(object_idx)
+        z_wrench = self.model.encode_wrench(wrist_wrench)
+
+        # Get points to evaluate iou.
+        points_iou = torch.from_numpy(data["points_iou"]).to(self.device).float().unsqueeze(0)
+
+        # Get occupancy predictions from SDF predictions.
+        iou_pred_dict = self.model.forward(points_iou, latent, z_object, z_wrench)
+        sdf_pred = iou_pred_dict["sdf"].squeeze(0)
+        iou_labels = sdf_pred < 0.0
+
+        return {"iou_labels": iou_labels, "iou_sdf": sdf_pred}, {"latent": latent}

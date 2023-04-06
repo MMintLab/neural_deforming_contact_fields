@@ -7,7 +7,7 @@ import trimesh
 from neural_contact_fields.utils import utils
 
 
-def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx):
+def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, iou_labels, idx):
     if mesh is not None:
         mesh_fn = os.path.join(out_dir, "mesh_%d.obj" % idx)
         mesh.export(mesh_fn)
@@ -24,12 +24,17 @@ def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
         mmint_utils.save_gzip_pickle(contact_labels, cl_fn)
 
+    if iou_labels is not None:
+        iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
+        mmint_utils.save_gzip_pickle(iou_labels, iou_fn)
+
 
 def load_pred_results(out_dir, n, device=None):
     meshes = []
     pointclouds = []
     contact_patches = []
     contact_labels = []
+    iou_labels = []
 
     for idx in range(n):
         mesh_fn = os.path.join(out_dir, "mesh_%d.obj" % idx)
@@ -57,7 +62,14 @@ def load_pred_results(out_dir, n, device=None):
         else:
             contact_labels.append(None)
 
-    return meshes, pointclouds, contact_patches, contact_labels
+        iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
+        if os.path.exists(iou_fn):
+            iou_labels_ = mmint_utils.load_gzip_pickle(iou_fn)
+            iou_labels.append(iou_labels_)
+        else:
+            iou_labels.append(None)
+
+    return meshes, pointclouds, contact_patches, contact_labels, iou_labels
 
 
 def load_gt_results(dataset, dataset_dir, n, device=None):
