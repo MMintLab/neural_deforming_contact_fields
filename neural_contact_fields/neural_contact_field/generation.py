@@ -70,9 +70,12 @@ class Generator(BaseGenerator):
         self.generates_contact_labels = False
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
-        self.embed_weight = generation_cfg.get("embed_weight", 1.0)
+        self.embed_weight = generation_cfg.get("embed_weight", 0.0)
         self.def_weight = generation_cfg.get("def_weight", 0.0)
         self.contact_patch_size = generation_cfg.get("contact_patch_size", 10000)
+
+        self.iter_limit = generation_cfg.get("iter_limit", 1000)
+        self.conv_eps = float(generation_cfg.get("conv_eps", 1e-4))
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
@@ -84,7 +87,8 @@ class Generator(BaseGenerator):
             z_deform_, _ = inference_by_optimization(self.model,
                                                      get_surface_loss_fn(self.embed_weight, self.def_weight),
                                                      z_deform_size, 1, data,
-                                                     device=self.device, verbose=True)
+                                                     inf_params={"iter_limit": self.iter_limit},
+                                                     device=self.device, verbose=True, epsilon=self.conv_eps)
             latent = z_deform_.weight
 
         # Generate mesh.
