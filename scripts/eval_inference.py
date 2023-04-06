@@ -1,10 +1,11 @@
 import os
 import random
+import time
 
 import numpy as np
 import torch
 import yaml
-from tqdm import trange
+from tqdm import trange, tqdm
 
 import mmint_utils
 from neural_contact_fields import config
@@ -34,18 +35,28 @@ def eval_inference(model_cfg, model, model_file, dataset, device, out_dir, gen_a
     # Dump any generation arguments to out directory.
     mmint_utils.dump_cfg(os.path.join(out_dir, "metadata.yaml"), generation_cfg)
 
-    for run_idx in range(n_repeat):
-        run_dir = os.path.join(out_dir, f"run_{run_idx}")
-        mmint_utils.make_dir(run_dir)
+    with tqdm(total=len(dataset) * n_repeat) as pbar:
+        for run_idx in range(n_repeat):
+            run_dir = os.path.join(out_dir, f"run_{run_idx}")
+            mmint_utils.make_dir(run_dir)
 
-        # Generate results.
-        for idx in trange(len(dataset)):
-            data_dict = dataset[idx]
+            # Generate results.
+            for idx in range(len(dataset)):
+                data_dict = dataset[idx]
 
-            contact_labels_dict, metadata = generator.generate_contact_labels(data_dict, {})
-            iou_labels_dict, _ = generator.generate_iou_labels(data_dict, metadata)
+                # Generate latent.
+                start_time = time.time()
+                latent = generator.generate_latent(data_dict)
+                end_time = time.time()
+                latent_gen_time = end_time - start_time
 
-            write_results(run_dir, None, None, None, contact_labels_dict, iou_labels_dict, idx)
+                contact_labels_dict, _ = generator.generate_contact_labels(data_dict, {"latent": latent})
+                iou_labels_dict, _ = generator.generate_iou_labels(data_dict, {"latent": latent})
+
+                write_results(run_dir, None, None, None, contact_labels_dict, iou_labels_dict, idx,
+                              {"latent_gen_time": latent_gen_time})
+
+                pbar.update(1)
 
 
 if __name__ == '__main__':

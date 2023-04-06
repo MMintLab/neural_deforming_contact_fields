@@ -7,7 +7,7 @@ import trimesh
 from neural_contact_fields.utils import utils
 
 
-def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, iou_labels, idx):
+def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, iou_labels, idx, misc: dict = None):
     if mesh is not None:
         mesh_fn = os.path.join(out_dir, "mesh_%d.obj" % idx)
         mesh.export(mesh_fn)
@@ -27,6 +27,10 @@ def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, iou_
     if iou_labels is not None:
         iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
         mmint_utils.save_gzip_pickle(iou_labels, iou_fn)
+
+    if misc is not None:
+        misc_fn = os.path.join(out_dir, "misc_%d.pkl.gzip" % idx)
+        mmint_utils.save_gzip_pickle(misc, misc_fn)
 
 
 def load_pred_results(out_dir, n, device=None):
