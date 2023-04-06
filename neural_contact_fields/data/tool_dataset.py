@@ -125,4 +125,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "occ_tgt": self.occ_tgt[index],
         }
 
+        if self.transform is not None:
+            data_dict = self.transform(data_dict)
+
         return data_dict

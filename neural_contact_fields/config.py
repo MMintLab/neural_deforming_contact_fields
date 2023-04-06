@@ -1,3 +1,4 @@
+from neural_contact_fields.data.noise_transform import NoiseTransform
 from neural_contact_fields.data.poke_dataset import PokeDataset
 from neural_contact_fields.data.real_tool_dataset import RealToolDataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
@@ -101,9 +102,11 @@ def get_transforms(cfg):
     transform_list = []
     for transform_info in transforms_info:
         transform_type = transform_info["type"]
-        transform = None
 
-        raise Exception("Unknown transform type: %s" % transform_type)
+        if transform_type == "NoiseTransform":
+            transform = NoiseTransform(transform_info["noise"])
+        else:
+            raise Exception("Unknown transform type: %s" % transform_type)
 
         transform_list.append(transform)
 

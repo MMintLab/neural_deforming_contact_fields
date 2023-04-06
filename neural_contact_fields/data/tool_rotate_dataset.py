@@ -69,4 +69,7 @@ class ToolRotateDataset(ToolDataset):
             "occ_tgt": self.occ_tgt[trial_index],
         }
 
+        if self.transform is not None:
+            data_dict = self.transform(data_dict)
+
         return data_dict
