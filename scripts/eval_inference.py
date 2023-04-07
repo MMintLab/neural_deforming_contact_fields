@@ -54,7 +54,7 @@ def eval_inference(model_cfg, model, model_file, dataset, device, out_dir, gen_a
                 iou_labels_dict, _ = generator.generate_iou_labels(data_dict, {"latent": latent})
 
                 write_results(run_dir, None, None, None, contact_labels_dict, iou_labels_dict, idx,
-                              {"latent_gen_time": latent_gen_time})
+                              {"latent_gen_time": latent_gen_time, "latent": latent})
 
                 pbar.update(1)
 

@@ -19,9 +19,11 @@ class VirdoNCF(NeuralContactField):
         self.device = device
         self.forward_deformation_input = forward_deformation_input
 
+        self.no_wrench = self.z_wrench_size == 0
+
         # Setup sub-models of the VirdoNCF.
         self.object_model = meta_modules.virdo_hypernet(in_features=3, out_features=1,
-        hyper_in_features=self.z_object_size, hl=2).to(self.device)
+                                                        hyper_in_features=self.z_object_size, hl=2).to(self.device)
         self.deformation_model = meta_modules.virdo_hypernet(
             in_features=3, out_features=3,
             hyper_in_features=self.z_object_size + self.z_deform_size + self.z_wrench_size, hl=1
@@ -114,7 +116,10 @@ class VirdoNCF(NeuralContactField):
 
     def forward(self, query_points: torch.Tensor, z_deform: torch.Tensor, z_object: torch.Tensor,
                 z_wrench: torch.Tensor):
-        combined_embedding = torch.cat([z_deform, z_object, z_wrench], dim=-1)
+        if self.no_wrench:
+            combined_embedding = torch.cat([z_deform, z_object], dim=-1)
+        else:
+            combined_embedding = torch.cat([z_deform, z_object, z_wrench], dim=-1)
 
         # Determine deformation at each query point.
         deform_in = {
