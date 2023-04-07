@@ -45,7 +45,7 @@ class ToolRotateDataset(ToolDataset):
         object_index = self.object_idcs[trial_index]
         data_dict = {
             "object_idx": np.array([object_index]),
-            "trial_idx": np.array([index]),
+            "trial_idx": np.array([index.cpu().numpy()]),
             "query_point": transform.transform_points(
                 torch.tensor(self.query_points[trial_index], dtype=self.dtype)).cpu().numpy(),
             "sdf": self.sdf[trial_index],
