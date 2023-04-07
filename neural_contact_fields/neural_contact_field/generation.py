@@ -81,13 +81,14 @@ class Generator(BaseGenerator):
     def generate_latent(self, data):
         # Generate deformation code latent.
         z_deform_size = self.model.z_deform_size
-        z_deform_, _ = inference_by_optimization(self.model,
-                                                 get_surface_loss_fn(self.embed_weight, self.def_weight),
-                                                 z_deform_size, 1, data,
-                                                 inf_params={"iter_limit": self.iter_limit, "conv_eps": self.conv_eps},
-                                                 device=self.device, verbose=False)
+        z_deform_, latent_metadata = inference_by_optimization(self.model,
+                                                               get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                               z_deform_size, 1, data,
+                                                               inf_params={"iter_limit": self.iter_limit,
+                                                                           "conv_eps": self.conv_eps},
+                                                               device=self.device, verbose=False)
         latent = z_deform_.weight
-        return latent
+        return latent, latent_metadata
 
     def generate_mesh(self, data, meta_data):
         # Check if we have been provided with the latent already.
@@ -95,7 +96,7 @@ class Generator(BaseGenerator):
             latent = meta_data["latent"]
         else:
             # Generate deformation code latent.
-            latent = self.generate_latent(data)
+            latent, _ = self.generate_latent(data)
 
         # Generate mesh.
         object_idx_ = torch.from_numpy(data["object_idx"]).to(self.device)
@@ -162,7 +163,7 @@ class Generator(BaseGenerator):
             latent = meta_data["latent"]
         else:
             # Generate deformation code latent.
-            latent = self.generate_latent(data)
+            latent, _ = self.generate_latent(data)
 
         object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
         wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
@@ -185,7 +186,7 @@ class Generator(BaseGenerator):
             latent = metadata["latent"]
         else:
             # Generate deformation code latent.
-            latent = self.generate_latent(data)
+            latent, _ = self.generate_latent(data)
 
         object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
         wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)

@@ -1,4 +1,5 @@
 import os.path
+import time
 
 import mmint_utils
 import numpy as np
@@ -42,6 +43,14 @@ def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: d
         metadata = {}
         mesh = pointcloud = contact_patch = contact_labels = None
 
+        # Generate latent.
+        start_time = time.time()
+        latent, latent_metadata = generator.generate_latent(data_dict)
+        end_time = time.time()
+        latent_gen_time = end_time - start_time
+        latent_metadata["latent_gen_time"] = latent_gen_time
+        metadata["latent"] = latent
+
         if generate_mesh:
             mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
             metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
@@ -57,7 +66,7 @@ def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: d
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
 
-        write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
+        write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, None, idx, latent_metadata)
 
 
 if __name__ == '__main__':

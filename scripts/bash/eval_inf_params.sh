@@ -24,27 +24,38 @@ OUT_BASE="out/experiments/primitives/model_v2/eval_inference"
 #python scripts/eval_inference.py cfg/primitives/model_v2.yaml -d $DATA_CFG -m test -o $OUT_BASE/embed_conv/0.001_0.00001/ --gen_args "{"embed_weight": 0.001, "conv_eps": 0.00001}" -n 3
 #python scripts/eval_inference.py cfg/primitives/model_v2.yaml -d $DATA_CFG -m test -o $OUT_BASE/embed_conv/0.001_0.000001/ --gen_args "{"embed_weight": 0.001, "conv_eps": 0.000001}" -n 3
 
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/random/ -m test
+python scripts/eval_inference.py cfg/primitives/model_v2.yaml -d $DATA_CFG -m test -o $OUT_BASE/iter_limit/50/ --gen_args "{"iter_limit": 50}" -n 3
+python scripts/eval_inference.py cfg/primitives/model_v2.yaml -d $DATA_CFG -m test -o $OUT_BASE/iter_limit/60/ --gen_args "{"iter_limit": 60}" -n 3
+python scripts/eval_inference.py cfg/primitives/model_v2.yaml -d $DATA_CFG -m test -o $OUT_BASE/iter_limit/100/ --gen_args "{"iter_limit": 100}" -n 3
+python scripts/eval_inference.py cfg/primitives/model_v2.yaml -d $DATA_CFG -m test -o $OUT_BASE/iter_limit/300/ --gen_args "{"iter_limit": 300}" -n 3
 
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/1.0/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.1/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.01/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.0001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/random/ -m test
+#
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/1.0/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.1/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.01/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0.0001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight/0/ -m test
+#
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.01/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.0001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.00001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.000001/ -m test
+#
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.01/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.0001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.00001/ -m test
+#python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.000001/ -m test
 
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.01/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.0001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.00001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/conv_eps/0.000001/ -m test
+python scripts/eval_results.py $DATA_CFG $OUT_BASE/iter_limit/50/ -m test
+python scripts/eval_results.py $DATA_CFG $OUT_BASE/iter_limit/60/ -m test
+python scripts/eval_results.py $DATA_CFG $OUT_BASE/iter_limit/100/ -m test
+python scripts/eval_results.py $DATA_CFG $OUT_BASE/iter_limit/300/ -m test
 
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.01/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.0001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.00001/ -m test
-python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_conv/0.001_0.000001/ -m test
-
-python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/embed_weight/1.0/ $OUT_BASE/embed_weight/0.1/ $OUT_BASE/embed_weight/0.01/ $OUT_BASE/embed_weight/0.001/ $OUT_BASE/embed_weight/0.0001/ $OUT_BASE/embed_weight/0/ $OUT_BASE/embed_weight.csv
-python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/conv_eps/0.01/ $OUT_BASE/conv_eps/0.001/ $OUT_BASE/conv_eps/0.0001/ $OUT_BASE/conv_eps/0.00001/ $OUT_BASE/conv_eps/0.000001/ $OUT_BASE/conv_eps.csv
-python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/embed_conv/0.001_0.01/ $OUT_BASE/embed_conv/0.001_0.001/ $OUT_BASE/embed_conv/0.001_0.0001/ $OUT_BASE/embed_conv/0.001_0.00001/ $OUT_BASE/embed_conv/0.001_0.000001/ $OUT_BASE/embed_conv.csv
+#python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/embed_weight/1.0/ $OUT_BASE/embed_weight/0.1/ $OUT_BASE/embed_weight/0.01/ $OUT_BASE/embed_weight/0.001/ $OUT_BASE/embed_weight/0.0001/ $OUT_BASE/embed_weight/0/ $OUT_BASE/embed_weight.csv
+#python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/conv_eps/0.01/ $OUT_BASE/conv_eps/0.001/ $OUT_BASE/conv_eps/0.0001/ $OUT_BASE/conv_eps/0.00001/ $OUT_BASE/conv_eps/0.000001/ $OUT_BASE/conv_eps.csv
+#python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/embed_conv/0.001_0.01/ $OUT_BASE/embed_conv/0.001_0.001/ $OUT_BASE/embed_conv/0.001_0.0001/ $OUT_BASE/embed_conv/0.001_0.00001/ $OUT_BASE/embed_conv/0.001_0.000001/ $OUT_BASE/embed_conv.csv
+python scripts/plot/plot_inf_params.py $OUT_BASE/random/ $OUT_BASE/iter_limit/50/ $OUT_BASE/iter_limit/60/ $OUT_BASE/iter_limit/100/ $OUT_BASE/iter_limit/300/ $OUT_BASE/iter_limit.csv
