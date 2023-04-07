@@ -22,7 +22,7 @@ def train_model(config_file: str, cuda_id: int = 0, no_cuda: bool = False, verbo
 
     # Setup datasets.
     print('Loading train dataset:')
-    train_dataset: ToolDataset = config.get_dataset('train', cfg)
+    train_dataset: ToolDataset = config.get_dataset('train', cfg, device=device)
     print('Train dataset size: %d' % len(train_dataset))
 
     if "validation" in cfg["data"]:

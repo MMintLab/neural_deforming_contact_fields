@@ -79,7 +79,7 @@ def get_dataset(mode, cfg, **kwargs):
     transforms_ = get_transforms(cfg)
 
     if dataset_type == "ToolDataset":
-        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
+        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
     elif dataset_type == "ToolRotateDataset":
         dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
     elif dataset_type == "PretrainObjectModuleDataset":

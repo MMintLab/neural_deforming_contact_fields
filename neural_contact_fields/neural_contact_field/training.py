@@ -259,14 +259,14 @@ class Trainer(BaseTrainer):
                 torch.save(save_dict, os.path.join(out_dir, 'model.pt'))
 
     def compute_train_loss_from_latent(self, data, z_trial):
-        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
-        coords = torch.from_numpy(data["query_point"]).to(self.device).float().unsqueeze(0)
-        gt_sdf = torch.from_numpy(data["sdf"]).to(self.device).float().unsqueeze(0)
-        gt_normals = torch.from_numpy(data["normals"]).to(self.device).float().unsqueeze(0)
-        gt_in_contact = torch.from_numpy(data["in_contact"]).to(self.device).float().unsqueeze(0)
-        nominal_coords = torch.from_numpy(data["nominal_query_point"]).to(self.device).float().unsqueeze(0)
-        nominal_sdf = torch.from_numpy(data["nominal_sdf"]).to(self.device).float().unsqueeze(0)
-        wrist_wrench = torch.from_numpy(data["wrist_wrench"]).to(self.device).float().unsqueeze(0)
+        object_idx = data["object_idx"]
+        coords = data["query_point"].float().unsqueeze(0)
+        gt_sdf = data["sdf"].float().unsqueeze(0)
+        gt_normals = data["normals"].float().unsqueeze(0)
+        gt_in_contact = data["in_contact"].float().unsqueeze(0)
+        nominal_coords = data["nominal_query_point"].float().unsqueeze(0)
+        nominal_sdf = data["nominal_sdf"].float().unsqueeze(0)
+        wrist_wrench = data["wrist_wrench"].float().unsqueeze(0)
 
         # Run model forward.
         z_object = self.model.encode_object(object_idx)
@@ -320,8 +320,8 @@ class Trainer(BaseTrainer):
         Args:
         - data (dict): data dictionary
         """
-        object_idx = torch.from_numpy(data["object_idx"]).to(self.device)
-        trial_idx = torch.from_numpy(data["trial_idx"]).to(self.device)
+        object_idx = data["object_idx"]
+        trial_idx = data["trial_idx"]
 
         # Run model forward.
         _, z_trial = self.model.encode_trial(object_idx, trial_idx)

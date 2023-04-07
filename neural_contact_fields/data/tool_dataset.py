@@ -14,11 +14,12 @@ class ToolDataset(torch.utils.data.Dataset):
     Each example in this dataset is all sample points for a given trial.
     """
 
-    def __init__(self, dataset_dir: str, load_data: bool = True, transform=None):
+    def __init__(self, dataset_dir: str, load_data: bool = True, transform=None, device="cpu"):
         super().__init__()
         self.dataset_dir = dataset_dir
         self.transform = transform
         self.dtype = torch.float32
+        self.device = device
 
         # Load dataset files and sort according to example number.
         data_fns = sorted([f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f],
