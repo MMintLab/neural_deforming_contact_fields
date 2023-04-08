@@ -67,4 +67,4 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
         range_.close()
 
     final_loss = loss_fn(model, z, data_dict, device)
-    return z_, {"final_loss": final_loss, "iters": iter_idx}
+    return z_, {"final_loss": final_loss, "iters": iter_idx + 1}
