@@ -15,20 +15,22 @@ from vedo import Plotter, Mesh, Points, LegendBox, Video, settings
 
 mount_height = 0.036
 tool_height = 0.046
-
-dataset_cfg = "cfg/dataset/sim_terrain_test_v2.yaml"
+dataset_cfg = "cfg/primitives/dataset/test_rebuttal.yaml"
+# dataset_cfg = "cfg/dataset/sim_terrain_test_v2.yaml"
 mode = "test"
-base_test_dir = "out/experiments/terrain_tests_v3/partial_pointcloud"
-video_dir = "/home/markvdm/Pictures/RSS_2023/video/sim_results/"
+base_test_dir = "out/experiments/rebuttal/inference_timing"
+video_dir = "/home/markvdm/Pictures/RSS_Rebuttal/video/sim_results/"
+
+# base_test_dir = "out/experiments/terrain_tests_v3/partial_pointcloud"
+# video_dir = "/home/markvdm/Pictures/RSS_2023/video/sim_results/"
 mmint_utils.make_dir(video_dir)
 
 titles = [
     "Ours",
-    "Baseline"
 ]
 test_dirs = [
-    "wrench_v2",
-    "baseline"
+    "finetuned"
+#    "wrench_v2",
 ]
 
 # Load dataset.
@@ -45,15 +47,13 @@ pred_patches_all = []
 for title, test_dir in zip(titles, test_dirs):
     gen_dir = os.path.join(base_test_dir, test_dir)
     # Load predicted results.
-    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
+    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels, _, _ = load_pred_results(gen_dir, num_trials)
 
     pred_meshes_all.append(pred_meshes)
     pred_patches_all.append(pred_contact_patches)
 
 # Build plots.
-for index in range(32, num_trials):
-    # print(index)
-    # for index in [34, 22, 4]:
+for index in range(38, num_trials):
     trial_dict = dataset[index]
     pc = trial_dict["partial_pointcloud"]
 
@@ -65,6 +65,7 @@ for index in range(32, num_trials):
     vedo_elements.append(partial_pc)
 
     # Plot geometries.
+    # print(len(titles), len(pred_meshes_all), index, len(pred_meshes_all[0])
     for method_idx in range(len(titles)):
         pred_mesh_ = pred_meshes_all[method_idx][index]
         pred_mesh = Mesh([pred_mesh_.vertices, pred_mesh_.faces])
@@ -94,20 +95,20 @@ for index in range(32, num_trials):
     plt.camera.SetClippingRange(0.102757, 0.231116)
 
     # if out_fn is not None:
-    # video = Video(os.path.join(video_dir, "res_%d.mp4" % index), backend="ffmpeg", fps=60)
-    #
-    # fps = 60
-    # sec = 8
-    # frames = fps * sec
-    # for i in range(frames):
-    #     angle = (1 / frames) * 2. * np.pi
-    #
-    #     for vedo_el in vedo_elements:
-    #         vedo_el.rotate_x(angle, rad=True, around=[0.0, 0.0, mount_height + (tool_height / 2.0)])
-    #
-    #     # if out_fn is not None:
-    #     video.add_frame()
-    #
-    # # if out_fn is not None:
-    # video.close()
-    plt.interactive().close()
+    video = Video(os.path.join(video_dir, "res_%d.mp4" % index), backend="ffmpeg", fps=60)
+
+    fps = 60
+    sec = 8
+    frames = fps * sec
+    for i in range(frames):
+        angle = (1 / frames) * 2. * np.pi
+
+        for vedo_el in vedo_elements:
+            vedo_el.rotate_x(angle, rad=True, around=[0.0, 0.0, mount_height + (tool_height / 2.0)])
+
+        # if out_fn is not None:
+        video.add_frame()
+
+    # if out_fn is not None:
+    video.close()
+    plt.close()
