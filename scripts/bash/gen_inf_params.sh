@@ -44,6 +44,8 @@ OUT_BASE="out/experiments/primitives/model_v2/eval_inference_gen"
 #python scripts/generate.py $MODEL_CFG -d $DATA_CFG -m test -o $OUT_BASE/embed_iter/0.0001_100/ --gen_args "{"embed_weight": 0.0001, "iter_limit": 100}"
 # python scripts/generate.py $MODEL_CFG -d $DATA_CFG -m test -o $OUT_BASE/embed_iter/0.0001_150/ --gen_args "{"embed_weight": 0.0001, "iter_limit": 150}"
 
+python scripts/generate.py $MODEL_CFG -d $DATA_CFG -m test -o $OUT_BASE/embed_iter/1.0_1000/ --gen_args "{"embed_weight": 1.0, "iter_limit": 1000}"
+
 #python scripts/generate.py $MODEL_CFG -d $DATA_CFG -m test -o $OUT_BASE/embed_conv/0.001_0.0001/ --gen_args "{"embed_weight": 0.001, "conv_eps": 0.0001}"
 
 # python scripts/eval_results.py $DATA_CFG $OUT_BASE/random/ -m test
@@ -80,6 +82,8 @@ OUT_BASE="out/experiments/primitives/model_v2/eval_inference_gen"
 #python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_iter/0.0001_100/ -m test
 #python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_iter/0.0001_150/ -m test
 
+python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_iter/1.0_1000/ -m test
+
 #python scripts/eval_results.py $DATA_CFG $OUT_BASE/random/ -m test
 
 # python scripts/eval_results.py $DATA_CFG $OUT_BASE/embed_weight_std/0.0001/ -m test
@@ -97,4 +101,4 @@ OUT_BASE="out/experiments/primitives/model_v2/eval_inference_gen"
 
 # python scripts/plot/plot_inf_params_single.py $OUT_BASE/random/ $OUT_BASE/embed_weight/0.0001/ $OUT_BASE/embed_weight/0/ $OUT_BASE/embed_weight/0_1000/ $OUT_BASE/embed_conv/0.001_0.0001/ $OUT_BASE/embed_weight_std/std_0.0001/ $OUT_BASE/gen_res.csv
 
-python scripts/plot/plot_inf_params_single.py $OUT_BASE/random/ $OUT_BASE/embed_iter/0.001_50/ $OUT_BASE/embed_iter/0.001_100/ $OUT_BASE/embed_iter/0.001_150/ $OUT_BASE/embed_iter/0.0001_50/ $OUT_BASE/embed_iter/0.0001_100/ $OUT_BASE/embed_iter/0.0001_150/ $OUT_BASE/embed_iter.csv
+python scripts/plot/plot_inf_params_single.py $OUT_BASE/random/ $OUT_BASE/embed_iter/0.001_50/ $OUT_BASE/embed_iter/0.001_100/ $OUT_BASE/embed_iter/0.001_150/ $OUT_BASE/embed_iter/0.0001_50/ $OUT_BASE/embed_iter/0.0001_100/ $OUT_BASE/embed_iter/0.0001_150/ $OUT_BASE/embed_iter/1.0_1000/ $OUT_BASE/embed_iter.csv
