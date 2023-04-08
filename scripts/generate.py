@@ -44,16 +44,15 @@ def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: d
         mesh = pointcloud = contact_patch = contact_labels = None
 
         # Generate latent.
-        start_time = time.time()
         latent, latent_metadata = generator.generate_latent(data_dict)
-        end_time = time.time()
-        latent_gen_time = end_time - start_time
-        latent_metadata["latent_gen_time"] = latent_gen_time
         metadata["latent"] = latent
 
         if generate_mesh:
             mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
             metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
+
+            if "mesh_gen_time" in metadata_mesh:
+                latent_metadata["mesh_gen_time"] = metadata_mesh["mesh_gen_time"]
 
         if generate_pointcloud:
             pointcloud, metadata_pc = generator.generate_pointcloud(data_dict, metadata)

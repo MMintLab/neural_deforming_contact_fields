@@ -72,7 +72,8 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", partial: boo
     )
 
     # Load predicted results.
-    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
+    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels, _, _ = load_pred_results(gen_dir,
+                                                                                                       num_trials)
 
     for trial_idx in trange(offset, len(dataset)):
         trial_dict = dataset[trial_idx]

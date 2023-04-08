@@ -39,7 +39,7 @@ def load_pred_results(out_dir, n, device=None):
     contact_patches = []
     contact_labels = []
     iou_labels = []
-    infer_times = []
+    miscs = []
 
     for idx in range(n):
         mesh_fn = os.path.join(out_dir, "mesh_%d.obj" % idx)
@@ -77,11 +77,11 @@ def load_pred_results(out_dir, n, device=None):
         misc_fn = os.path.join(out_dir, "misc_%d.pkl.gzip" % idx)
         if os.path.exists(misc_fn):
             misc = mmint_utils.load_gzip_pickle(misc_fn)
-            infer_times.append(misc["latent_gen_time"])
+            miscs.append(misc)
         else:
-            infer_times.append(None)
+            miscs.append(None)
 
-    return meshes, pointclouds, contact_patches, contact_labels, iou_labels, infer_times
+    return meshes, pointclouds, contact_patches, contact_labels, iou_labels, miscs
 
 
 def load_gt_results(dataset, dataset_dir, n, device=None):

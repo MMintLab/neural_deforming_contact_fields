@@ -40,7 +40,7 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
                 )
 
             # Load predicted results.
-            pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels, pred_iou_labels, infer_times = \
+            pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels, pred_iou_labels, misc = \
                 load_pred_results(run_out_dir, num_trials, device)
 
             # Calculate metrics.
@@ -124,10 +124,10 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
                         "model_iou": iou.item(),
                     })
 
-                if infer_times[trial_idx] is not None:
-                    metrics_dict.update({
-                        "infer_time": infer_times[trial_idx],
-                    })
+                if misc[trial_idx] is not None:
+                    for key in ["mesh_gen_time", "latent_gen_time", "iters"]:
+                        if key in misc[trial_idx]:
+                            metrics_dict[key] = misc[trial_idx][key]
 
                 metrics_results.append(metrics_dict)
 

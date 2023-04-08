@@ -31,7 +31,7 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
 
     # Load inference hyper parameters.
     init_mean = inf_params.get("init_mean", 0.0)
-    init_std = inf_params.get("init_std", 0.001)
+    init_std = inf_params.get("init_std", 0.08)
     lr = inf_params.get("lr", 3e-2)
     num_steps = inf_params.get("iter_limit", 300)
     epsilon = inf_params.get("conv_eps", 0.0)

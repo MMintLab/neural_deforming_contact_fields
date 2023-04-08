@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -68,7 +70,7 @@ class Generator(BaseGenerator):
         self.generates_pointcloud = False
         self.generates_contact_patch = True
         self.generates_contact_labels = False
-        self.generates_iou_labels = True
+        self.generates_iou_labels = False
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
         self.embed_weight = generation_cfg.get("embed_weight", 0.0)
@@ -81,12 +83,17 @@ class Generator(BaseGenerator):
     def generate_latent(self, data):
         # Generate deformation code latent.
         z_deform_size = self.model.z_deform_size
+        start = time.time()
         z_deform_, latent_metadata = inference_by_optimization(self.model,
                                                                get_surface_loss_fn(self.embed_weight, self.def_weight),
                                                                z_deform_size, 1, data,
                                                                inf_params={"iter_limit": self.iter_limit,
                                                                            "conv_eps": self.conv_eps},
                                                                device=self.device, verbose=False)
+        end = time.time()
+        latent_gen_time = end - start
+        latent_metadata["latent_gen_time"] = latent_gen_time
+
         latent = z_deform_.weight
         return latent, latent_metadata
 
@@ -107,9 +114,12 @@ class Generator(BaseGenerator):
         z_wrench = self.model.encode_wrench(wrist_wrench_)
 
         latent_sdf_decoder = LatentSDFDecoder(self.model, latent, z_object, z_wrench)
+        start = time.time()
         mesh = create_mesh(latent_sdf_decoder)
+        end = time.time()
+        mesh_gen_time = end - start
 
-        return mesh, {"latent": latent, "mesh": mesh}
+        return mesh, {"latent": latent, "mesh": mesh, "mesh_gen_time": mesh_gen_time}
 
     def generate_pointcloud(self, data, meta_data):
         raise Exception("Selected generator does not generate point clouds.")
