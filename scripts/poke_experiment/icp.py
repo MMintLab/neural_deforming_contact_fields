@@ -22,8 +22,9 @@ def icp_gt(mesh_fn: str, pointclouds: List[str]):
     N_icp = 100
 
     # Load mesh and sample point cloud.
-    mesh = o3d.io.read_triangle_mesh(mesh_fn)
-    mesh_pcd = mesh.sample_points_poisson_disk(10000)
+    # mesh = o3d.io.read_triangle_mesh(mesh_fn)
+    # mesh_pcd = mesh.sample_points_poisson_disk(10000)
+    mesh_pcd = o3d.io.read_point_cloud(mesh_fn)
 
     # Load pointclouds.
     pcds = [o3d.io.read_point_cloud(pcd_fn) for pcd_fn in pointclouds]
@@ -59,7 +60,8 @@ def icp_gt(mesh_fn: str, pointclouds: List[str]):
     results = sorted(results, key=lambda x: x.fitness, reverse=True)
 
     # Visualize result.
-    draw_registration_result(mesh_pcd, target_pcd, results[0].transformation)
+    for res in results:
+        draw_registration_result(mesh_pcd, target_pcd, res.transformation)
 
 
 if __name__ == '__main__':
