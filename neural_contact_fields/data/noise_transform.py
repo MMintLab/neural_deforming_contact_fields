@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 
 class NoiseTransform(object):
@@ -10,7 +10,7 @@ class NoiseTransform(object):
         partial_pointcloud = data_dict["partial_pointcloud"].copy()
 
         # Add noise to points.
-        noise = numpy.random.normal(0, self.noise_level, partial_pointcloud.shape)
+        noise = np.random.normal(0, self.noise_level, partial_pointcloud.shape)
         partial_pointcloud += noise
 
         # Update points in data dict.

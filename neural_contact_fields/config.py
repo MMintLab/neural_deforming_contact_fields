@@ -6,6 +6,7 @@ from neural_contact_fields.data.pretrain_object_module_dataset import PretrainOb
 from torchvision import transforms
 from neural_contact_fields import neural_contact_field
 from neural_contact_fields.data.tool_rotate_dataset import ToolRotateDataset
+from neural_contact_fields.data.wrench_noise_transform import WrenchNoiseTransform
 
 method_dict = {
     'neural_contact_field': neural_contact_field,
@@ -105,6 +106,8 @@ def get_transforms(cfg):
 
         if transform_type == "NoiseTransform":
             transform = NoiseTransform(transform_info["noise"])
+        elif transform_type == "WrenchNoiseTransform":
+            transform = WrenchNoiseTransform(transform_info["noise"])
         else:
             raise Exception("Unknown transform type: %s" % transform_type)
 
