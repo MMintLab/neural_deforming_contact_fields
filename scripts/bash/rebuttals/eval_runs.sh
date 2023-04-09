@@ -1,7 +1,8 @@
 #!/bin/bash
 
 DATA_CFG=cfg/primitives/dataset/test_rebuttal.yaml
-MUG_DATA_CFG=cfg/poke_experiments/mug/mug_v6.yaml
+# MUG_DATA_CFG=cfg/poke_experiments/mug/mug_v6.yaml
+MUG_DATA_CFG=cfg/
 VAL_DATA_CFG=cfg/primitives/dataset/test_partial_v2.yaml
 
 BASE_MODEL_CFG=cfg/primitives/model_v2.yaml
@@ -79,16 +80,16 @@ OUT_DIR=out/experiments/rebuttal
 # Experiment 5: Iter count ablation                #
 ####################################################
 
-python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/1/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 1}"
-python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/50/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
-python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/100/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 100}"
-python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/200/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 200}"
-python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/300/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 300}"
-
-python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/1 -m test -s
-python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/50 -m test -s
-python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/100 -m test -s
-python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/200 -m test -s
-python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/300 -m test -s
-
-python scripts/plot/plot_inf_params_single.py $OUT_DIR/iter_ablation/1 $OUT_DIR/iter_ablation/50 $OUT_DIR/iter_ablation/100 $OUT_DIR/iter_ablation/200 $OUT_DIR/iter_ablation/300 $OUT_DIR/iter_ablation/res.csv
+#python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/1/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 1}"
+#python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/50/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
+#python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/100/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 100}"
+#python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/200/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 200}"
+#python scripts/generate.py $BASE_MODEL_CFG -d $DATA_CFG -m test -o $OUT_DIR/iter_ablation/300/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 300}"
+#
+#python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/1 -m test -s
+#python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/50 -m test -s
+#python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/100 -m test -s
+#python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/200 -m test -s
+#python scripts/eval_results.py $DATA_CFG $OUT_DIR/iter_ablation/300 -m test -s
+#
+#python scripts/plot/plot_inf_params_single.py $OUT_DIR/iter_ablation/1 $OUT_DIR/iter_ablation/50 $OUT_DIR/iter_ablation/100 $OUT_DIR/iter_ablation/200 $OUT_DIR/iter_ablation/300 $OUT_DIR/iter_ablation/res.csv
