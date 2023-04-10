@@ -100,12 +100,12 @@ OUT_DIR=out/experiments/rebuttal
 
 NOISE_CFG_DIR=cfg/primitives/rebuttal/noise
 
-python scripts/generate.py $BASE_MODEL_CFG -d $NOISE_CFG_DIR/noise_0.1.yaml -m test -o $OUT_DIR/wrench_noise/0.1/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
-python scripts/generate.py $BASE_MODEL_CFG -d $NOISE_CFG_DIR/noise_0.5.yaml -m test -o $OUT_DIR/wrench_noise/0.5/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
-python scripts/generate.py $BASE_MODEL_CFG -d $NOISE_CFG_DIR/noise_1.0.yaml -m test -o $OUT_DIR/wrench_noise/1.0/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
+# python scripts/generate.py $BASE_MODEL_CFG -d $NOISE_CFG_DIR/noise_0.1.yaml -m test -o $OUT_DIR/wrench_noise/0.1/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
+#python scripts/generate.py $BASE_MODEL_CFG -d $NOISE_CFG_DIR/noise_0.5.yaml -m test -o $OUT_DIR/wrench_noise/0.5/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
+#python scripts/generate.py $BASE_MODEL_CFG -d $NOISE_CFG_DIR/noise_1.0.yaml -m test -o $OUT_DIR/wrench_noise/1.0/ --gen_args "{"embed_weight": 0.0001, "def_loss": 0.0, "iter_limit": 50}"
+#
+#python scripts/eval_results.py $NOISE_CFG_DIR/noise_0.1.yaml $OUT_DIR/wrench_noise/0.1/ -m test -s
+#python scripts/eval_results.py $NOISE_CFG_DIR/noise_0.5.yaml $OUT_DIR/wrench_noise/0.5/ -m test -s
+#python scripts/eval_results.py $NOISE_CFG_DIR/noise_1.0.yaml $OUT_DIR/wrench_noise/1.0/ -m test -s
 
-python scripts/eval_results.py $NOISE_CFG_DIR/noise_0.1.yaml $OUT_DIR/wrench_noise/0.1/ -m test -s
-python scripts/eval_results.py $NOISE_CFG_DIR/noise_0.5.yaml $OUT_DIR/wrench_noise/0.5/ -m test -s
-python scripts/eval_results.py $NOISE_CFG_DIR/noise_1.0.yaml $OUT_DIR/wrench_noise/1.0/ -m test -s
-
-python scripts/plot/plot_inf_params_single.py $OUT_DIR/wrench_noise/0.1 $OUT_DIR/wrench_noise/0.5 $OUT_DIR/wrench_noise/1.0 $OUT_DIR/wrench_noise/res.csv
+python scripts/plot/plot_inf_params_single.py $OUT_DIR/inference_timing/finetuned/ $OUT_DIR/wrench_noise/0.1 $OUT_DIR/wrench_noise/0.5 $OUT_DIR/wrench_noise/1.0 $OUT_DIR/wrench_noise/res.csv

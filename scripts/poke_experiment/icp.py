@@ -1,11 +1,13 @@
 import argparse
 import copy
+import os
 from typing import List
 
 import numpy as np
 import open3d as o3d
 from tqdm import trange
 
+import mmint_utils
 import pytorch_kinematics as pk
 
 
@@ -18,13 +20,13 @@ def draw_registration_result(source, target, transformation):
     o3d.visualization.draw_geometries([source_temp, target_temp])
 
 
-def icp_gt(mesh_fn: str, pointclouds: List[str]):
+def icp_gt(mesh_fn: str, pointclouds: List[str], out_fn: str):
     N_icp = 100
 
     # Load mesh and sample point cloud.
-    # mesh = o3d.io.read_triangle_mesh(mesh_fn)
-    # mesh_pcd = mesh.sample_points_poisson_disk(10000)
-    mesh_pcd = o3d.io.read_point_cloud(mesh_fn)
+    mesh = o3d.io.read_triangle_mesh(mesh_fn)
+    mesh_pcd = mesh.sample_points_poisson_disk(10000)
+    # mesh_pcd = o3d.io.read_point_cloud(mesh_fn)
 
     # Load pointclouds.
     pcds = [o3d.io.read_point_cloud(pcd_fn) for pcd_fn in pointclouds]
@@ -60,8 +62,19 @@ def icp_gt(mesh_fn: str, pointclouds: List[str]):
     results = sorted(results, key=lambda x: x.fitness, reverse=True)
 
     # Visualize result.
-    for res in results:
-        draw_registration_result(mesh_pcd, target_pcd, res.transformation)
+    # for res in results:
+    #     draw_registration_result(mesh_pcd, target_pcd, res.transformation)
+    draw_registration_result(mesh_pcd, target_pcd, results[0].transformation)
+
+    results_to_save = [{
+        "fitness": res.fitness,
+        "inlier_rmse": res.inlier_rmse,
+        "transformation": res.transformation,
+    } for res in results]
+
+    # Save result.
+    mmint_utils.make_dir(os.path.dirname(out_fn))
+    mmint_utils.save_gzip_pickle(results_to_save, out_fn)
 
 
 if __name__ == '__main__':
@@ -71,4 +84,4 @@ if __name__ == '__main__':
     parser.add_argument("out_fn", type=str, help="Output file.")
     args = parser.parse_args()
 
-    icp_gt(args.mesh_fn, args.pointclouds)
+    icp_gt(args.mesh_fn, args.pointclouds, args.out_fn)
