@@ -4,7 +4,7 @@ data:
     dataset_fn: /home/markvdm/Documents/IsaacGym/ncf_envs/out/sim_12_6_22/nominal_0.pkl.gzip
   train:
     dataset: ToolRotateDataset
-    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/rebuttal/combine_train_proc/
+    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/rebuttals/combine_train_proc/
 training:
   out_dir: out/models/primitives/camera_ready/model_v1/
   learning_rate: 0.0001
