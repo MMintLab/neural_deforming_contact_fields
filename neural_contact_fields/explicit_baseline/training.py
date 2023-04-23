@@ -37,14 +37,20 @@ class Trainer(BaseTrainer):
     #  Main training loop                                                    #
     ##########################################################################
 
-    def get_loss(self,data_dict, trial_idx):
+    def get_loss(self, data_dict, trial_idx):
+        query_points = data_dict["query_point"].float().unsqueeze(0)
+        surface_coords_ = data_dict["surface_points"].float().unsqueeze(0)
+        gt_sdf = data_dict["sdf"].float().unsqueeze(0)
+        gt_in_contact = data_dict["in_contact"].float().unsqueeze(0)
+        partial_pcd = data_dict["partial_pointcloud"].float().unsqueeze(0)
+
         # Pull out relevant data.
-        query_points = torch.from_numpy(data_dict["query_point"]).to(self.device).float().unsqueeze(0)
-        surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
-        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
-        gt_sdf = torch.from_numpy(data_dict["sdf"]).to(self.device).float().unsqueeze(0)
-        gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(self.device).float().unsqueeze(0)
-        partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
+        # query_points = torch.from_numpy(data_dict["query_point"]).to(self.device).float().unsqueeze(0)
+        # surface_coords_ = torch.from_numpy(data_dict["surface_points"]).to(self.device).float().unsqueeze(0)
+        wrist_wrench_ = data_dict["wrist_wrench"].to(self.device).float().unsqueeze(0)
+        # gt_sdf = torch.from_numpy(data_dict["sdf"]).to(self.device).float().unsqueeze(0)
+        # gt_in_contact = torch.from_numpy(data_dict["in_contact"]).to(self.device).float().unsqueeze(0)
+        # partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
 
 #         print(data_dict.keys(), query_points.shape, surface_coords_.shape, gt_sdf.shape)
         cnt_indicator = gt_in_contact[gt_sdf == 0.0]

@@ -3,17 +3,17 @@ data:
     dataset: PretrainObjectModuleDataset
     dataset_fn: out/datasets/sim_1_20_23_v1/nominal_0.pkl.gzip
   train:
-    dataset: ToolDataset
-    dataset_dir: out/datasets/combined_train/
+    dataset: ToolRotateDataset
+    dataset_dir: out/datasets/combine_train_proc/
 training:
-  out_dir: out/models/example_b1_full
+  out_dir: out/models/example_b1_rbt
   learning_rate: 0.0001
   betas: (.9, .999)
   weight_decay: 0
-  epochs: 10000
+  epochs: 200 #10000
   epochs_per_validation: 100
   update_object_code: false
-  epochs_per_save: 100
+  epochs_per_save: 10 #100
   load_pretrain:
     freeze_object_module_weights: true
   loss_weights:
@@ -38,5 +38,5 @@ method: explicit_baseline
 model:
   method: explicit_baseline
   z_object_size: 6
-  z_deform_size: 6
-  z_wrench_size: 6
+  z_deform_size: 16
+  z_wrench_size: 16

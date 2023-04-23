@@ -1,9 +1,13 @@
+from neural_contact_fields.data.noise_transform import NoiseTransform
+from neural_contact_fields.data.poke_dataset import PokeDataset
 from neural_contact_fields.data.real_tool_dataset import RealToolDataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
 from torchvision import transforms
-from neural_contact_fields import neural_contact_field
-from neural_contact_fields import explicit_baseline
+from neural_contact_fields import neural_contact_field, explicit_baseline
+
+from neural_contact_fields.data.tool_rotate_dataset import ToolRotateDataset
+from neural_contact_fields.data.wrench_noise_transform import WrenchNoiseTransform
 
 method_dict = {
     'neural_contact_field': neural_contact_field,
@@ -66,7 +70,7 @@ def get_visualizer(cfg, model, device=None, visualizer_args=None):
     return visualizer
 
 
-def get_dataset(mode, cfg):
+def get_dataset(mode, cfg, **kwargs):
     """
     Args:
     - mode (str): dataset mode [train, val, test].
@@ -78,11 +82,15 @@ def get_dataset(mode, cfg):
     transforms_ = get_transforms(cfg)
 
     if dataset_type == "ToolDataset":
-        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
+        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
+    elif dataset_type == "ToolRotateDataset":
+        dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
     elif dataset_type == "PretrainObjectModuleDataset":
         dataset = PretrainObjectModuleDataset(cfg["data"][mode]["dataset_fn"], transform=transforms_)
     elif dataset_type == "RealToolDataset":
         dataset = RealToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
+    elif dataset_type == "PokeDataset":
+        dataset = PokeDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_)
     else:
         raise Exception("Unknown requested dataset type: %s" % dataset_type)
 
@@ -97,9 +105,13 @@ def get_transforms(cfg):
     transform_list = []
     for transform_info in transforms_info:
         transform_type = transform_info["type"]
-        transform = None
 
-        raise Exception("Unknown transform type: %s" % transform_type)
+        if transform_type == "NoiseTransform":
+            transform = NoiseTransform(transform_info["noise"])
+        elif transform_type == "WrenchNoiseTransform":
+            transform = WrenchNoiseTransform(transform_info["noise"])
+        else:
+            raise Exception("Unknown transform type: %s" % transform_type)
 
         transform_list.append(transform)
 
