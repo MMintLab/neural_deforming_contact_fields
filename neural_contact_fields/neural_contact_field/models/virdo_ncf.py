@@ -20,6 +20,7 @@ class VirdoNCF(NeuralContactField):
         self.forward_deformation_input = forward_deformation_input
 
         self.no_wrench = self.z_wrench_size == 0
+        self.no_trial_code = self.z_deform_size == 0
 
         # Setup sub-models of the VirdoNCF.
         self.object_model = meta_modules.virdo_hypernet(in_features=3, out_features=1,
@@ -118,6 +119,8 @@ class VirdoNCF(NeuralContactField):
                 z_wrench: torch.Tensor):
         if self.no_wrench:
             combined_embedding = torch.cat([z_deform, z_object], dim=-1)
+        elif self.no_trial_code:
+            combined_embedding = torch.cat([z_object, z_wrench], dim=-1)
         else:
             combined_embedding = torch.cat([z_deform, z_object, z_wrench], dim=-1)
 
