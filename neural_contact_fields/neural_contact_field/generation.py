@@ -29,6 +29,22 @@ class LatentSDFDecoder(nn.Module):
         return out_dict["sdf"].squeeze(0)
 
 
+class NominalSDFDecoder(nn.Module):
+    """
+    Decoder when given latent variables.
+    """
+
+    def __init__(self, model: NeuralContactField, z_object):
+        super().__init__()
+        self.model: NeuralContactField = model
+        self.model.eval()
+        self.z_object = z_object
+
+    def forward(self, query_points: torch.Tensor):
+        out_dict = self.model.forward_object_module(query_points.unsqueeze(0), self.z_object)
+        return out_dict["sdf"].squeeze(0)
+
+
 def get_surface_loss_fn(embed_weight: float, def_weight: float):
     def surface_loss_fn(model, latent, data_dict, device):
         # Pull out relevant data.
@@ -66,6 +82,7 @@ class Generator(BaseGenerator):
         self.model: NeuralContactField
         super().__init__(cfg, model, device)
 
+        self.generates_nominal_mesh = True
         self.generates_mesh = True
         self.generates_pointcloud = False
         self.generates_contact_patch = True
@@ -79,6 +96,21 @@ class Generator(BaseGenerator):
 
         self.iter_limit = generation_cfg.get("iter_limit", 150)
         self.conv_eps = float(generation_cfg.get("conv_eps", 0.0))
+
+    def generate_nominal_mesh(self, data, meta_data):
+        nominal_metadata = {}
+
+        object_idx_ = torch.from_numpy(data["object_idx"]).to(self.device)
+        z_object = self.model.encode_object(object_idx_)
+
+        nominal_sdf_decoder = NominalSDFDecoder(self.model, z_object)
+        start = time.time()
+        nominal_mesh = create_mesh(nominal_sdf_decoder)
+        end = time.time()
+        mesh_gen_time = end - start
+        nominal_metadata["mesh_gen_time"] = mesh_gen_time
+
+        return nominal_mesh, nominal_metadata
 
     def generate_latent(self, data):
         # Generate deformation code latent.

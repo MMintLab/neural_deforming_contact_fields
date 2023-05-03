@@ -37,7 +37,7 @@ def icp_gt(mesh_fn: str, pointclouds: List[str], out_fn: str):
         target_pcd += pcd
 
     # Sample many initial orientations.
-    tf_init = pk.random_rotations(100).cpu().numpy()
+    tf_init = pk.random_rotations(N_icp).cpu().numpy()
     results = []
 
     for icp_idx in trange(N_icp):

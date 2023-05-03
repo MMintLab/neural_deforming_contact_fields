@@ -69,13 +69,14 @@ def load_model_from_config(model_config, dataset, model_file="model_best.pt", cu
 
 
 def load_model_and_dataset(model_config, dataset_config=None, dataset_mode="test", model_file='model_best.pt',
-                           cuda_id=0, no_cuda=False):
+                           cuda_id=0, no_cuda=False, load_data: bool = True):
     if dataset_config is None:
         dataset_config = model_config
-    _, dataset = load_dataset_from_config(dataset_config, dataset_mode)
+    _, dataset = load_dataset_from_config(dataset_config, dataset_mode, load_data=load_data)
 
     # Because some models depend on their train dataset, we load it additionally.
-    _, train_dataset = load_dataset_from_config(model_config, dataset_mode="train", load_data=dataset_config is None)
+    _, train_dataset = load_dataset_from_config(model_config, dataset_mode="train",
+                                                load_data=load_data and dataset_config is None)
     model_cfg, model, cuda_device, load_dict = load_model_from_config(model_config, train_dataset,
                                                                       model_file=model_file,
                                                                       cuda_id=cuda_id, no_cuda=no_cuda)

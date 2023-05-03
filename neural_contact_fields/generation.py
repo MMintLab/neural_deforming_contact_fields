@@ -15,11 +15,18 @@ class BaseGenerator(object):
         self.model = model
         self.device = device
 
+        self.generates_nominal_mesh = False
         self.generates_mesh = False
         self.generates_pointcloud = False
         self.generates_contact_patch = False
         self.generates_contact_labels = False
         self.generates_iou_labels = False
+
+    def generate_nominal_mesh(self, data, metadata):
+        raise NotImplementedError()
+
+    def generate_latent(self, data):
+        raise NotImplementedError()
 
     def generate_mesh(self, data, metadata):
         raise NotImplementedError()
