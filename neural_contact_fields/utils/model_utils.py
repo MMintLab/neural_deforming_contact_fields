@@ -87,4 +87,4 @@ def load_generation_cfg(model_cfg: dict, model_file="model_best.pt"):
     model_file = os.path.join(model_cfg['training']['out_dir'], model_file)
     state_dict = torch.load(model_file, map_location='cpu')
 
-    return state_dict.get("generation", {})
+    return mmint_utils.combine_dict(state_dict.get("generation", {}), model_cfg.get("generation", {}))
