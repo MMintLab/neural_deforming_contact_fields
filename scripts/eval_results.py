@@ -14,6 +14,91 @@ import torchmetrics
 import pytorch3d.loss
 
 
+def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool = False):
+    metrics_dict = dict()
+
+    # Evaluate meshes.
+    if gen_dict["mesh"] is not None:
+        chamfer_dist = ncf_metrics.mesh_chamfer_distance(gen_dict["mesh"], gt_dict["mesh"], device=device, vis=verbose)
+        iou = ncf_metrics.mesh_iou(gt_dict["points_iou"], gt_dict["iou_labels"], gen_dict["mesh"], device=device,
+                                   vis=verbose)
+        metrics_dict.update({
+            "chamfer_distance": chamfer_dist.item() * 1e6,
+            "iou": iou.item(),
+        })
+
+    # Evaluate pointclouds.
+    if gen_dict["pointcloud"] is not None:
+        if sample:
+            pred_pointcloud = utils.sample_pointcloud(gen_dict["pointcloud"], 10000)
+        else:
+            pred_pointcloud = gen_dict["pointcloud"]
+        gt_pc = utils.sample_pointcloud(gt_dict["pointcloud"], 10000)
+        chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointcloud.unsqueeze(0).float(),
+                                                          gt_pc.unsqueeze(0).float())
+
+        metrics_dict.update({
+            "chamfer_distance": chamfer_dist.item() * 1e6,
+        })
+
+    # Evaluate contact patches.
+    if gen_dict["contact_patch"] is not None:
+        # Sample each to 300 - makes evaluation of CD more fair.
+        if sample:
+            pred_pc = utils.sample_pointcloud(gen_dict["contact_patch"], 300)
+        else:
+            pred_pc = gen_dict["contact_patch"]
+        gt_pc = utils.sample_pointcloud(gt_dict["contact_patch"], 300)
+        patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
+                                                                gt_pc.unsqueeze(0).float())
+
+        metrics_dict.update({
+            "patch_chamfer_distance": patch_chamfer_dist.item() * 1e6,
+        })
+
+    # Evaluate binary contact labels.
+    if gen_dict["contact_labels"] is not None:
+        pred_contact_labels_trial = gen_dict["contact_labels"]["contact_labels"].float()
+        gt_contact_label = gt_dict["contact_labels"].float()
+        binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels_trial,
+                                                                                 gt_contact_label,
+                                                                                 threshold=0.5)
+        precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels_trial,
+                                                                            gt_contact_label,
+                                                                            threshold=0.5)
+        recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels_trial,
+                                                                      gt_contact_label,
+                                                                      threshold=0.5)
+        f1 = torchmetrics.functional.classification.binary_f1_score(pred_contact_labels_trial,
+                                                                    gt_contact_label,
+                                                                    threshold=0.5)
+        metrics_dict.update({
+            "binary_accuracy": binary_accuracy.item(),
+            "precision": precision.item(),
+            "recall": recall.item(),
+            "f1": f1.item(),
+        })
+
+    if gen_dict["iou_labels"] is not None:
+        pred_iou_labels_trial = gen_dict["iou_labels"]["iou_labels"].float()
+        gt_iou_labels_trial = gt_dict["iou_labels"].float()
+
+        iou = torchmetrics.functional.classification.binary_jaccard_index(pred_iou_labels_trial,
+                                                                          gt_iou_labels_trial,
+                                                                          threshold=0.5)
+
+        metrics_dict.update({
+            "model_iou": iou.item(),
+        })
+
+    if gen_dict["metadata"] is not None:
+        for key in ["mesh_gen_time", "latent_gen_time", "iters"]:
+            if key in gen_dict["metadata"]:
+                metrics_dict[key] = gen_dict["metadata"][key]
+
+    return metrics_dict
+
+
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False,
                       sample: bool = False):
     device = torch.device("cuda:0")
@@ -34,103 +119,17 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
             run_out_dir = os.path.join(out_dir, run_dir)
 
             # Load specific ground truth results needed for evaluation.
-            gt_meshes, gt_pointclouds, gt_contact_patches, gt_contact_labels, points_iou, gt_occ_iou = \
-                load_gt_results(
-                    dataset, dataset_dir, num_trials, device
-                )
+            gt_dicts = load_gt_results(dataset, num_trials, device)
 
             # Load predicted results.
-            pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels, pred_iou_labels, misc = \
-                load_pred_results(run_out_dir, num_trials, device)
+            gen_dicts = load_pred_results(run_out_dir, num_trials, device)
 
             # Calculate metrics.
             metrics_results = []
             for trial_idx in range(num_trials):
-                metrics_dict = dict()
-
-                # Evaluate meshes.
-                if pred_meshes[trial_idx] is not None:
-                    chamfer_dist = ncf_metrics.mesh_chamfer_distance(pred_meshes[trial_idx], gt_meshes[trial_idx],
-                                                                     device=device,
-                                                                     vis=verbose)
-                    iou = ncf_metrics.mesh_iou(points_iou[trial_idx], gt_occ_iou[trial_idx], pred_meshes[trial_idx],
-                                               device=device,
-                                               vis=verbose)
-                    metrics_dict.update({
-                        "chamfer_distance": chamfer_dist.item() * 1e6,
-                        "iou": iou.item(),
-                    })
-
-                # Evaluate pointclouds.
-                if pred_pointclouds[trial_idx] is not None:
-                    if sample:
-                        pred_pc = utils.sample_pointcloud(pred_pointclouds[trial_idx], 10000)
-                    gt_pc = utils.sample_pointcloud(gt_pointclouds[trial_idx], 10000)
-                    chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
-                                                                      gt_pc.unsqueeze(0).float())
-
-                    metrics_dict.update({
-                        "chamfer_distance": chamfer_dist.item() * 1e6,
-                    })
-
-                # Evaluate contact patches.
-                if pred_contact_patches[trial_idx] is not None:
-                    # Sample each to 300 - makes evaluation of CD more fair.
-                    if sample:
-                        pred_pc = utils.sample_pointcloud(pred_contact_patches[trial_idx], 300)
-                    else:
-                        pred_pc = pred_contact_patches[trial_idx]
-                    gt_pc = utils.sample_pointcloud(gt_contact_patches[trial_idx], 300)
-                    patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
-                        pred_pc.unsqueeze(0).float(),
-                        gt_pc.unsqueeze(0).float())
-
-                    metrics_dict.update({
-                        "patch_chamfer_distance": patch_chamfer_dist.item() * 1e6,
-                    })
-
-                # Evaluate binary contact labels.
-                if pred_contact_labels[trial_idx] is not None:
-                    pred_contact_labels_trial = pred_contact_labels[trial_idx]["contact_labels"].float()
-                    binary_accuracy = torchmetrics.functional.classification.binary_accuracy(pred_contact_labels_trial,
-                                                                                             gt_contact_labels[
-                                                                                                 trial_idx],
-                                                                                             threshold=0.5)
-                    precision = torchmetrics.functional.classification.binary_precision(pred_contact_labels_trial,
-                                                                                        gt_contact_labels[trial_idx],
-                                                                                        threshold=0.5)
-                    recall = torchmetrics.functional.classification.binary_recall(pred_contact_labels_trial,
-                                                                                  gt_contact_labels[trial_idx],
-                                                                                  threshold=0.5)
-                    f1 = torchmetrics.functional.classification.binary_f1_score(pred_contact_labels_trial,
-                                                                                gt_contact_labels[trial_idx],
-                                                                                threshold=0.5)
-                    metrics_dict.update({
-                        "binary_accuracy": binary_accuracy.item(),
-                        "precision": precision.item(),
-                        "recall": recall.item(),
-                        "f1": f1.item(),
-                    })
-
-                if pred_iou_labels[trial_idx] is not None:
-                    pred_iou_labels_trial = pred_iou_labels[trial_idx]["iou_labels"].float()
-                    gt_iou_labels_trial = gt_occ_iou[trial_idx].float()
-
-                    iou = torchmetrics.functional.classification.binary_jaccard_index(pred_iou_labels_trial,
-                                                                                      gt_iou_labels_trial,
-                                                                                      threshold=0.5)
-
-                    metrics_dict.update({
-                        "model_iou": iou.item(),
-                    })
-
-                if misc[trial_idx] is not None:
-                    for key in ["mesh_gen_time", "latent_gen_time", "iters"]:
-                        if key in misc[trial_idx]:
-                            metrics_dict[key] = misc[trial_idx][key]
-
+                metrics_dict = eval_example(gen_dicts[trial_idx], gt_dicts[trial_idx], device, sample=sample,
+                                            verbose=verbose)
                 metrics_results.append(metrics_dict)
-
                 pbar.update()
 
             if verbose:

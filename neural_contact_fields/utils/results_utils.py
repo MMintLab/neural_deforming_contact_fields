@@ -17,105 +17,89 @@ def write_nominal_results(out_dir, nominal_mesh, idx, misc: dict = None):
         mmint_utils.save_gzip_pickle(misc, misc_fn)
 
 
-def write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, iou_labels, idx, misc: dict = None):
+def write_results(out_dir, gen_dict: dict, idx):
+    mesh = gen_dict["mesh"]
     if mesh is not None:
         mesh_fn = os.path.join(out_dir, "mesh_%d.obj" % idx)
         mesh.export(mesh_fn)
 
+    pointcloud = gen_dict["pointcloud"]
     if pointcloud is not None:
         pc_fn = os.path.join(out_dir, "pointcloud_%d.ply" % idx)
         utils.save_pointcloud(pointcloud, pc_fn)
 
+    contact_patch = gen_dict["contact_patch"]
     if contact_patch is not None:
         cp_fn = os.path.join(out_dir, "contact_patch_%d.ply" % idx)
         utils.save_pointcloud(contact_patch, cp_fn)
 
+    contact_labels = gen_dict["contact_labels"]
     if contact_labels is not None:
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
         mmint_utils.save_gzip_pickle(contact_labels, cl_fn)
 
+    iou_labels = gen_dict["iou_labels"]
     if iou_labels is not None:
         iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
         mmint_utils.save_gzip_pickle(iou_labels, iou_fn)
 
-    if misc is not None:
-        misc_fn = os.path.join(out_dir, "misc_%d.pkl.gzip" % idx)
-        mmint_utils.save_gzip_pickle(misc, misc_fn)
+    metadata = gen_dict["metadata"]
+    if metadata is not None:
+        # Make sure mesh not in metadata.
+        if "mesh" in metadata:
+            del metadata["mesh"]
+        metadata_fn = os.path.join(out_dir, "misc_%d.pkl.gzip" % idx)
+        mmint_utils.save_gzip_pickle(metadata, metadata_fn)
 
 
 def load_pred_results(out_dir, n, device=None):
-    meshes = []
-    pointclouds = []
-    contact_patches = []
-    contact_labels = []
-    iou_labels = []
-    miscs = []
+    gen_dicts = []
 
     for idx in range(n):
+        gen_dict = dict()
+
         mesh_fn = os.path.join(out_dir, "mesh_%d.obj" % idx)
-        if os.path.exists(mesh_fn):
-            meshes.append(trimesh.load(mesh_fn))
-        else:
-            meshes.append(None)
+        gen_dict["mesh"] = trimesh.load(mesh_fn) if os.path.exists(mesh_fn) else None
 
         pc_fn = os.path.join(out_dir, "pointcloud_%d.ply" % idx)
-        if os.path.exists(pc_fn):
-            pointclouds.append(torch.from_numpy(utils.load_pointcloud(pc_fn)).to(device))
-        else:
-            pointclouds.append(None)
+        gen_dict["pointcloud"] = torch.from_numpy(utils.load_pointcloud(pc_fn)).to(device) if os.path.exists(
+            pc_fn) else None
 
         cp_fn = os.path.join(out_dir, "contact_patch_%d.ply" % idx)
-        if os.path.exists(cp_fn):
-            contact_patches.append(torch.from_numpy(utils.load_pointcloud(cp_fn)).to(device))
-        else:
-            contact_patches.append(None)
+        gen_dict["contact_patch"] = torch.from_numpy(utils.load_pointcloud(cp_fn)).to(device) if os.path.exists(
+            cp_fn) else None
 
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
-        if os.path.exists(cl_fn):
-            contact_labels_ = mmint_utils.load_gzip_pickle(cl_fn)
-            contact_labels.append(contact_labels_)
-        else:
-            contact_labels.append(None)
+        gen_dict["contact_labels"] = mmint_utils.load_gzip_pickle(cl_fn) if os.path.exists(cl_fn) else None
 
         iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
-        if os.path.exists(iou_fn):
-            iou_labels_ = mmint_utils.load_gzip_pickle(iou_fn)
-            iou_labels.append(iou_labels_)
-        else:
-            iou_labels.append(None)
+        gen_dict["iou_labels"] = mmint_utils.load_gzip_pickle(iou_fn) if os.path.exists(iou_fn) else None
 
         misc_fn = os.path.join(out_dir, "misc_%d.pkl.gzip" % idx)
-        if os.path.exists(misc_fn):
-            misc = mmint_utils.load_gzip_pickle(misc_fn)
-            miscs.append(misc)
-        else:
-            miscs.append(None)
+        gen_dict["metadata"] = mmint_utils.load_gzip_pickle(misc_fn) if os.path.exists(misc_fn) else None
 
-    return meshes, pointclouds, contact_patches, contact_labels, iou_labels, miscs
+        gen_dicts.append(gen_dict)
+    return gen_dicts
 
 
-def load_gt_results(dataset, dataset_dir, n, device=None):
-    meshes = []
-    pointclouds = []
-    contact_patches = []
-    contact_labels = []
-    points_iou = []
-    occ_iou = []
+def load_gt_results(dataset, n, device=None):
+    gt_dicts = []
 
     # Load ground truth meshes and surface contact labels.
     for idx in range(n):
         dataset_dict = dataset[idx]
-        meshes.append(dataset.get_example_mesh(idx))
-        pointclouds.append(torch.from_numpy(dataset_dict["surface_points"]).to(device))
+        gt_dict = dict()
 
-        # Load contact patch.
-        contact_patches.append(torch.from_numpy(dataset_dict["contact_patch"]).to(device))
+        gt_dict["mesh"] = dataset.get_example_mesh(idx)
+        gt_dict["pointcloud"] = torch.from_numpy(dataset_dict["surface_points"]).to(device)
+        gt_dict["contact_patch"] = torch.from_numpy(dataset_dict["contact_patch"]).to(device)
+        gt_dict["contact_labels"] = torch.from_numpy(dataset_dict["surface_in_contact"]).to(device).int()
+        gt_dict["iou_labels"] = torch.from_numpy(dataset_dict["occ_tgt"]).to(device).int()
+        gt_dict["points_iou"] = torch.from_numpy(dataset_dict["points_iou"]).to(device)
 
-        contact_labels.append(torch.from_numpy(dataset_dict["surface_in_contact"]).to(device).int())
-        points_iou.append(torch.from_numpy(dataset_dict["points_iou"]).to(device))
-        occ_iou.append(torch.from_numpy(dataset_dict["occ_tgt"]).to(device).int())
+        gt_dicts.append(gt_dict)
 
-    return meshes, pointclouds, contact_patches, contact_labels, points_iou, occ_iou
+    return gt_dicts
 
 
 def load_gt_results_real(dataset, dataset_dir, n, device=None):
@@ -130,6 +114,18 @@ def load_gt_results_real(dataset, dataset_dir, n, device=None):
         contact_patches.append(contact_patch)
 
     return contact_patches
+
+
+def metrics_to_statistics(metrics_dicts):
+    keys = metrics_dicts[0].keys()
+
+    statistics = dict()
+    for key in keys:
+        statistics[key] = dict()
+        statistics[f"{key}_mean"] = np.mean([example[key] for example in metrics_dicts])
+        statistics[f"{key}_std"] = np.std([example[key] for example in metrics_dicts])
+
+    return statistics
 
 
 def print_results(metrics_dict, title):

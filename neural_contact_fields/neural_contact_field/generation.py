@@ -94,6 +94,8 @@ class Generator(BaseGenerator):
         self.def_weight = generation_cfg.get("def_weight", 0.0)
         self.contact_patch_size = generation_cfg.get("contact_patch_size", 10000)
 
+        self.mesh_resolution = generation_cfg.get("mesh_resolution", 64)
+
         self.iter_limit = generation_cfg.get("iter_limit", 150)
         self.conv_eps = float(generation_cfg.get("conv_eps", 0.0))
 
@@ -147,7 +149,7 @@ class Generator(BaseGenerator):
 
         latent_sdf_decoder = LatentSDFDecoder(self.model, latent, z_object, z_wrench)
         start = time.time()
-        mesh = create_mesh(latent_sdf_decoder)
+        mesh = create_mesh(latent_sdf_decoder, n=self.mesh_resolution)
         end = time.time()
         mesh_gen_time = end - start
 

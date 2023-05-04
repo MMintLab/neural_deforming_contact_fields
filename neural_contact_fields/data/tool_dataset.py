@@ -50,7 +50,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.occ_tgt = []  # Occupancy target for IoU points.
 
         # Load all data.
-        for trial_idx, data_fn in enumerate(tqdm.tqdm(data_fns)):
+        for trial_idx, data_fn in enumerate(data_fns):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
 
             # Populate example info.

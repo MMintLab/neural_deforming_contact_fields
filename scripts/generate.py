@@ -13,6 +13,38 @@ from tqdm import trange
 import random
 
 
+def generate_example(generator, data_dict):
+    # TODO: Move to different file.
+    metadata = {}
+    mesh = pointcloud = contact_patch = contact_labels = None
+
+    # Generate latent.
+    latent, latent_metadata = generator.generate_latent(data_dict)
+    metadata["latent"] = latent
+    metadata = mmint_utils.combine_dict(metadata, latent_metadata)
+
+    if generator.generates_mesh:
+        mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
+        metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
+
+    if generator.generates_pointcloud:
+        pointcloud, metadata_pc = generator.generate_pointcloud(data_dict, metadata)
+        metadata = mmint_utils.combine_dict(metadata, metadata_pc)
+
+    if generator.generates_contact_patch:
+        contact_patch, metadata_cp = generator.generate_contact_patch(data_dict, metadata)
+        metadata = mmint_utils.combine_dict(metadata, metadata_cp)
+
+    if generator.generates_contact_labels:
+        contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
+        metadata = mmint_utils.combine_dict(metadata, metadata_cl)
+
+    return {
+        "mesh": mesh, "pointcloud": pointcloud, "contact_patch": contact_patch, "contact_labels": contact_labels,
+        "metadata": metadata
+    }
+
+
 def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: dict, offset: int):
     model.eval()
 
@@ -24,12 +56,6 @@ def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: d
     # Load generator.
     generator = config.get_generator(model_cfg, model, generation_cfg, device)
 
-    # Determine what to generate.
-    generate_mesh = generator.generates_mesh
-    generate_pointcloud = generator.generates_pointcloud
-    generate_contact_patch = generator.generates_contact_patch
-    generate_contact_labels = generator.generates_contact_labels
-
     # Create output directory.
     if out_dir is not None:
         mmint_utils.make_dir(out_dir)
@@ -40,32 +66,9 @@ def generate(model_cfg, model, model_file, dataset, device, out_dir, gen_args: d
     # Go through dataset and generate!
     for idx in trange(offset, len(dataset)):
         data_dict = dataset[idx]
-        metadata = {}
-        mesh = pointcloud = contact_patch = contact_labels = None
+        gen_dict = generate_example(generator, data_dict)
 
-        # Generate latent.
-        latent, latent_metadata = generator.generate_latent(data_dict)
-        metadata["latent"] = latent
-
-        if generate_mesh:
-            mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
-            metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
-
-            if "mesh_gen_time" in metadata_mesh:
-                latent_metadata["mesh_gen_time"] = metadata_mesh["mesh_gen_time"]
-
-        if generate_pointcloud:
-            pointcloud, metadata_pc = generator.generate_pointcloud(data_dict, metadata)
-            metadata = mmint_utils.combine_dict(metadata, metadata_pc)
-
-        if generate_contact_patch:
-            contact_patch, metadata_cp = generator.generate_contact_patch(data_dict, metadata)
-            metadata = mmint_utils.combine_dict(metadata, metadata_cp)
-
-        if generate_contact_labels:
-            contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
-
-        write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, None, idx, latent_metadata)
+        write_results(out_dir, gen_dict, idx)
 
 
 if __name__ == '__main__':
