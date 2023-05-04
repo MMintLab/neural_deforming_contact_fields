@@ -38,10 +38,11 @@ def write_results(out_dir, gen_dict: dict, idx):
         cl_fn = os.path.join(out_dir, "contact_labels_%d.pkl.gzip" % idx)
         mmint_utils.save_gzip_pickle(contact_labels, cl_fn)
 
-    iou_labels = gen_dict["iou_labels"]
-    if iou_labels is not None:
-        iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
-        mmint_utils.save_gzip_pickle(iou_labels, iou_fn)
+    if "iou_labels" in gen_dict:
+        iou_labels = gen_dict["iou_labels"]
+        if iou_labels is not None:
+            iou_fn = os.path.join(out_dir, "iou_labels_%d.pkl.gzip" % idx)
+            mmint_utils.save_gzip_pickle(iou_labels, iou_fn)
 
     metadata = gen_dict["metadata"]
     if metadata is not None:
@@ -121,7 +122,6 @@ def metrics_to_statistics(metrics_dicts):
 
     statistics = dict()
     for key in keys:
-        statistics[key] = dict()
         statistics[f"{key}_mean"] = np.mean([example[key] for example in metrics_dicts])
         statistics[f"{key}_std"] = np.std([example[key] for example in metrics_dicts])
 

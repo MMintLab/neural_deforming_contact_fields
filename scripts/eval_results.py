@@ -48,6 +48,8 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
             pred_pc = utils.sample_pointcloud(gen_dict["contact_patch"], 300)
         else:
             pred_pc = gen_dict["contact_patch"]
+        if type(pred_pc) == np.ndarray:
+            pred_pc = torch.from_numpy(pred_pc).to(device)
         gt_pc = utils.sample_pointcloud(gt_dict["contact_patch"], 300)
         patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
                                                                 gt_pc.unsqueeze(0).float())
@@ -79,17 +81,18 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
             "f1": f1.item(),
         })
 
-    if gen_dict["iou_labels"] is not None:
-        pred_iou_labels_trial = gen_dict["iou_labels"]["iou_labels"].float()
-        gt_iou_labels_trial = gt_dict["iou_labels"].float()
+    if "iou_labels" in gen_dict:  # TODO: Fix key issue.
+        if gen_dict["iou_labels"] is not None:
+            pred_iou_labels_trial = gen_dict["iou_labels"]["iou_labels"].float()
+            gt_iou_labels_trial = gt_dict["iou_labels"].float()
 
-        iou = torchmetrics.functional.classification.binary_jaccard_index(pred_iou_labels_trial,
-                                                                          gt_iou_labels_trial,
-                                                                          threshold=0.5)
+            iou = torchmetrics.functional.classification.binary_jaccard_index(pred_iou_labels_trial,
+                                                                              gt_iou_labels_trial,
+                                                                              threshold=0.5)
 
-        metrics_dict.update({
-            "model_iou": iou.item(),
-        })
+            metrics_dict.update({
+                "model_iou": iou.item(),
+            })
 
     if gen_dict["metadata"] is not None:
         for key in ["mesh_gen_time", "latent_gen_time", "iters"]:
