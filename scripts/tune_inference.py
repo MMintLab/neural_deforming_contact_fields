@@ -72,8 +72,8 @@ def tune_inference(args):
 
     # Setup search algorithm.
     if search_alg == "bayes":
-        search_alg = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
-        tune_cfg = tune.TuneConfig(search_alg=search_alg)
+        search_alg_ = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
+        tune_cfg = tune.TuneConfig(search_alg=search_alg_)
     else:
         tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
 
