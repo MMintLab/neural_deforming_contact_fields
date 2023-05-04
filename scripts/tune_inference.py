@@ -9,6 +9,7 @@ from neural_contact_fields.utils.results_utils import load_gt_results, metrics_t
 
 from ray.air import session
 from ray import tune, air
+from ray.tune.search.bayesopt import BayesOptSearch
 
 from scripts.eval_results import eval_example
 from scripts.generate import generate_example
@@ -16,6 +17,7 @@ from scripts.generate import generate_example
 
 def tune_inference(args):
     out_dir = args.out
+    search_alg = args.search_alg
 
     # Set visible gpus to the one provided.
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_id)
@@ -67,10 +69,18 @@ def tune_inference(args):
 
     # Setup RayTune.
     trainable_with_resources = tune.with_resources(eval_hyper_params, {"cpu": 16, "gpu": 1})
+
+    # Setup search algorithm.
+    if search_alg == "bayes":
+        search_alg = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
+        tune_cfg = tune.TuneConfig(search_alg=search_alg)
+    else:
+        tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
+
     tuner = tune.Tuner(
         trainable_with_resources,
-        tune_config=tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10),
-        run_config=air.RunConfig(local_dir=out_dir, name="tune_inference"),
+        tune_config=tune_cfg,
+        run_config=air.RunConfig(local_dir=out_dir, name=search_alg),
         param_space=search_space,
     )
     tuner.fit()
@@ -79,6 +89,7 @@ def tune_inference(args):
 if __name__ == '__main__':
     parser = get_model_dataset_arg_parser()
     parser.add_argument("--out", "-o", type=str, help="Optional out directory to write generated results to.")
+    parser.add_argument("--search_alg", "-s", type=str, default="random", help="Search algorithm to use.")
     args = parser.parse_args()
 
     tune_inference(args)
