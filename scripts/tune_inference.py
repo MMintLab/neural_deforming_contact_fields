@@ -20,7 +20,7 @@ def tune_inference(args):
     search_alg = args.search_alg
 
     # Set visible gpus to the one provided.
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_id)
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join([str(c_id) for c_id in args.cuda_ids])
     args.cuda_id = 0  # Change index to be into visible devices list.
 
     # Make out dir.
@@ -72,6 +72,7 @@ def tune_inference(args):
 
     # Setup search algorithm.
     if search_alg == "bayes":
+        search_space["iter_limit"] = tune.uniform(100, 1000)  # Bayes doesn't support int search spaces.
         search_alg_ = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
         tune_cfg = tune.TuneConfig(search_alg=search_alg_)
     else:
@@ -90,6 +91,7 @@ if __name__ == '__main__':
     parser = get_model_dataset_arg_parser()
     parser.add_argument("--out", "-o", type=str, help="Optional out directory to write generated results to.")
     parser.add_argument("--search_alg", "-s", type=str, default="random", help="Search algorithm to use.")
+    parser.add_argument("--cuda_ids", nargs="+", type=int, default=[0], help="Cuda device ids to use.")
     args = parser.parse_args()
 
     tune_inference(args)

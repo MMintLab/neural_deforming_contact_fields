@@ -96,7 +96,7 @@ class Generator(BaseGenerator):
 
         self.mesh_resolution = generation_cfg.get("mesh_resolution", 64)
 
-        self.iter_limit = generation_cfg.get("iter_limit", 150)
+        self.iter_limit = int(generation_cfg.get("iter_limit", 150))
         self.conv_eps = float(generation_cfg.get("conv_eps", 0.0))
 
     def generate_nominal_mesh(self, data, meta_data):
