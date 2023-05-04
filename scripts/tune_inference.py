@@ -1,4 +1,5 @@
 from tqdm import trange
+import os
 
 import mmint_utils
 from neural_contact_fields import config
@@ -15,6 +16,10 @@ from scripts.generate import generate_example
 
 def tune_inference(args):
     out_dir = args.out
+
+    # Set visible gpus to the one provided.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_id)
+    args.cuda_id = 0  # Change index to be into visible devices list.
 
     # Make out dir.
     mmint_utils.make_dir(out_dir)
