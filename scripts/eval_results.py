@@ -48,15 +48,20 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
             pred_pc = utils.sample_pointcloud(gen_dict["contact_patch"], 300)
         else:
             pred_pc = gen_dict["contact_patch"]
-        if type(pred_pc) == np.ndarray:
-            pred_pc = torch.from_numpy(pred_pc).to(device)
-        gt_pc = utils.sample_pointcloud(gt_dict["contact_patch"], 300)
-        patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
-                                                                gt_pc.unsqueeze(0).float())
+        if len(pred_pc) > 0:
+            if type(pred_pc) == np.ndarray:
+                pred_pc = torch.from_numpy(pred_pc).to(device)
+            gt_pc = utils.sample_pointcloud(gt_dict["contact_patch"], 300)
+            patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
+                                                                    gt_pc.unsqueeze(0).float())
 
-        metrics_dict.update({
-            "patch_chamfer_distance": patch_chamfer_dist.item() * 1e6,
-        })
+            metrics_dict.update({
+                "patch_chamfer_distance": patch_chamfer_dist.item() * 1e6,
+            })
+        else:
+            metrics_dict.update({
+                "patch_chamfer_distance": None,
+            })
 
     # Evaluate binary contact labels.
     if gen_dict["contact_labels"] is not None:

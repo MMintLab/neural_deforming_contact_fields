@@ -122,8 +122,8 @@ def metrics_to_statistics(metrics_dicts):
 
     statistics = dict()
     for key in keys:
-        statistics[f"{key}_mean"] = np.mean([example[key] for example in metrics_dicts])
-        statistics[f"{key}_std"] = np.std([example[key] for example in metrics_dicts])
+        statistics[f"{key}_mean"] = np.mean([example[key] for example in metrics_dicts if example[key] is not None])
+        statistics[f"{key}_std"] = np.std([example[key] for example in metrics_dicts if example[key] is not None])
 
     return statistics
 

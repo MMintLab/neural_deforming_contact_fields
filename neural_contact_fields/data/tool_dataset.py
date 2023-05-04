@@ -54,6 +54,15 @@ class ToolDataset(torch.utils.data.Dataset):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
 
             # Populate example info.
+            try:
+                contact_patch = example_dict["test"]["contact_patch"]
+            except:
+                contact_patch = self.surface_points[-1][self.surface_in_contact[-1]]
+            if len(contact_patch) == 0:
+                self.num_trials -= 1
+                continue
+            self.contact_patch.append(contact_patch)
+
             self.object_idcs.append(0)  # TODO: Replace when using multiple tools.
             self.trial_idcs.append(trial_idx)
             self.query_points.append(example_dict["train"]["query_points"])
@@ -63,12 +72,6 @@ class ToolDataset(torch.utils.data.Dataset):
             self.trial_pressure.append(example_dict["train"]["pressure"])
             self.surface_points.append(example_dict["test"]["surface_points"])
             self.surface_in_contact.append(example_dict["test"]["surface_in_contact"])
-            try:
-                self.contact_patch.append(example_dict["test"]["contact_patch"])
-            except:
-                self.contact_patch.append(
-                    self.surface_points[-1][self.surface_in_contact[-1]]
-                )
             try:
                 self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
             except:
