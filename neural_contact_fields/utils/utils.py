@@ -43,6 +43,9 @@ def sample_pointcloud(pointcloud, n):
     Draw n samples from given pointcloud.
     """
     pointcloud_size = len(pointcloud)
+    if pointcloud_size == 0:
+        return pointcloud
+
     indices = np.arange(pointcloud_size)
     sample_indices = np.random.choice(indices, size=n)
 
