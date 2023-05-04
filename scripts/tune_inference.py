@@ -64,10 +64,9 @@ def tune_inference(args):
     trainable_with_resources = tune.with_resources(eval_hyper_params, {"cpu": 16, "gpu": 1})
     tuner = tune.Tuner(
         trainable_with_resources,
-        tune_config=tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min"),
+        tune_config=tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10),
         run_config=air.RunConfig(local_dir=out_dir, name="tune_inference"),
         param_space=search_space,
-        # param_space={"contact_threshold": 0.5, "embed_weight": 0.5, "iter_limit": 100},
     )
     tuner.fit()
 
