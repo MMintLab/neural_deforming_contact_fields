@@ -74,7 +74,12 @@ def tune_inference(args):
     if search_alg == "bayes":
         search_space["iter_limit"] = tune.uniform(100, 1000)  # Bayes doesn't support int search spaces.
         search_alg_ = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
-        tune_cfg = tune.TuneConfig(search_alg=search_alg_)
+        tune_cfg = tune.TuneConfig(search_alg=search_alg_, num_samples=-1)
+    elif search_alg == "grid":
+        tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=-1)
+        search_space["contact_threshold"] = tune.grid_search([0.2, 0.5, 0.8])
+        search_space["embed_weight"] = tune.grid_search([1e-6, 1e-3, 1e-1, 1.0])
+        search_space["iter_limit"] = tune.grid_search([100, 300, 500, 1000])
     else:
         tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
 
