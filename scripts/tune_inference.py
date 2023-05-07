@@ -60,7 +60,7 @@ def tune_inference(args):
         metrics_stats_dict = metrics_to_statistics(metrics_dicts)
         session.report(metrics_stats_dict)
 
-    # Define search space.
+    # Define search space. TODO: Move this to a config file.
     search_space = {
         "contact_threshold": tune.quniform(0.0, 1.0, 0.1),
         "embed_weight": tune.loguniform(1e-6, 1.0),
