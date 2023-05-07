@@ -24,7 +24,7 @@ class ToolDataset(torch.utils.data.Dataset):
         # Load dataset files and sort according to example number.
         data_fns = sorted([f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f],
                           key=lambda x: int(x.split(".")[0].split("_")[-1]))
-
+        data_fns = data_fns[:10]
         nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
                              key=lambda x: int(x.split(".")[0].split("_")[-1]))
         self.num_objects = len(nominal_fns)
@@ -47,6 +47,8 @@ class ToolDataset(torch.utils.data.Dataset):
         self.contact_patch = []  # Contact patch.
         self.points_iou = []  # Points used to calculated IoU.
         self.occ_tgt = []  # Occupancy target for IoU points.
+        self.partial_pcd_idx = [[1, 0], [2, 0], [2, 1], [3, 0], [3, 1], [3, 2], [4, 0], [4, 1], [4, 2], [4, 3], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4], [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [7, 0], [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]]
+
 
         null_idx = []
         # Load all data.
@@ -80,7 +82,7 @@ class ToolDataset(torch.utils.data.Dataset):
                 self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
             except:
                 self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
-            self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
+            self.partial_pointcloud.append(example_dict["input"]['pointclouds'])
             self.points_iou.append(example_dict["test"]["points_iou"])
             self.occ_tgt.append(example_dict["test"]["occ_tgt"])
 
@@ -89,11 +91,11 @@ class ToolDataset(torch.utils.data.Dataset):
         self.nominal_sdf = []
 
         for object_idx, nominal_fn in enumerate(nominal_fns):
-            example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, nominal_fn))
+            example_dict_nom = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, nominal_fn))
 
             # Populate nominal info.
-            self.nominal_query_points.append(example_dict["query_points"])
-            self.nominal_sdf.append(example_dict["sdf"])
+            self.nominal_query_points.append(example_dict_nom["query_points"])
+            self.nominal_sdf.append(example_dict_nom["sdf"])
 
         [data_fns.pop(null_idx_) for null_idx_ in null_idx]
         self.num_trials = len(data_fns)
@@ -114,7 +116,8 @@ class ToolDataset(torch.utils.data.Dataset):
         return self.num_trials
 
     def __getitem__(self, index):
-        object_index = self.object_idcs[index]
+        object_index = 0
+
 
         data_dict = {
             "object_idx": np.array([object_index]),
@@ -129,7 +132,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "nominal_sdf": self.nominal_sdf[object_index],
             "surface_points": self.surface_points[index],
             "surface_in_contact": self.surface_in_contact[index],
-            "partial_pointcloud": self.partial_pointcloud[index],
+            "partial_pointcloud": partial_pointcloud,
             "contact_patch": self.contact_patch[index],
             "points_iou": self.points_iou[index],
             "occ_tgt": self.occ_tgt[index],

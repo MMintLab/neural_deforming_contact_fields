@@ -7,6 +7,7 @@ import torch
 import open3d as o3d
 from tensorboardX import SummaryWriter
 from torch import optim
+from tqdm import trange
 
 from torch.utils.data import Dataset
 from neural_contact_fields.data.tool_dataset import ToolDataset
@@ -107,12 +108,13 @@ class Trainer(BaseTrainer):
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
         # Load model + optimizer if a partially trained copy of it exists.
-        epoch_it, it = self.load_partial_train_model(
+        epoch_it0, it = self.load_partial_train_model(
             {"model": self.model, "optimizer": optimizer}, out_dir, "model.pt")
 
         # Training loop
-        while True:
-            epoch_it += 1
+        # while True:
+        for epoch_it in trange(epoch_it0, max_epochs):
+            # epoch_it += 1
 
             if epoch_it > max_epochs:
                 print("Backing up and stopping training. Reached max epochs.")
