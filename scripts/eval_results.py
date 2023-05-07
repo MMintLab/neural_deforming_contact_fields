@@ -10,7 +10,10 @@ from neural_contact_fields import config
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, print_results
 from tqdm import trange
 import torchmetrics
-import pytorch3d.loss
+try:
+    import pytorch3d.loss
+except:
+    print("pytorch3d not installed ")
 
 
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False):
@@ -55,21 +58,21 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
 
         # Evaluate pointclouds.
         if pred_pointclouds[trial_idx] is not None:
-            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointclouds[trial_idx].unsqueeze(0).float(),
-                                                              gt_pointclouds[trial_idx].unsqueeze(0).float())
+            chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pointclouds[trial_idx].unsqueeze(0).float().to(device),
+                                                              gt_pointclouds[trial_idx].unsqueeze(0).float().to(device))
 
             metrics_dict.update({
-                "chamfer_distance": chamfer_dist.item(),
+                "chamfer_distance": chamfer_dist.item().detach(),
             })
 
         # Evaluate contact patches.
         if pred_contact_patches[trial_idx] is not None:
             patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(
-                pred_contact_patches[trial_idx].unsqueeze(0).float(),
-                gt_contact_patches[trial_idx].unsqueeze(0).float())
+                pred_contact_patches[trial_idx].unsqueeze(0).float().to(device),
+                gt_contact_patches[trial_idx].unsqueeze(0).float().to(device))
 
             metrics_dict.update({
-                "patch_chamfer_distance": patch_chamfer_dist.item(),
+                "patch_chamfer_distance": patch_chamfer_dist.item().detach(),
             })
 
         # Evaluate binary contact labels.

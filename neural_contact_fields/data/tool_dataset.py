@@ -24,7 +24,6 @@ class ToolDataset(torch.utils.data.Dataset):
         # Load dataset files and sort according to example number.
         data_fns = sorted([f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f],
                           key=lambda x: int(x.split(".")[0].split("_")[-1]))
-        self.num_trials = len(data_fns)
 
         nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
                              key=lambda x: int(x.split(".")[0].split("_")[-1]))
@@ -49,9 +48,22 @@ class ToolDataset(torch.utils.data.Dataset):
         self.points_iou = []  # Points used to calculated IoU.
         self.occ_tgt = []  # Occupancy target for IoU points.
 
+        null_idx = []
         # Load all data.
         for trial_idx, data_fn in enumerate(tqdm.tqdm(data_fns)):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
+            try:
+                self.contact_patch.append(example_dict["test"]["contact_patch"])
+            except:
+                self.contact_patch.append(
+                    self.surface_points[-1][self.surface_in_contact[-1]]
+                )
+
+            if len(self.contact_patch[-1]) == 0:
+                null_idx.append(trial_idx)
+                self.contact_patch.pop(-1)
+                continue
+
 
             # Populate example info.
             self.object_idcs.append(0)  # TODO: Replace when using multiple tools.
@@ -63,12 +75,7 @@ class ToolDataset(torch.utils.data.Dataset):
             self.trial_pressure.append(example_dict["train"]["pressure"])
             self.surface_points.append(example_dict["test"]["surface_points"])
             self.surface_in_contact.append(example_dict["test"]["surface_in_contact"])
-            try:
-                self.contact_patch.append(example_dict["test"]["contact_patch"])
-            except:
-                self.contact_patch.append(
-                    self.surface_points[-1][self.surface_in_contact[-1]]
-                )
+
             try:
                 self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
             except:
@@ -82,13 +89,15 @@ class ToolDataset(torch.utils.data.Dataset):
         self.nominal_sdf = []
 
         for object_idx, nominal_fn in enumerate(nominal_fns):
-            example_dict_nom = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, nominal_fn))
+            example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, nominal_fn))
 
             # Populate nominal info.
-            self.nominal_query_points.append(example_dict_nom["query_points"])
-            self.nominal_sdf.append(example_dict_nom["sdf"])
+            self.nominal_query_points.append(example_dict["query_points"])
+            self.nominal_sdf.append(example_dict["sdf"])
 
-        assert len(self.nominal_query_points) == max(self.object_idcs) + 1
+        [data_fns.pop(null_idx_) for null_idx_ in null_idx]
+        self.num_trials = len(data_fns)
+        # assert len(self.nominal_query_points) == max(self.object_idcs) + 1
 
     def get_num_objects(self):
         return self.num_objects

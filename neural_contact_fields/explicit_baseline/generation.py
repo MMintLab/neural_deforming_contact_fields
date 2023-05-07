@@ -64,8 +64,8 @@ class Generator(BaseGenerator):
 
     def generate_pointcloud(self, data_dict, meta_data):
         self.device = 'cuda'
-        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
-        partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
+        wrist_wrench_ = data_dict["wrist_wrench"].to(self.device).float().unsqueeze(0)
+        partial_pcd = data_dict["partial_pointcloud"].to(self.device).float().unsqueeze(0)
 
         z_wrench_ = self.model.encode_wrench(wrist_wrench_)
         
@@ -74,8 +74,8 @@ class Generator(BaseGenerator):
         return pred_dict_['dense_df_ptcloud'].squeeze().detach().cpu().numpy(), torch.tensor([0])
     #
     def generate_contact_patch(self, data_dict, meta_data):
-        wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(self.device).float().unsqueeze(0)
-        partial_pcd = torch.from_numpy(data_dict["partial_pointcloud"]).to(self.device).float().unsqueeze(0)
+        wrist_wrench_ = data_dict["wrist_wrench"].to(self.device).float().unsqueeze(0)
+        partial_pcd = data_dict["partial_pointcloud"].to(self.device).float().unsqueeze(0)
 
 
         # We assume we know the object code.

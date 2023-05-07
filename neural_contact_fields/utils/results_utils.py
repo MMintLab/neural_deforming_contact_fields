@@ -73,12 +73,12 @@ def load_gt_results(dataset, dataset_dir, n, device=None):
         dataset_dict = dataset[idx]
         data_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, "out_%d.pkl.gzip" % idx))
         meshes.append(trimesh.load(os.path.join(dataset_dir, "out_%d_mesh.obj" % idx)))
-        pointclouds.append(torch.from_numpy(dataset_dict["surface_points"]).to(device))
+        pointclouds.append(dataset_dict["surface_points"].to(device))
 
         # Load contact patch.
-        contact_patches.append(torch.from_numpy(dataset_dict["contact_patch"]).to(device))
+        contact_patches.append(dataset_dict["contact_patch"].to(device))
 
-        contact_labels.append(torch.from_numpy(dataset_dict["surface_in_contact"]).to(device).int())
+        contact_labels.append(dataset_dict["surface_in_contact"].to(device).int())
         points_iou.append(torch.from_numpy(data_dict["test"]["points_iou"]).to(device))
         occ_iou.append(torch.from_numpy(data_dict["test"]["occ_tgt"]).to(device).int())
 

@@ -1,7 +1,10 @@
 import torch
 import torchmetrics
 import trimesh
-import pytorch3d.loss
+try:
+    import pytorch3d.loss
+except:
+    print("pytorch3d not installed ")
 from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.utils.mesh_utils import occupancy_check
 from vedo import Plotter, Points

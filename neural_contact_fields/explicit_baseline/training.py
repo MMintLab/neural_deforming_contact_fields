@@ -132,6 +132,7 @@ class Trainer(BaseTrainer):
             trial_idcs = torch.from_numpy(trial_idcs).to(self.device)
 
             for trial_idx in trial_idcs:
+                # print(trial_idx)
                 it += 1
 
                 # For this training, we use just a single example per run.
