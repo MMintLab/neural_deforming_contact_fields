@@ -93,7 +93,7 @@ def get_init_function(model: VirdoNCF, init_mode: str = "random"):
             # Make embedding match the standard deviation of the trial_code_embedding.
             for latent_idx in range(latent_dim):
                 std = torch.std(trial_code_embedding.weight[:, latent_idx])
-                torch.nn.init.normal_(z[:, latent_idx], mean=0.0, std=std)
+                torch.nn.init.normal_(z[:, latent_idx], mean=0.0, std=std.item())
 
         return init_function
 
