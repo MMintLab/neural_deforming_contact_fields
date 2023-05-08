@@ -4,7 +4,7 @@ data:
     dataset_fn: out/datasets/sim_1_20_23_v1/nominal_0.pkl.gzip
   train:
     dataset: ToolRotateDataset
-    dataset_dir: out/datasets/combine_train_proc/
+    dataset_dir: out/combine_train_proc_v2/
 training:
   out_dir: out/models/example_b1_rbt_partial
   learning_rate: 0.0001

@@ -24,7 +24,7 @@ class ToolDataset(torch.utils.data.Dataset):
         # Load dataset files and sort according to example number.
         data_fns = sorted([f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f],
                           key=lambda x: int(x.split(".")[0].split("_")[-1]))
-        data_fns = data_fns[:10]
+        # data_fns = data_fns[:10]
         nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
                              key=lambda x: int(x.split(".")[0].split("_")[-1]))
         self.num_objects = len(nominal_fns)
@@ -47,7 +47,9 @@ class ToolDataset(torch.utils.data.Dataset):
         self.contact_patch = []  # Contact patch.
         self.points_iou = []  # Points used to calculated IoU.
         self.occ_tgt = []  # Occupancy target for IoU points.
-        self.partial_pcd_idx = [[1, 0], [2, 0], [2, 1], [3, 0], [3, 1], [3, 2], [4, 0], [4, 1], [4, 2], [4, 3], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4], [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [7, 0], [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]]
+        self.partial_pcd_idx = [[0], [1], [2], [3], [4], [5], [6], [7],
+                                [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
+                                [6, 7], [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6], [5, 6, 7]]
 
 
         null_idx = []

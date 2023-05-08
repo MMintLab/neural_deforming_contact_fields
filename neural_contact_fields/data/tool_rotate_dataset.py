@@ -9,7 +9,7 @@ import pytorch_kinematics.transforms as tf
 class ToolRotateDataset(ToolDataset):
 
     def get_num_trials(self):
-        return self.num_trials * 4
+        return self.num_trials * 4 * len(self.partial_pcd_idx)
 
     def get_example_mesh(self, example_idx):
         trial_index = torch.div(example_idx, 4, rounding_mode="floor")
@@ -25,13 +25,23 @@ class ToolRotateDataset(ToolDataset):
         return mesh
 
     def __len__(self):
-        return self.num_trials * 4 * len(self.partial_pcd_idx)
+        return self.num_trials * 4
+
+    def _from_idx_to_pcd(self, partial_index, partial_pcds):
+
+        partial_pcd_idxs = self.partial_pcd_idx[partial_index]
+        combined_pcd = []
+        for partial_pcd_idx_i in partial_pcd_idxs:
+            if partial_pcds[partial_pcd_idx_i]['pointcloud'] is not None:
+                pcd_i = partial_pcds[partial_pcd_idx_i]['pointcloud']
+                combined_pcd.append(pcd_i)
+        return combined_pcd
 
     def __getitem__(self, index):
-        trial_index = torch.div(index, 4 * len(self.partial_pcd_idx), rounding_mode="floor")
-        rotation_index = (index % (4 * len(self.partial_pcd_idx) )) // len(self.partial_pcd_idx)  #index % 4  # Which of the 4 rotations to use.
-        partial_index =  (index % (4 * len(self.partial_pcd_idx) )) % len(self.partial_pcd_idx)
-        partial_pcd_idxs = self.partial_pcd_idx[partial_index]
+        trial_index = index // 4
+        rotation_index = index % 4  # Which of the 4 rotations to use.
+
+
 
         # Build transform around z vector based on rotation index.
         rotation = np.pi / 2.0 * rotation_index
@@ -45,17 +55,16 @@ class ToolRotateDataset(ToolDataset):
         wrench[..., 3:] = transform.transform_normals(wrench[..., 3:])
         wrench = wrench.squeeze(0)
 
+        partial_index = np.random.randint(0, len(self.partial_pcd_idx), size=1)[0]
+        combined_pcd = self._from_idx_to_pcd(partial_index , self.partial_pointcloud[trial_index])
 
-        combined_pcd = []
-        for partial_pcd_idx_i in partial_pcd_idxs:
-            pcd_i = self.partial_pointcloud[trial_index][partial_pcd_idx_i]['pointcloud']
-            if len(pcd_i) > 100:  # pcd_i small pointcloud
-                combined_pcd.append(pcd_i)
+        # When selected indexes are all bad, try two more.
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 1 , self.partial_pointcloud[trial_index])
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 2 , self.partial_pointcloud[trial_index])
+
         partial_pointcloud = np.concatenate(combined_pcd, axis=0)
-
-
-
-
         object_index = self.object_idcs[trial_index]
 
         data_dict = {
