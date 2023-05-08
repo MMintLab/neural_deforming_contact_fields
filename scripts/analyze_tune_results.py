@@ -23,6 +23,7 @@ def analyze_tune_results(results_dir: str):
 
     # Grid visualization of configs and their effect on performance.
     metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
+    metrics_mode = ["min", "min", "max"]
 
     # Define our search space. TODO: Load this from a config file.
     search_space = {
@@ -33,7 +34,12 @@ def analyze_tune_results(results_dir: str):
 
     # Create grids based on embed_weight and iter_limit with a fixed contact_threshold.
     for contact_threshold in search_space["contact_threshold"]:
-        grid = np.zeros((len(search_space["embed_weight"]), len(search_space["iter_limit"])))
+        metrics_dict = dict()
+        for metric in metrics:
+            metrics_dict[f"{metric}_mean"] = np.zeros(
+                (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
+            metrics_dict[f"{metric}_std"] = np.zeros(
+                (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
 
         for embed_idx, embed_weight in enumerate(search_space["embed_weight"]):
             for iter_idx, iter_limit in enumerate(search_space["iter_limit"]):
@@ -44,25 +50,35 @@ def analyze_tune_results(results_dir: str):
                 }
 
                 result = get_matching_result(result_grid, config)
-                grid[embed_idx, iter_idx] = result.metrics["patch_chamfer_distance_mean"]
+
+                for metric in metrics:
+                    metrics_dict[f"{metric}_mean"][embed_idx, iter_idx] = result.metrics[f"{metric}_mean"]
+                    metrics_dict[f"{metric}_std"][embed_idx, iter_idx] = result.metrics[f"{metric}_std"]
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        x_ticks = np.arange(len(search_space["iter_limit"]))
-        y_ticks = np.arange(len(search_space["embed_weight"]))
-        ax.set_xticks(x_ticks)
-        ax.set_yticks(y_ticks)
-        ax.set_xticklabels(search_space["iter_limit"])
-        ax.set_yticklabels(search_space["embed_weight"])
-        ax.set_ylabel("embed_weight")
-        ax.set_xlabel("iter_limit")
-        ax.set_title(f"contact_threshold={contact_threshold}")
-        grid_vis = ax.matshow(grid)
-        fig.colorbar(grid_vis)
+        for m_idx, metric in enumerate(metrics):
+            ax = fig.add_subplot(1, len(metrics), m_idx + 1)
+            x_ticks = np.arange(len(search_space["iter_limit"]))
+            y_ticks = np.arange(len(search_space["embed_weight"]))
+            ax.set_xticks(x_ticks)
+            ax.set_yticks(y_ticks)
+            ax.set_xticklabels(search_space["iter_limit"])
+            ax.set_yticklabels(search_space["embed_weight"])
+            ax.set_ylabel("embed_weight")
+            ax.set_xlabel("iter_limit")
 
-        for (i, j), m in np.ndenumerate(grid):
-            ax.text(j, i, f"{m:.2f}", ha="center", va="center")
+            # print(metrics_dict[f"{metric}_mean"])
+            # print(metrics_dict[f"{metric}_std"])
 
+            grid_vis = ax.matshow(metrics_dict[f"{metric}_mean"],
+                                  cmap="viridis" if metrics_mode[m_idx] == "max" else "viridis_r")
+            fig.colorbar(grid_vis)
+
+            for (i, j), m in np.ndenumerate(metrics_dict[f"{metric}_mean"]):
+                std = metrics_dict[f"{metric}_std"][i, j]
+                ax.text(j, i, f"{m:.3f}\n({std:.3f})", ha="center", va="center")
+
+        fig.suptitle(f"contact_threshold={contact_threshold}")
         plt.show()
         plt.close()
 
