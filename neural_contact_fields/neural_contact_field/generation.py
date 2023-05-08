@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from neural_contact_fields.generation import BaseGenerator
 from neural_contact_fields.neural_contact_field.models.neural_contact_field import NeuralContactField
+from neural_contact_fields.neural_contact_field.models.virdo_ncf import VirdoNCF
 from neural_contact_fields.utils import mesh_utils
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 from neural_contact_fields.utils.marching_cubes import create_mesh
@@ -76,6 +77,27 @@ def get_surface_loss_fn(embed_weight: float, def_weight: float):
     return surface_loss_fn
 
 
+def get_init_function(model: VirdoNCF, init_mode: str = "random"):
+    if init_mode == "random":
+        def init_function(embedding: nn.Embedding):
+            torch.nn.init.normal_(embedding.weight, mean=0.0, std=0.1)
+
+        return init_function
+    else:
+        def init_function(embedding: nn.Embedding):
+            z = embedding.weight
+            latent_dim = z.shape[-1]
+
+            trial_code_embedding = model.trial_code
+
+            # Make embedding match the standard deviation of the trial_code_embedding.
+            for latent_idx in range(latent_dim):
+                std = torch.std(trial_code_embedding.weight[:, latent_idx])
+                torch.nn.init.normal_(z[:, latent_idx], mean=0.0, std=std)
+
+        return init_function
+
+
 class Generator(BaseGenerator):
 
     def __init__(self, cfg: dict, model: NeuralContactField, generation_cfg: dict, device: torch.device):
@@ -98,6 +120,7 @@ class Generator(BaseGenerator):
 
         self.iter_limit = int(generation_cfg.get("iter_limit", 150))
         self.conv_eps = float(generation_cfg.get("conv_eps", 0.0))
+        self.init_mode = generation_cfg.get("init_mode", "random")
 
     def generate_nominal_mesh(self, data, meta_data):
         nominal_metadata = {}
@@ -120,6 +143,7 @@ class Generator(BaseGenerator):
         start = time.time()
         z_deform_, latent_metadata = inference_by_optimization(self.model,
                                                                get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                               get_init_function(self.model, init_mode=self.init_mode),
                                                                z_deform_size, 1, data,
                                                                inf_params={"iter_limit": self.iter_limit,
                                                                            "conv_eps": self.conv_eps},

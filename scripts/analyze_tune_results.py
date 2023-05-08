@@ -16,12 +16,13 @@ def analyze_tune_results(results_dir: str):
     restored_tuner = tune.Tuner.restore(results_dir)
 
     result_grid: tune.ResultGrid = restored_tuner.get_results()
-    best_result = result_grid.get_best_result(metric="patch_chamfer_distance_mean", mode="min")
 
-    print("Best config: ", best_result.config)
-    print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
+    # best_result = result_grid.get_best_result(metric="patch_chamfer_distance_mean", mode="min")
+    # print("Best config: ", best_result.config)
+    # print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
 
     # Grid visualization of configs and their effect on performance.
+    metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
 
     # Define our search space. TODO: Load this from a config file.
     search_space = {

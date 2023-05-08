@@ -76,7 +76,16 @@ class ToolDataset(torch.utils.data.Dataset):
                 self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
             except:
                 self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
-            self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
+            # self.partial_pointcloud.append(example_dict["input"]["combined_pointcloud"])
+
+            camera_idcs = [0, 1, 7]
+            partial_pc = []
+            for camera_idx in camera_idcs:
+                pc = example_dict["input"]["pointclouds"][camera_idx]["pointcloud"]
+                if pc is not None:
+                    partial_pc.append(pc)
+            self.partial_pointcloud.append(np.concatenate(partial_pc, axis=0))
+
             self.points_iou.append(example_dict["test"]["points_iou"])
             self.occ_tgt.append(example_dict["test"]["occ_tgt"])
 
@@ -100,7 +109,7 @@ class ToolDataset(torch.utils.data.Dataset):
         return self.num_trials
 
     def get_example_mesh(self, example_idx):
-        mesh_fn = os.path.join(self.dataset_dir, "out_%d_mesh.obj" % example_idx)
+        mesh_fn = os.path.join(self.dataset_dir, "out_%d_mesh.obj" % self.trial_idcs[example_idx])
         mesh = trimesh.load(mesh_fn)
         return mesh
 

@@ -1,3 +1,4 @@
+import yaml
 from tqdm import trange
 import os
 
@@ -33,6 +34,8 @@ def tune_inference(args):
 
         # Load generate cfg, if present.
         base_generation_cfg = load_generation_cfg(model_cfg, args.model_file)
+        if args.gen_args is not None:
+            base_generation_cfg.update(args.gen_args)
 
         # Load ground truth results.
         gt_dicts = load_gt_results(dataset, len(dataset), device)
@@ -76,9 +79,9 @@ def tune_inference(args):
         search_alg_ = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
         tune_cfg = tune.TuneConfig(search_alg=search_alg_, num_samples=-1)
     elif search_alg == "grid":
-        tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=-1)
+        tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min")
         search_space["contact_threshold"] = tune.grid_search([0.2, 0.5, 0.8])
-        search_space["embed_weight"] = tune.grid_search([1e-6, 1e-3, 1e-1, 1.0])
+        search_space["embed_weight"] = tune.grid_search([1e-3, 1e-1, 1.0])
         search_space["iter_limit"] = tune.grid_search([100, 300, 500, 1000])
     else:
         tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
@@ -97,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("--out", "-o", type=str, help="Optional out directory to write generated results to.")
     parser.add_argument("--search_alg", "-s", type=str, default="random", help="Search algorithm to use.")
     parser.add_argument("--cuda_ids", nargs="+", type=int, default=[0], help="Cuda device ids to use.")
+    parser.add_argument("--gen_args", type=yaml.safe_load, default=None, help="Generation args.")
     args = parser.parse_args()
 
     tune_inference(args)

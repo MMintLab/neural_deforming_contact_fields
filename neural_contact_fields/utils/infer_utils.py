@@ -8,7 +8,8 @@ import torch.nn as nn
 from tqdm import trange
 
 
-def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: int, num_examples: int, data_dict: dict,
+def inference_by_optimization(model: nn.Module, loss_fn: Callable, init_fn: Callable, latent_size: int,
+                              num_examples: int, data_dict: dict,
                               inf_params=None, device: torch.device = None, verbose: bool = False):
     """
     Helper with basic inference by optimization structure. Repeatedly calls loss function with the specified
@@ -17,6 +18,7 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
     Args:
     - model (nn.Module): network model
     - loss_fn (Callable): loss function. Should take in model, current latent, data dictionary, and device and return loss.
+    - init_fn (Callable): initialization function. Should init the given embedding.
     - latent_size (int): specify latent space size.
     - num_examples (int): number of examples to run inference on.
     - data_dict (dict): data dictionary for example(s) we are inferring for.
@@ -30,15 +32,13 @@ def inference_by_optimization(model: nn.Module, loss_fn: Callable, latent_size: 
     model.eval()
 
     # Load inference hyper parameters.
-    init_mean = inf_params.get("init_mean", 0.0)
-    init_std = inf_params.get("init_std", 0.08)
     lr = inf_params.get("lr", 3e-2)
     num_steps = inf_params.get("iter_limit", 300)
     epsilon = inf_params.get("conv_eps", 0.0)
 
     # Initialize latent code as noise.
     z_ = nn.Embedding(num_examples, latent_size, dtype=torch.float32).requires_grad_(True).to(device)
-    torch.nn.init.normal_(z_.weight, mean=init_mean, std=init_std)
+    init_fn(z_)  # Call provided init function.
     optimizer = optim.Adam(z_.parameters(), lr=lr)
 
     # Start optimization procedure.

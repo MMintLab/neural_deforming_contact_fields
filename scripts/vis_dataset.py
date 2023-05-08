@@ -10,17 +10,21 @@ from vedo import Plotter, Mesh, Points
 
 
 def vis_dataset(dataset, offset: int = 0):
-    for data_idx in range(len(dataset)):
+    print("Dataset size: %d" % len(dataset))
+
+    for data_idx in range(offset, len(dataset)):
         data_dict = dataset[data_idx]
 
         partial_pc = data_dict["partial_pointcloud"]
+        contact_patch = data_dict["contact_patch"]
         mesh = dataset.get_example_mesh(data_idx)
 
         # Visualize.
         plt = Plotter()
         plt.at(0).show(
             Mesh([mesh.vertices, mesh.faces], c="grey", alpha=0.5),
-            Points(partial_pc, c="red"),
+            Points(partial_pc, c="black"),
+            Points(contact_patch, c="red"),
         )
         plt.interactive().close()
 
