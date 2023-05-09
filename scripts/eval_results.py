@@ -115,7 +115,6 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
     dataset_config = mmint_utils.load_cfg(dataset_cfg_fn)
     dataset = config.get_dataset(dataset_mode, dataset_config)
     num_trials = len(dataset)
-    dataset_dir = dataset_config["data"][dataset_mode]["dataset_dir"]
 
     # Check if there are multiple runs.
     run_dirs = [f for f in os.listdir(out_dir) if "run_" in f]
