@@ -25,6 +25,7 @@ class ToolDataset(torch.utils.data.Dataset):
         data_fns = sorted([f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f],
                           key=lambda x: int(x.split(".")[0].split("_")[-1]))
         self.num_trials = len(data_fns)
+        self.original_num_trials = len(data_fns)  # Above value may change due to bad data examples...
 
         nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
                              key=lambda x: int(x.split(".")[0].split("_")[-1]))
@@ -44,7 +45,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.wrist_wrench = []  # Wrist wrench.
         self.surface_points = []  # Surface points.
         self.surface_in_contact = []  # Surface point contact labels.
-        self.partial_pointcloud = []  # Partial pointcloud.
+        self.partial_pointcloud = []  # Partial point cloud.
         self.contact_patch = []  # Contact patch.
         self.points_iou = []  # Points used to calculated IoU.
         self.occ_tgt = []  # Occupancy target for IoU points.
@@ -120,6 +121,7 @@ class ToolDataset(torch.utils.data.Dataset):
         object_index = self.object_idcs[index]
 
         data_dict = {
+            "env_class": self.trial_idcs[index] // (self.original_num_trials // 3),  # NOTE: assumes equal num per env.
             "object_idx": np.array([object_index]),
             "trial_idx": np.array([self.trial_idcs[index]]),
             "query_point": self.query_points[index],

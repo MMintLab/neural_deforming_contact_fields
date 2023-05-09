@@ -30,6 +30,7 @@ class ToolRotateDataset(ToolDataset):
     def __getitem__(self, index):
         trial_index = torch.div(index, 4, rounding_mode="floor")
         rotation_index = index % 4  # Which of the 4 rotations to use.
+        env_class = trial_index // (self.original_num_trials // 3)
 
         # Build transform around z vector based on rotation index.
         rotation = np.pi / 2.0 * rotation_index
@@ -45,6 +46,7 @@ class ToolRotateDataset(ToolDataset):
 
         object_index = self.object_idcs[trial_index]
         data_dict = {
+            "env_class": env_class,
             "object_idx": torch.tensor([object_index], device=self.device),
             "trial_idx": torch.tensor([index], device=self.device),
             "query_point": transform.transform_points(

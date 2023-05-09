@@ -97,6 +97,7 @@ def load_gt_results(dataset, n, device=None):
         gt_dict["contact_labels"] = torch.from_numpy(dataset_dict["surface_in_contact"]).to(device).int()
         gt_dict["iou_labels"] = torch.from_numpy(dataset_dict["occ_tgt"]).to(device).int()
         gt_dict["points_iou"] = torch.from_numpy(dataset_dict["points_iou"]).to(device)
+        gt_dict["env_class"] = dataset_dict["env_class"]
 
         gt_dicts.append(gt_dict)
 
