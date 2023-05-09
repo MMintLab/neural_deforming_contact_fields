@@ -16,8 +16,6 @@ import pytorch3d.loss
 
 def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool = False):
     metrics_dict = dict()
-    metrics_dict["env_class"] = gt_dict[
-        "env_class"]  # Add environment class to metrics dict - allows us to filter later.
 
     # Evaluate meshes.
     if gen_dict["mesh"] is not None:
@@ -106,7 +104,13 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
             if key in gen_dict["metadata"]:
                 metrics_dict[key] = gen_dict["metadata"][key]
 
-    return metrics_dict
+    res_dict = {
+        "metadata": {
+            "env_id": gt_dict["env_class"]  # Add environment class to metrics dict - allows us to filter later.
+        },
+        "metrics": metrics_dict,
+    }
+    return res_dict
 
 
 def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verbose: bool = False,

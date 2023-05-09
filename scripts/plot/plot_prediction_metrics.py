@@ -8,7 +8,7 @@ import numpy as np
 # base_test_dir = "out/experiments/terrain_tests_v3/partial_pointcloud"
 base_test_dir = "out/models/primitives/camera_ready/model_v1/out/generate/"
 
-out_name = "val_v1_full_%s.csv"
+out_name = "val_v2_%s.csv"
 
 # test_dirs = ["wrench_v4", "wrench_v1", "wrench_v2"]
 # titles = ["l=3", "l=6", "l=12"]
@@ -56,7 +56,7 @@ test_dirs = [
     # "baseline",
     # "no_wrench_v1",
     # "forward_def_v1",
-    "val_v1_full_random", "val_v1_full_random_high_res"
+    "val_v2_random", "val_v2_random_high_res"
 ]
 
 env_ids = [[0], [1], [2], [0, 1, 2]]

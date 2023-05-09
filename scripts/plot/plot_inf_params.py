@@ -18,12 +18,13 @@ def perf_to_csv(dirs, out_fn, names=None):
         res_dicts = []
         for run_dir in run_dirs:
             run_out_dir = os.path.join(directory, run_dir)
-            metrics_fn = os.path.join(run_out_dir, "metrics.pkl.gzip")
-            metrics_dict = mmint_utils.load_gzip_pickle(metrics_fn)
+            run_fn = os.path.join(run_out_dir, "metrics.pkl.gzip")
+            run_dict = mmint_utils.load_gzip_pickle(run_fn)
 
             # Collect result on each metric for each example.
             run_res_dict = defaultdict(list)
-            for example_metrics_dict in metrics_dict:
+            for example_run_dict in run_dict:
+                example_metrics_dict = example_run_dict["metrics"]
 
                 if keys is None:
                     keys = example_metrics_dict.keys()
@@ -43,7 +44,9 @@ def perf_to_csv(dirs, out_fn, names=None):
             }
             for k in keys
         }
-        res_dict[name] = dir_res_dict
+        res_dict[name] = {
+            "metrics": dir_res_dict,
+        }
 
     # Write to CSV.
     csv_str = "dir, name, "
