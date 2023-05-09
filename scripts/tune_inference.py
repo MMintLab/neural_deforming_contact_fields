@@ -19,6 +19,7 @@ from scripts.generate import generate_example
 def tune_inference(args):
     out_dir = args.out
     search_alg = args.search_alg
+    restore = args.restore
 
     # Set visible gpus to the one provided.
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join([str(c_id) for c_id in args.cuda_ids])
@@ -63,35 +64,43 @@ def tune_inference(args):
         metrics_stats_dict = metrics_to_statistics(metrics_dicts)
         session.report(metrics_stats_dict)
 
-    # Define search space. TODO: Move this to a config file.
-    search_space = {
-        "contact_threshold": tune.quniform(0.0, 1.0, 0.1),
-        "embed_weight": tune.loguniform(1e-6, 1.0),
-        "iter_limit": tune.qrandint(100, 1000, 100),
-    }
-
-    # Setup RayTune.
     trainable_with_resources = tune.with_resources(eval_hyper_params, {"cpu": 16, "gpu": 1})
 
-    # Setup search algorithm.
-    if search_alg == "bayes":
-        search_space["iter_limit"] = tune.uniform(100, 1000)  # Bayes doesn't support int search spaces.
-        search_alg_ = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
-        tune_cfg = tune.TuneConfig(search_alg=search_alg_, num_samples=-1)
-    elif search_alg == "grid":
-        tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min")
-        search_space["contact_threshold"] = tune.grid_search([0.2, 0.5, 0.8])
-        search_space["embed_weight"] = tune.grid_search([1e-3, 1e-1, 1.0])
-        search_space["iter_limit"] = tune.grid_search([100, 300, 500, 1000])
+    if restore:
+        # Restore tuner.
+        tuner = tune.Tuner.restore(
+            os.path.join(out_dir, search_alg),
+            trainable_with_resources,
+            resume_errored=False, restart_errored=True
+        )
     else:
-        tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
+        # Define search space. TODO: Move this to a config file.
+        search_space = {
+            "contact_threshold": tune.quniform(0.0, 1.0, 0.1),
+            "embed_weight": tune.loguniform(1e-6, 1.0),
+            "iter_limit": tune.qrandint(100, 1000, 100),
+        }
 
-    tuner = tune.Tuner(
-        trainable_with_resources,
-        tune_config=tune_cfg,
-        run_config=air.RunConfig(local_dir=out_dir, name=search_alg),
-        param_space=search_space,
-    )
+        # Setup search algorithm.
+        if search_alg == "bayes":
+            search_space["iter_limit"] = tune.uniform(100, 1000)  # Bayes doesn't support int search spaces.
+            search_alg_ = BayesOptSearch(metric="patch_chamfer_distance_mean", mode="min", random_search_steps=4)
+            tune_cfg = tune.TuneConfig(search_alg=search_alg_, num_samples=-1)
+        elif search_alg == "grid":
+            tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min")
+            search_space["contact_threshold"] = tune.grid_search([0.2, 0.5, 0.8])
+            search_space["embed_weight"] = tune.grid_search([1e-3, 1e-1, 1.0])
+            search_space["iter_limit"] = tune.grid_search([100, 300, 500, 1000])
+        else:
+            tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
+
+        # Setup and run tuner.
+        tuner = tune.Tuner(
+            trainable_with_resources,
+            tune_config=tune_cfg,
+            run_config=air.RunConfig(local_dir=out_dir, name=search_alg),
+            param_space=search_space,
+        )
     tuner.fit()
 
 
@@ -101,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument("--search_alg", "-s", type=str, default="random", help="Search algorithm to use.")
     parser.add_argument("--cuda_ids", nargs="+", type=int, default=[0], help="Cuda device ids to use.")
     parser.add_argument("--gen_args", type=yaml.safe_load, default=None, help="Generation args.")
+    parser.add_argument("--restore", "-r", action="store_true", help="Restore from checkpoint.")
+    parser.set_defaults(restore=False)
     args = parser.parse_args()
 
     tune_inference(args)

@@ -1,4 +1,4 @@
 data:
   test:
     dataset: ToolDataset
-    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/camera_ready/combine_val/
+    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/camera_ready/combine_val_v2/
