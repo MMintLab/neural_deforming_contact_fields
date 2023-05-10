@@ -1,25 +1,31 @@
+from typing import List
+
 import matplotlib.pyplot as plt
 import numpy as np
 from ray import tune
 import argparse
 
 
-def get_matching_result(results_gird: tune.ResultGrid, config: dict):
-    for result in results_gird:
-        if result.config == config:
-            return result
+def get_matching_result(results_grids: List[tune.ResultGrid], config: dict):
+    for result_grid in results_grids:
+        for result in result_grid:
+            if result.config == config:
+                return result
 
     raise RuntimeError("No matching result found for config ", config)
 
 
-def analyze_tune_results(results_dir: str):
-    restored_tuner = tune.Tuner.restore(results_dir)
+def analyze_tune_results(results_dirs: str):
+    restored_tuners = [tune.Tuner.restore(results_dir) for results_dir in results_dirs]
 
-    result_grid: tune.ResultGrid = restored_tuner.get_results()
+    result_grids = [restored_tuner.get_results() for restored_tuner in restored_tuners]
 
-    # best_result = result_grid.get_best_result(metric="patch_chamfer_distance_mean", mode="min")
-    # print("Best config: ", best_result.config)
-    # print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
+    # Get best result from all tuners.
+    best_results = [result_grid.get_best_result(metric="patch_chamfer_distance_mean", mode="min") for result_grid in
+                    result_grids]
+    best_result = min(best_results, key=lambda result_: result_.metrics["patch_chamfer_distance_mean"])
+    print("Best config: ", best_result.config)
+    print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
 
     # Grid visualization of configs and their effect on performance.
     metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
@@ -28,8 +34,8 @@ def analyze_tune_results(results_dir: str):
     # Define our search space. TODO: Load this from a config file.
     search_space = {
         "contact_threshold": [0.2, 0.5, 0.8],
-        "embed_weight": [1e-4, 1e-3, 1e-1, 1.0],
-        "iter_limit": [50, 100, 300, 500, 1000],
+        "embed_weight": [1e-4, 1e-3, 1e-1],
+        "iter_limit": [50, 100, 300, 500],
     }
 
     # Create grids based on embed_weight and iter_limit with a fixed contact_threshold.
@@ -49,7 +55,7 @@ def analyze_tune_results(results_dir: str):
                     "iter_limit": iter_limit,
                 }
 
-                result = get_matching_result(result_grid, config)
+                result = get_matching_result(result_grids, config)
 
                 for metric in metrics:
                     metrics_dict[f"{metric}_mean"][embed_idx, iter_idx] = result.metrics[f"{metric}_mean"]
@@ -85,7 +91,7 @@ def analyze_tune_results(results_dir: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("tune_dir", type=str, help="Directory with tune results.")
+    parser.add_argument("tune_dirs", nargs="+", type=str, help="Directories with tune results.")
     args = parser.parse_args()
 
-    analyze_tune_results(results_dir=args.tune_dir)
+    analyze_tune_results(results_dirs=args.tune_dirs)

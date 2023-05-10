@@ -90,7 +90,7 @@ def tune_inference(args):
         elif search_alg == "grid":
             tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min")
             search_space["contact_threshold"] = tune.grid_search([0.2, 0.5, 0.8])
-            search_space["embed_weight"] = tune.grid_search([1e-4, 1e-3, 1e-1])
+            search_space["embed_weight"] = tune.grid_search([1.0])
             search_space["iter_limit"] = tune.grid_search([50, 100, 300])
         else:
             tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
