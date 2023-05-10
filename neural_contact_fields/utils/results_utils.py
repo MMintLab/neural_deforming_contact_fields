@@ -4,6 +4,9 @@ import mmint_utils
 import numpy as np
 import torch
 import trimesh
+
+from neural_contact_fields.data.real_tool_dataset import RealToolDataset
+from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.utils import utils
 
 
@@ -84,6 +87,15 @@ def load_pred_results(out_dir, n, device=None):
 
 
 def load_gt_results(dataset, n, device=None):
+    if type(dataset) == ToolDataset:
+        return load_gt_results_sim(dataset, n, device)
+    elif type(dataset) == RealToolDataset:
+        return load_gt_results_real(dataset, n, device)
+    else:
+        raise Exception("Unknown dataset type.")
+
+
+def load_gt_results_sim(dataset, n, device=None):
     gt_dicts = []
 
     # Load ground truth meshes and surface contact labels.
@@ -104,18 +116,21 @@ def load_gt_results(dataset, n, device=None):
     return gt_dicts
 
 
-def load_gt_results_real(dataset, dataset_dir, n, device=None):
-    contact_patches = []
+def load_gt_results_real(dataset, n, device=None):
+    gt_dicts = []
 
     # Load ground truth meshes and surface contact labels.
     for idx in range(n):
         dataset_dict = dataset[idx]
+        gt_dict = dict()
 
         # Load contact patch.
-        contact_patch = torch.from_numpy(dataset_dict["contact_patch"]).to(device).float()
-        contact_patches.append(contact_patch)
+        gt_dict["contact_patch"] = torch.from_numpy(dataset_dict["contact_patch"]).to(device).float()
+        gt_dict["env_class"] = dataset_dict["env_class"]
 
-    return contact_patches
+        gt_dicts.append(gt_dict)
+
+    return gt_dicts
 
 
 def metrics_to_statistics(metrics_dicts):

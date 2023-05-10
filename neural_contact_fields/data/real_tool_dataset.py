@@ -29,7 +29,7 @@ class RealToolDataset(torch.utils.data.Dataset):
         self.gt_contact_patch = []  # GT contact patch.
 
         # Load all data.
-        for trial_idx, data_fn in enumerate(tqdm.tqdm(data_fns)):
+        for trial_idx, data_fn in enumerate(data_fns):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
 
             # Populate example info.
@@ -46,6 +46,7 @@ class RealToolDataset(torch.utils.data.Dataset):
         object_index = self.object_idcs[index]
 
         data_dict = {
+            "env_class": 0,
             "object_idx": np.array([object_index]),
             "trial_idx": np.array([self.trial_idcs[index]]),
             "wrist_wrench": self.wrist_wrench[index],

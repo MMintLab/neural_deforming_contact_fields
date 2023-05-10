@@ -18,7 +18,7 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
     metrics_dict = dict()
 
     # Evaluate meshes.
-    if gen_dict["mesh"] is not None:
+    if gen_dict["mesh"] is not None and "mesh" in gt_dict:
         chamfer_dist = ncf_metrics.mesh_chamfer_distance(gen_dict["mesh"], gt_dict["mesh"], device=device, vis=verbose)
         iou = ncf_metrics.mesh_iou(gt_dict["points_iou"], gt_dict["iou_labels"], gen_dict["mesh"], device=device,
                                    vis=verbose)
@@ -28,7 +28,7 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
         })
 
     # Evaluate pointclouds.
-    if gen_dict["pointcloud"] is not None:
+    if gen_dict["pointcloud"] is not None and "pointcloud" in gt_dict:
         if sample:
             pred_pointcloud = utils.sample_pointcloud(gen_dict["pointcloud"], 10000)
         else:
