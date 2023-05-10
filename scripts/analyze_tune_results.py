@@ -9,7 +9,7 @@ def get_matching_result(results_gird: tune.ResultGrid, config: dict):
         if result.config == config:
             return result
 
-    raise RuntimeError("No matching result found.")
+    raise RuntimeError("No matching result found for config ", config)
 
 
 def analyze_tune_results(results_dir: str):
@@ -28,8 +28,8 @@ def analyze_tune_results(results_dir: str):
     # Define our search space. TODO: Load this from a config file.
     search_space = {
         "contact_threshold": [0.2, 0.5, 0.8],
-        "embed_weight": [1e-3, 1e-1, 1.0],
-        "iter_limit": [100, 300, 500, 1000],
+        "embed_weight": [1e-4, 1e-3, 1e-1, 1.0],
+        "iter_limit": [50, 100, 300, 500, 1000],
     }
 
     # Create grids based on embed_weight and iter_limit with a fixed contact_threshold.
