@@ -28,14 +28,16 @@ def analyze_tune_results(results_dirs: str):
     print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
 
     # Grid visualization of configs and their effect on performance.
-    metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
-    metrics_mode = ["min", "min", "max"]
+    # metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
+    # metrics_mode = ["min", "min", "max"]
+    metrics = ["patch_chamfer_distance"]
+    metrics_mode = ["min"]
 
     # Define our search space. TODO: Load this from a config file.
     search_space = {
         "contact_threshold": [0.2, 0.5, 0.8],
-        "embed_weight": [1e-4, 1e-3, 1e-1],
-        "iter_limit": [50, 100, 300, 500],
+        "embed_weight": [1e-4, 1e-3, 1e-1, 1.0],
+        "iter_limit": [50, 100, 300],
     }
 
     # Create grids based on embed_weight and iter_limit with a fixed contact_threshold.

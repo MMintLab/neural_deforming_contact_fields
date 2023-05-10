@@ -77,25 +77,19 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test"):
     num_trials = len(dataset)
 
     # Load specific ground truth results needed for evaluation.
-    gt_contact_patches = load_gt_results_real(
-        dataset, dataset_cfg["data"][mode]["dataset_dir"], num_trials
-    )
+    gt_dicts = load_gt_results_real(dataset, num_trials)
 
     # Load predicted results.
-    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
+    gen_dicts = load_pred_results(gen_dir, num_trials)
 
     for trial_idx in trange(len(dataset)):
-        # print(trial_idx)
-
         trial_dict = dataset[trial_idx]
 
         # Load the conditioning pointcloud used.
         pc = trial_dict["partial_pointcloud"]
 
-        vis_mesh_prediction_real(pc, pred_meshes[trial_idx], pred_pointclouds[trial_idx],
-                                 pred_contact_patches[trial_idx], gt_contact_patches[trial_idx])
-        # vis_inputs(pc, gt_contact_patches[trial_idx])
-        # vis_real_baseline_predictions(pred_contact_patches[trial_idx], gt_contact_patches[trial_idx])
+        vis_mesh_prediction_real(pc, gen_dicts[trial_idx]["mesh"], None,
+                                 gen_dicts[trial_idx]["contact_patch"], gt_dicts[trial_idx]["contact_patch"])
 
 
 if __name__ == '__main__':
