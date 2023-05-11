@@ -78,7 +78,7 @@ class ToolDataset(torch.utils.data.Dataset):
             except:
                 self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
 
-            camera_idcs = [0, 1, 2]  # TODO: parameterize this somehow?
+            camera_idcs = [3, 4, 5]  # [0, 1, 2]  # TODO: parameterize this somehow?
             partial_pc = []
             for camera_idx in camera_idcs:
                 pc = example_dict["input"]["pointclouds"][camera_idx]["pointcloud"]

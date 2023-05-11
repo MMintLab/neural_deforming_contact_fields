@@ -6,7 +6,11 @@ import mmint_utils
 import numpy as np
 
 
-def perf_to_csv(dirs, out_fn, names=None):
+def reject_outliers_from_data(data, m=3):
+    return data[abs(data - np.mean(data)) < m * np.std(data)]
+
+
+def perf_to_csv(dirs, out_fn, names=None, reject_outliers=False):
     if names is None:
         names = [os.path.basename(os.path.normpath(d)) for d in dirs]
 
@@ -15,6 +19,7 @@ def perf_to_csv(dirs, out_fn, names=None):
     # TODO: Way to generalize this?
     env_ids = [[0], [1], [2], [0, 1, 2]]
     env_names = ["box", "curves", "ridges", "all"]
+    metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
 
     for env_id_set, env_name in zip(env_ids, env_names):
         out_fn = "%s_%s.csv" % (out_fn_base, env_name)
@@ -35,6 +40,11 @@ def perf_to_csv(dirs, out_fn, names=None):
 
                 for k, v in example_metrics_dict.items():
                     run_res_dict[k].append(v)
+
+            if reject_outliers:
+                for metric in metrics:
+                    if metric in run_res_dict:
+                        run_res_dict[metric] = reject_outliers_from_data(np.array(run_res_dict[metric]), m=3)
 
             # Calculate mean/std across examples in run.
             perf_dict = {
@@ -73,6 +83,8 @@ if __name__ == '__main__':
     parser.add_argument("dirs", type=str, nargs="+", help="Directories to consolidate.")
     parser.add_argument("out_fn", type=str, help="Output CSV file.")
     parser.add_argument("-n", "--names", type=str, nargs="+", default=None, help="Names for each directory.")
+    parser.add_argument("-r", "--reject_outliers", action="store_true", help="Reject outliers.")
+    parser.set_defaults(reject_outliers=False)
     args = parser.parse_args()
 
-    perf_to_csv(args.dirs, args.out_fn, args.names)
+    perf_to_csv(args.dirs, args.out_fn, args.names, args.reject_outliers)

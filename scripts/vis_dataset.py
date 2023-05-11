@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 import torch
+from tqdm import trange
 
 from neural_contact_fields.utils.model_utils import load_dataset_from_config
 
@@ -12,7 +13,7 @@ from vedo import Plotter, Mesh, Points
 def vis_dataset(dataset, offset: int = 0):
     print("Dataset size: %d" % len(dataset))
 
-    for data_idx in range(offset, len(dataset)):
+    for data_idx in trange(offset, len(dataset)):
         data_dict = dataset[data_idx]
 
         partial_pc = data_dict["partial_pointcloud"]

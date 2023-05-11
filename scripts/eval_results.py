@@ -2,12 +2,14 @@ import argparse
 import os
 import random
 
+from vedo import Plotter, Points, LegendBox
+
 import mmint_utils
 import numpy as np
 import torch
 import neural_contact_fields.metrics as ncf_metrics
 from neural_contact_fields import config
-from neural_contact_fields.utils import utils
+from neural_contact_fields.utils import utils, vedo_utils
 from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, print_results
 from tqdm import trange, tqdm
 import torchmetrics
@@ -19,9 +21,9 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
 
     # Evaluate meshes.
     if gen_dict["mesh"] is not None and "mesh" in gt_dict:
-        chamfer_dist = ncf_metrics.mesh_chamfer_distance(gen_dict["mesh"], gt_dict["mesh"], device=device, vis=verbose)
+        chamfer_dist = ncf_metrics.mesh_chamfer_distance(gen_dict["mesh"], gt_dict["mesh"], device=device, vis=False)
         iou = ncf_metrics.mesh_iou(gt_dict["points_iou"], gt_dict["iou_labels"], gen_dict["mesh"], device=device,
-                                   vis=verbose)
+                                   vis=False)
         metrics_dict.update({
             "chamfer_distance": chamfer_dist.item() * 1e6,
             "iou": iou.item(),
@@ -52,6 +54,14 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
             if type(pred_pc) == np.ndarray:
                 pred_pc = torch.from_numpy(pred_pc).to(device)
             gt_pc = utils.sample_pointcloud(gt_dict["contact_patch"], 300)
+
+            if verbose:
+                plt = Plotter()
+                pred_patch_pc = Points(pred_pc.cpu().numpy(), c="red").legend("Predicted")
+                gt_patch_pc = Points(gt_pc.cpu().numpy(), c="blue").legend("Ground Truth")
+                leg = LegendBox([pred_patch_pc, gt_patch_pc])
+                plt.at(0).show(pred_patch_pc, gt_patch_pc, leg, vedo_utils.draw_origin(), "Pred. Contact Patch")
+
             patch_chamfer_dist, _ = pytorch3d.loss.chamfer_distance(pred_pc.unsqueeze(0).float(),
                                                                     gt_pc.unsqueeze(0).float())
 
@@ -141,7 +151,7 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
             metrics_results = []
             for trial_idx in range(num_trials):
                 metrics_dict = eval_example(gen_dicts[trial_idx], gt_dicts[trial_idx], device, sample=sample,
-                                            verbose=verbose)
+                                            verbose=trial_idx == 32)
                 metrics_results.append(metrics_dict)
                 pbar.update()
 
