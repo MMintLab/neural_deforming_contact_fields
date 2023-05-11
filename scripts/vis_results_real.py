@@ -1,18 +1,14 @@
 import argparse
-import os
-import pdb
 import random
 
-import mmint_utils
 import numpy as np
-import pytorch3d.loss
 import torch
 import trimesh
-from neural_contact_fields.utils import mesh_utils, vedo_utils, utils
+from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.utils.model_utils import load_dataset_from_config
-from neural_contact_fields.utils.results_utils import load_gt_results, load_pred_results, load_gt_results_real
+from neural_contact_fields.utils.results_utils import load_pred_results, load_gt_results_real
 from tqdm import trange
-from vedo import Plotter, Mesh, Points, LegendBox
+from vedo import Plotter, Mesh, Points
 
 
 def vis_inputs(partial_pointcloud: np.ndarray, gt_contact_patch: np.ndarray):
@@ -37,7 +33,7 @@ def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
         pred_patch_pc = Points(pred_contact_patch, c="red").legend("Predicted")
         pred_geom_mesh = Mesh([pred_mesh.vertices, pred_mesh.faces])
         # plt.at(1).show(pred_geom_mesh, vedo_utils.draw_origin(), "Pred. Mesh", pred_patch_pc)
-        plt.at(1).show(pred_geom_mesh)
+        plt.at(1).show(pred_geom_mesh, Points(partial_pointcloud))
 
     # Show predicted pointcloud, if provided.
     if pred_pointcloud is not None:
