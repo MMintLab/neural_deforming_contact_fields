@@ -49,6 +49,7 @@ def perf_to_csv(dirs, out_fn, names=None, reject_outliers=False):
             # Calculate mean/std across examples in run.
             perf_dict = {
                 k: {
+                    "median": np.median(v),
                     "mean": np.mean(v),
                     "std": np.std(v),
                 } for k, v in run_res_dict.items()
@@ -60,7 +61,7 @@ def perf_to_csv(dirs, out_fn, names=None, reject_outliers=False):
         # Write to CSV.
         csv_str = "dir, name, "
         for key in keys.keys():
-            csv_str += "%s, std, " % key
+            csv_str += "%s, std, median, " % key
         csv_str += "Patch Perc.,"  # Rate of patch generation.
         csv_str += "\n"
 
@@ -68,7 +69,8 @@ def perf_to_csv(dirs, out_fn, names=None, reject_outliers=False):
             csv_str += "%s, %s, " % (directory, name)
             for key in keys.keys():
                 if type(dir_res_dict[key]) is dict:
-                    csv_str += "%f, %f, " % (dir_res_dict[key]["mean"], dir_res_dict[key]["std"])
+                    csv_str += "%f, %f, %f, " % \
+                               (dir_res_dict[key]["mean"], dir_res_dict[key]["std"], dir_res_dict[key]["median"])
 
             # Manually add in rate of patch generation.
             csv_str += "%f," % dir_res_dict["patch_percent"]
