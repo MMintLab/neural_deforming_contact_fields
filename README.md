@@ -65,7 +65,7 @@ Removing will test inference procedures on training data.
 
 To test inferring latent variables given *full* supervision:
 ```
-python scripts/inference/infer_latent.py cfg/example_v1.yaml -d cfg/dataset/example_gen.yaml
+python scripts/inference/infer_latent.py cfg/example_v1.yaml -d cfg/dataset/           example_gen.yaml
 ```
 
 To test inferring latent variables given *surface samples*:

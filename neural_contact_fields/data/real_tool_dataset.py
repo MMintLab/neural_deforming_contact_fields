@@ -27,6 +27,7 @@ class RealToolDataset(torch.utils.data.Dataset):
         self.wrist_wrench = []  # Wrist wrench.
         self.partial_pointcloud = []  # Partial pointcloud.
         self.gt_contact_patch = []  # GT contact patch.
+        self.device = 'cuda:0'
 
         # Load all data.
         for trial_idx, data_fn in enumerate(data_fns):
@@ -48,9 +49,9 @@ class RealToolDataset(torch.utils.data.Dataset):
         data_dict = {
             "object_idx": np.array([object_index]),
             "trial_idx": np.array([self.trial_idcs[index]]),
-            "wrist_wrench": self.wrist_wrench[index],
-            "partial_pointcloud": self.partial_pointcloud[index],
-            "contact_patch": self.gt_contact_patch[index],
+            "wrist_wrench": torch.tensor(self.wrist_wrench[index], device=self.device),
+            "partial_pointcloud":  torch.tensor(self.partial_pointcloud[index], device=self.device),
+            "contact_patch":  torch.tensor(self.gt_contact_patch[index], device=self.device),
         }
 
         return data_dict

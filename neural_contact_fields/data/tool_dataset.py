@@ -47,9 +47,11 @@ class ToolDataset(torch.utils.data.Dataset):
         self.contact_patch = []  # Contact patch.
         self.points_iou = []  # Points used to calculated IoU.
         self.occ_tgt = []  # Occupancy target for IoU points.
-        self.partial_pcd_idx = [[0], [1], [2], [3], [4], [5], [6], [7],
-                                [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
-                                [6, 7], [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6], [5, 6, 7]]
+        # self.partial_pcd_idx = [[0, 1, 7]]
+        self.partial_pcd_idx = [[3, 4, 5]]
+        # self.partial_pcd_idx = [[0], [1], [2], [3], [4], [5], [6], [7],
+        #                         [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
+        #                         [6, 7], [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6], [5, 6, 7]]
 
 
         null_idx = []
@@ -103,6 +105,16 @@ class ToolDataset(torch.utils.data.Dataset):
         self.num_trials = len(data_fns)
         # assert len(self.nominal_query_points) == max(self.object_idcs) + 1
 
+    def _from_idx_to_pcd(self, partial_index, partial_pcds):
+
+        partial_pcd_idxs = self.partial_pcd_idx[partial_index]
+        combined_pcd = []
+        for partial_pcd_idx_i in partial_pcd_idxs:
+            if partial_pcds[partial_pcd_idx_i]['pointcloud'] is not None:
+                pcd_i = partial_pcds[partial_pcd_idx_i]['pointcloud']
+                combined_pcd.append(pcd_i)
+        return combined_pcd
+
     def get_num_objects(self):
         return self.num_objects
 
@@ -119,25 +131,35 @@ class ToolDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         object_index = 0
+        partial_index = np.random.randint(0, len(self.partial_pcd_idx), size=1)[0]
+        combined_pcd = self._from_idx_to_pcd(partial_index , self.partial_pointcloud[index])
+
+        # When selected indexes are all bad, try two more.
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 1 , self.partial_pointcloud[index])
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 2 , self.partial_pointcloud[index])
+
+        partial_pointcloud = np.concatenate(combined_pcd, axis=0)
 
 
         data_dict = {
-            "object_idx": np.array([object_index]),
-            "trial_idx": np.array([self.trial_idcs[index]]),
-            "query_point": self.query_points[index],
-            "sdf": self.sdf[index],
-            "normals": self.normals[index],
-            "in_contact": self.in_contact[index].astype(int),
-            "pressure": np.array([self.trial_pressure[index]]),
-            "wrist_wrench": self.wrist_wrench[index],
-            "nominal_query_point": self.nominal_query_points[object_index],
-            "nominal_sdf": self.nominal_sdf[object_index],
-            "surface_points": self.surface_points[index],
-            "surface_in_contact": self.surface_in_contact[index],
-            "partial_pointcloud": partial_pointcloud,
+            "object_idx": torch.tensor([object_index], device=self.device),
+            "trial_idx": torch.tensor([index], device=self.device),
+            "query_point": torch.tensor(self.query_points[index], dtype=self.dtype, device=self.device),
+            "sdf": torch.from_numpy(self.sdf[index]).to(self.device),
+            "normals": torch.tensor(self.normals[index], dtype=self.dtype, device=self.device),
+            "in_contact": torch.from_numpy(self.in_contact[index].astype(int)).to(self.device),
+            "pressure": torch.tensor([self.trial_pressure[index]], device=self.device),
+            "wrist_wrench": torch.tensor(self.wrist_wrench[index], device=self.device).float(),
+            "nominal_query_point": torch.tensor(self.nominal_query_points[object_index], dtype=self.dtype, device=self.device),
+            "nominal_sdf": torch.tensor(self.nominal_sdf[object_index], device=self.device),
+            "surface_points": torch.tensor(self.surface_points[index], dtype=self.dtype, device=self.device),
+            "surface_in_contact": torch.tensor(self.surface_in_contact[index], device=self.device),
+            "partial_pointcloud": torch.tensor(partial_pointcloud, dtype=self.dtype, device=self.device),
             "contact_patch": self.contact_patch[index],
-            "points_iou": self.points_iou[index],
-            "occ_tgt": self.occ_tgt[index],
+            "points_iou": torch.tensor(self.points_iou[index], dtype=self.dtype, device=self.device),
+            "occ_tgt": torch.tensor(self.occ_tgt[index], device=self.device),
         }
 
         if self.transform is not None:

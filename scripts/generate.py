@@ -7,6 +7,7 @@ from neural_contact_fields.utils import utils
 from neural_contact_fields.utils.args_utils import get_model_dataset_arg_parser, load_model_dataset_from_args
 from neural_contact_fields.utils.results_utils import write_results
 from tqdm import trange
+import time
 import numpy as np
 
 def generate(model_cfg, model, dataset, device, out_dir):
@@ -27,7 +28,7 @@ def generate(model_cfg, model, dataset, device, out_dir):
 
     # Go through dataset and generate!
     cd_hist = {'pcd': [] , 'pcd_cnt': []}
-
+    time_hist = {'inference': [], 'meshing': []}
     for idx in trange(len(dataset)):
         data_dict = dataset[idx]
         metadata = {}
@@ -35,17 +36,22 @@ def generate(model_cfg, model, dataset, device, out_dir):
 
 
         if generate_pointcloud:
+            start = time.time()
             pointcloud, cd = generator.generate_pointcloud(data_dict, metadata)
-
             cd_hist['pcd'].append(cd)
+            time_hist['inference'].append(time.time()-start)
 
         if generate_mesh:
             mesh, metadata_mesh = generator.generate_mesh(data_dict, metadata)
             metadata = mmint_utils.combine_dict(metadata, metadata_mesh)
 
+
+
         else:
             # Generate mesh from the pointcloud.
+            start = time.time()
             mesh = generator.generate_mesh_from_pointcloud(pointcloud)
+            time_hist['meshing'].append(time.time() - start)
 
 
         if generate_contact_patch:
@@ -55,6 +61,10 @@ def generate(model_cfg, model, dataset, device, out_dir):
         if generate_contact_labels:
             contact_labels, metadata_cl = generator.generate_contact_labels(data_dict, metadata)
         write_results(out_dir, mesh, pointcloud, contact_patch, contact_labels, idx)
+
+
+    print(time_hist)
+    print("summary", np.mean(time_hist['inference']), np.std(time_hist['inference']), np.mean(time_hist['meshing']), np.std(time_hist['meshing']))
 
 
 if __name__ == '__main__':

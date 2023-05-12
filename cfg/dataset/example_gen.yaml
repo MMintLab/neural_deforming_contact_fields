@@ -1,4 +1,4 @@
 data:
   test:
-    dataset: ToolRotateDataset
-    dataset_dir: out/datasets/combine_val/ # out/datasets/combine_train_proc/
+    dataset: ToolDataset
+    dataset_dir: out/datasets/combine_test_proc/ # out/datasets/combine_train_proc/
