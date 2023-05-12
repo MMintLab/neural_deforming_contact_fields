@@ -151,7 +151,7 @@ def calculate_metrics(dataset_cfg_fn: str, dataset_mode: str, out_dir: str, verb
             metrics_results = []
             for trial_idx in range(num_trials):
                 metrics_dict = eval_example(gen_dicts[trial_idx], gt_dicts[trial_idx], device, sample=sample,
-                                            verbose=trial_idx == 32)
+                                            verbose=False)
                 metrics_results.append(metrics_dict)
                 pbar.update()
 
