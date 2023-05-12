@@ -106,7 +106,8 @@ class ToolDataset(torch.utils.data.Dataset):
         return self.num_objects
 
     def get_num_trials(self):
-        return self.num_trials
+        # We use original number of trials for simplicity.
+        return self.original_num_trials
 
     def get_example_mesh(self, example_idx):
         mesh_fn = os.path.join(self.dataset_dir, "out_%d_mesh.obj" % self.trial_idcs[example_idx])

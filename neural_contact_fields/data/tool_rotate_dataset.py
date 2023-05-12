@@ -9,7 +9,7 @@ import pytorch_kinematics.transforms as tf
 class ToolRotateDataset(ToolDataset):
 
     def get_num_trials(self):
-        return self.num_trials * 4
+        return self.original_num_trials * 4
 
     def get_example_mesh(self, example_idx):
         trial_index = torch.div(example_idx, 4, rounding_mode="floor")
@@ -28,7 +28,8 @@ class ToolRotateDataset(ToolDataset):
         return self.num_trials * 4
 
     def __getitem__(self, index):
-        trial_index = torch.div(index, 4, rounding_mode="floor")
+        dataset_index = torch.div(index, 4, rounding_mode="floor")
+        trial_index = self.trial_idcs[dataset_index]
         rotation_index = index % 4  # Which of the 4 rotations to use.
         env_class = trial_index // (self.original_num_trials // 3)
 
@@ -39,37 +40,37 @@ class ToolRotateDataset(ToolDataset):
             dtype=self.dtype, device=self.device)
 
         # Transform wrench by individual rotation force/torque.
-        wrench = torch.tensor(self.wrist_wrench[trial_index], device=self.device).unsqueeze(0).float()
+        wrench = torch.tensor(self.wrist_wrench[dataset_index], device=self.device).unsqueeze(0).float()
         wrench[..., :3] = transform.transform_normals(wrench[..., :3])
         wrench[..., 3:] = transform.transform_normals(wrench[..., 3:])
         wrench = wrench.squeeze(0)
 
-        object_index = self.object_idcs[trial_index]
+        object_index = self.object_idcs[dataset_index]
         data_dict = {
             "env_class": env_class,
             "object_idx": torch.tensor([object_index], device=self.device),
-            "trial_idx": torch.tensor([index], device=self.device),
+            "trial_idx": torch.tensor([trial_index * 4 + rotation_index], device=self.device),
             "query_point": transform.transform_points(
-                torch.tensor(self.query_points[trial_index], dtype=self.dtype, device=self.device)),
-            "sdf": torch.from_numpy(self.sdf[trial_index]).to(self.device),
+                torch.tensor(self.query_points[dataset_index], dtype=self.dtype, device=self.device)),
+            "sdf": torch.from_numpy(self.sdf[dataset_index]).to(self.device),
             "normals": transform.transform_normals(
-                torch.tensor(self.normals[trial_index], dtype=self.dtype, device=self.device)),
-            "in_contact": torch.from_numpy(self.in_contact[trial_index].astype(int)).to(self.device),
-            "pressure": torch.tensor([self.trial_pressure[trial_index]], device=self.device),
+                torch.tensor(self.normals[dataset_index], dtype=self.dtype, device=self.device)),
+            "in_contact": torch.from_numpy(self.in_contact[dataset_index].astype(int)).to(self.device),
+            "pressure": torch.tensor([self.trial_pressure[dataset_index]], device=self.device),
             "wrist_wrench": wrench,
             "nominal_query_point": transform.transform_points(
                 torch.tensor(self.nominal_query_points[object_index], dtype=self.dtype, device=self.device)),
             "nominal_sdf": torch.tensor(self.nominal_sdf[object_index], device=self.device),
             "surface_points": transform.transform_points(
-                torch.tensor(self.surface_points[trial_index], dtype=self.dtype, device=self.device)),
-            "surface_in_contact": torch.tensor(self.surface_in_contact[trial_index], device=self.device),
+                torch.tensor(self.surface_points[dataset_index], dtype=self.dtype, device=self.device)),
+            "surface_in_contact": torch.tensor(self.surface_in_contact[dataset_index], device=self.device),
             "partial_pointcloud": transform.transform_points(
-                torch.tensor(self.partial_pointcloud[trial_index], dtype=self.dtype, device=self.device)),
+                torch.tensor(self.partial_pointcloud[dataset_index], dtype=self.dtype, device=self.device)),
             "contact_patch": transform.transform_points(
-                torch.tensor(self.contact_patch[trial_index], dtype=self.dtype, device=self.device)),
+                torch.tensor(self.contact_patch[dataset_index], dtype=self.dtype, device=self.device)),
             "points_iou": transform.transform_points(
-                torch.tensor(self.points_iou[trial_index], dtype=self.dtype, device=self.device)),
-            "occ_tgt": torch.tensor(self.occ_tgt[trial_index], device=self.device),
+                torch.tensor(self.points_iou[dataset_index], dtype=self.dtype, device=self.device)),
+            "occ_tgt": torch.tensor(self.occ_tgt[dataset_index], device=self.device),
         }
 
         if self.transform is not None:
