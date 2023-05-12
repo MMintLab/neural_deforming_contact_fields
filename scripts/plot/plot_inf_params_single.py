@@ -19,8 +19,10 @@ def perf_to_csv(dirs, out_fn, names=None, reject_outliers=False):
     # TODO: Way to generalize this?
     # env_ids = [[0], [1], [2], [0, 1, 2]]
     # env_names = ["box", "curves", "ridges", "all"]
-    env_ids = [[0, 1, 2]]
-    env_names = ["all"]
+    # env_ids = [[0, 1, 2]]
+    # env_names = ["all"]
+    env_ids = [[0]]
+    env_names = ["real"]
     metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
 
     for env_id_set, env_name in zip(env_ids, env_names):
