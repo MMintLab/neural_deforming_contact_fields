@@ -47,7 +47,9 @@ def eval_example(gen_dict, gt_dict, device, sample: bool = True, verbose: bool =
     if gen_dict["contact_patch"] is not None:
         # Sample each to 300 - makes evaluation of CD more fair.
         if sample:
-            pred_pc = utils.sample_pointcloud(gen_dict["contact_patch"], 300)
+            pred_pc = gen_dict["contact_patch"].cpu().numpy()
+            pred_pc = utils.voxel_downsample_pointcloud(pred_pc, 0.0005)
+            pred_pc = utils.sample_pointcloud(pred_pc, 300)
         else:
             pred_pc = gen_dict["contact_patch"]
         if len(pred_pc) > 0:

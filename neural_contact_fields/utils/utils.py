@@ -51,6 +51,17 @@ def sample_pointcloud(pointcloud, n):
 
     return pointcloud[sample_indices]
 
+def voxel_downsample_pointcloud(pointcloud, n):
+    """
+    Downsample pointcloud to n points using voxel downsampling.
+    """
+    pointcloud_pcd: o3d.geometry.PointCloud = pointcloud_to_o3d(pointcloud)
+    pointcloud_pcd = pointcloud_pcd.voxel_down_sample(voxel_size=n)
+    if pointcloud.shape[1] > 3:
+        return np.concatenate([np.asarray(pointcloud_pcd.points), pointcloud[:, 3:]], axis=1)
+    else:
+        return np.asarray(pointcloud_pcd.points)
+
 
 def save_pointcloud(pointcloud, fn: str):
     pointcloud_pcd: o3d.geometry.PointCloud = pointcloud_to_o3d(pointcloud)
