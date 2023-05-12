@@ -46,16 +46,19 @@ class NominalSDFDecoder(nn.Module):
         return out_dict["sdf"].squeeze(0)
 
 
-def get_surface_loss_fn(embed_weight: float, def_weight: float):
+def get_surface_loss_fn(embed_weight: float):
     def surface_loss_fn(model, latent, data_dict, device):
         # Pull out relevant data.
         object_idx_ = torch.from_numpy(data_dict["object_idx"]).to(device)
         surface_coords_ = torch.from_numpy(data_dict["partial_pointcloud"]).to(device).float().unsqueeze(0)
+        surface_coords_ = surface_coords_.repeat(latent.shape[0], 1, 1)
         wrist_wrench_ = torch.from_numpy(data_dict["wrist_wrench"]).to(device).float().unsqueeze(0)
 
         # We assume we know the object code.
         z_object_ = model.encode_object(object_idx_)
+        z_object_ = z_object_.repeat(latent.shape[0], 1)
         z_wrench_ = model.encode_wrench(wrist_wrench_)
+        z_wrench_ = z_wrench_.repeat(latent.shape[0], 1)
 
         # Predict with updated latents.
         pred_dict_ = model.forward(surface_coords_, latent, z_object_, z_wrench_)
@@ -63,16 +66,13 @@ def get_surface_loss_fn(embed_weight: float, def_weight: float):
         # loss = 0.0
 
         # Loss: all points on surface should have SDF = 0.0.
-        sdf_loss = torch.mean(torch.abs(pred_dict_["sdf"]))
+        sdf_loss = torch.mean(torch.abs(pred_dict_["sdf"]), dim=-1)
 
         # Latent embedding loss: shouldn't drift too far from data.
-        embedding_loss = ncf_losses.l2_loss(pred_dict_["embedding"], squared=True)
+        embedding_loss = ncf_losses.l2_loss(pred_dict_["embedding"], squared=True, reduce=False)
 
-        # Prefer smaller deformations.
-        def_loss = ncf_losses.l2_loss(pred_dict_["deform"], squared=True)
-
-        loss = sdf_loss + (embed_weight * embedding_loss) + (def_weight * def_loss)
-        return loss
+        loss = sdf_loss + (embed_weight * embedding_loss)
+        return loss.mean(), loss
 
     return surface_loss_fn
 
@@ -114,11 +114,11 @@ class Generator(BaseGenerator):
 
         self.contact_threshold = generation_cfg.get("contact_threshold", 0.5)
         self.embed_weight = generation_cfg.get("embed_weight", 0.0)
-        self.def_weight = generation_cfg.get("def_weight", 0.0)
         self.contact_patch_size = generation_cfg.get("contact_patch_size", 10000)
 
         self.mesh_resolution = generation_cfg.get("mesh_resolution", 64)
 
+        self.num_latent = int(generation_cfg.get("num_latent", 1))
         self.iter_limit = int(generation_cfg.get("iter_limit", 150))
         self.conv_eps = float(generation_cfg.get("conv_eps", 0.0))
         self.init_mode = generation_cfg.get("init_mode", "random")
@@ -143,9 +143,9 @@ class Generator(BaseGenerator):
         z_deform_size = self.model.z_deform_size
         start = time.time()
         z_deform_, latent_metadata = inference_by_optimization(self.model,
-                                                               get_surface_loss_fn(self.embed_weight, self.def_weight),
+                                                               get_surface_loss_fn(self.embed_weight),
                                                                get_init_function(self.model, init_mode=self.init_mode),
-                                                               z_deform_size, 1, data,
+                                                               z_deform_size, self.num_latent, data,
                                                                inf_params={"iter_limit": self.iter_limit,
                                                                            "conv_eps": self.conv_eps},
                                                                device=self.device, verbose=False)
@@ -153,7 +153,7 @@ class Generator(BaseGenerator):
         latent_gen_time = end - start
         latent_metadata["latent_gen_time"] = latent_gen_time
 
-        latent = z_deform_.weight
+        latent = z_deform_.weight[torch.argmin(latent_metadata["final_loss"])].unsqueeze(0)
         return latent, latent_metadata
 
     def generate_mesh(self, data, meta_data):

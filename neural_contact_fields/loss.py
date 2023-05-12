@@ -37,27 +37,35 @@ def surface_normal_loss(gt_sdf: torch.Tensor, gt_normals: torch.Tensor, pred_nor
 
     # Calculate difference between predicted and gt normals.
     diff = (1.0 - F.cosine_similarity(pred_normals_unit, gt_normals, dim=-1))
-    diff_loss = torch.where(gt_sdf == 0.0, diff, torch.tensor(0.0, dtype=pred_normals.dtype, device=pred_normals.device))
+    diff_loss = torch.where(gt_sdf == 0.0, diff,
+                            torch.tensor(0.0, dtype=pred_normals.dtype, device=pred_normals.device))
 
     # Average error (for surface points).
     norm_loss = diff_loss.sum() / (gt_sdf == 0.0).sum()
     return norm_loss
 
 
-def l2_loss(tens: torch.Tensor, squared: bool = False):
+def l2_loss(tens: torch.Tensor, squared: bool = False, reduce: bool = True):
     """
     L2 loss on provided tensor.
 
     Args:
     - tens (torch.Tensor): tensor to derive l2 loss from.
     - squared (bool): whether to derive squared l2 loss.
+    - reduce (bool): whether to reduce the l2 loss.
     """
     l2_squared = torch.sum(tens ** 2.0, dim=-1)
 
     if squared:
-        return torch.mean(l2_squared)
+        if reduce:
+            return torch.mean(l2_squared)
+        else:
+            return l2_squared
     else:
-        return torch.mean(torch.sqrt(l2_squared))
+        if reduce:
+            return torch.mean(torch.sqrt(l2_squared))
+        else:
+            return torch.sqrt(l2_squared)
 
 
 def surface_chamfer_loss(nominal_coords: torch.Tensor, nominal_sdf: torch.Tensor, gt_sdf: torch.Tensor,
