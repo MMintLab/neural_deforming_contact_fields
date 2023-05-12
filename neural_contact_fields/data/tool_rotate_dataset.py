@@ -45,6 +45,17 @@ class ToolRotateDataset(ToolDataset):
         wrench[..., 3:] = transform.transform_normals(wrench[..., 3:])
         wrench = wrench.squeeze(0)
 
+        # Get partial pointcloud.
+        partial_index = np.random.randint(0, len(self.partial_pcd_idx), size=1)[0]
+        combined_pcd = self._from_idx_to_pcd(partial_index, self.partial_pointcloud[dataset_index])
+
+        # When selected indexes are all bad, try two more.
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 1, self.partial_pointcloud[dataset_index])
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 2, self.partial_pointcloud[dataset_index])
+        partial_pointcloud = np.concatenate(combined_pcd, axis=0)
+
         object_index = self.object_idcs[dataset_index]
         data_dict = {
             "env_class": env_class,
@@ -65,7 +76,7 @@ class ToolRotateDataset(ToolDataset):
                 torch.tensor(self.surface_points[dataset_index], dtype=self.dtype, device=self.device)),
             "surface_in_contact": torch.tensor(self.surface_in_contact[dataset_index], device=self.device),
             "partial_pointcloud": transform.transform_points(
-                torch.tensor(self.partial_pointcloud[dataset_index], dtype=self.dtype, device=self.device)),
+                torch.tensor(partial_pointcloud, dtype=self.dtype, device=self.device)),
             "contact_patch": transform.transform_points(
                 torch.tensor(self.contact_patch[dataset_index], dtype=self.dtype, device=self.device)),
             "points_iou": transform.transform_points(

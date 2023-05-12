@@ -14,7 +14,7 @@ class ToolDataset(torch.utils.data.Dataset):
     Each example in this dataset is all sample points for a given trial.
     """
 
-    def __init__(self, dataset_dir: str, load_data: bool = True, transform=None, device="cpu"):
+    def __init__(self, dataset_dir: str, load_data: bool = True, partial_pcd_idx=None, transform=None, device="cpu"):
         super().__init__()
         self.dataset_dir = dataset_dir
         self.transform = transform
@@ -33,6 +33,11 @@ class ToolDataset(torch.utils.data.Dataset):
 
         if not load_data:
             return
+
+        self.partial_pcd_idx = [[0], [1], [2], [3], [4], [5], [6], [7],
+                                [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
+                                [6, 7], [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6],
+                                [5, 6, 7]] if partial_pcd_idx is None else partial_pcd_idx
 
         # Data arrays.
         self.object_idcs = []  # Object index: what tool is used in this example?
@@ -77,14 +82,7 @@ class ToolDataset(torch.utils.data.Dataset):
                 self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
             except:
                 self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
-
-            camera_idcs = [3, 4, 5]  # [0, 1, 2]  # TODO: parameterize this somehow?
-            partial_pc = []
-            for camera_idx in camera_idcs:
-                pc = example_dict["input"]["pointclouds"][camera_idx]["pointcloud"]
-                if pc is not None:
-                    partial_pc.append(pc)
-            self.partial_pointcloud.append(np.concatenate(partial_pc, axis=0))
+            self.partial_pointcloud.append(example_dict["input"]["pointclouds"])
 
             self.points_iou.append(example_dict["test"]["points_iou"])
             self.occ_tgt.append(example_dict["test"]["occ_tgt"])
@@ -114,11 +112,30 @@ class ToolDataset(torch.utils.data.Dataset):
         mesh = trimesh.load(mesh_fn)
         return mesh
 
+    def _from_idx_to_pcd(self, partial_index, partial_pcds):
+        partial_pcd_idxs = self.partial_pcd_idx[partial_index]
+        combined_pcd = []
+        for partial_pcd_idx_i in partial_pcd_idxs:
+            if partial_pcds[partial_pcd_idx_i]['pointcloud'] is not None:
+                pcd_i = partial_pcds[partial_pcd_idx_i]['pointcloud']
+                combined_pcd.append(pcd_i)
+        return combined_pcd
+
     def __len__(self):
         return self.num_trials
 
     def __getitem__(self, index):
         object_index = self.object_idcs[index]
+
+        partial_index = np.random.randint(0, len(self.partial_pcd_idx), size=1)[0]
+        combined_pcd = self._from_idx_to_pcd(partial_index, self.partial_pointcloud[index])
+
+        # When selected indexes are all bad, try two more.
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 1, self.partial_pointcloud[index])
+        if len(combined_pcd) == 0:
+            combined_pcd = self._from_idx_to_pcd(partial_index + 2, self.partial_pointcloud[index])
+        partial_pointcloud = np.concatenate(combined_pcd, axis=0)
 
         data_dict = {
             "env_class": self.trial_idcs[index] // (self.original_num_trials // 3),  # NOTE: assumes equal num per env.
@@ -134,7 +151,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "nominal_sdf": self.nominal_sdf[object_index],
             "surface_points": self.surface_points[index],
             "surface_in_contact": self.surface_in_contact[index],
-            "partial_pointcloud": self.partial_pointcloud[index],
+            "partial_pointcloud": partial_pointcloud,
             "contact_patch": self.contact_patch[index],
             "points_iou": self.points_iou[index],
             "occ_tgt": self.occ_tgt[index],

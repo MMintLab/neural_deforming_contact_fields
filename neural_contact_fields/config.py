@@ -5,11 +5,13 @@ from neural_contact_fields.data.tool_dataset import ToolDataset
 from neural_contact_fields.data.pretrain_object_module_dataset import PretrainObjectModuleDataset
 from torchvision import transforms
 from neural_contact_fields import neural_contact_field
+from neural_contact_fields import encoder_ndcf
 from neural_contact_fields.data.tool_rotate_dataset import ToolRotateDataset
 from neural_contact_fields.data.wrench_noise_transform import WrenchNoiseTransform
 
 method_dict = {
     'neural_contact_field': neural_contact_field,
+    'endcf': encoder_ndcf,
 }
 
 
@@ -80,9 +82,13 @@ def get_dataset(mode, cfg, **kwargs):
     transforms_ = get_transforms(cfg)
 
     if dataset_type == "ToolDataset":
-        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
+        dataset = ToolDataset(cfg["data"][mode]["dataset_dir"],
+                              partial_pcd_idx=cfg["data"][mode].get("partial_pcd_idx", None),
+                              transform=transforms_, **kwargs)
     elif dataset_type == "ToolRotateDataset":
-        dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"], transform=transforms_, **kwargs)
+        dataset = ToolRotateDataset(cfg["data"][mode]["dataset_dir"],
+                                    partial_pcd_idx=cfg["data"][mode].get("partial_pcd_idx", None),
+                                    transform=transforms_, **kwargs)
     elif dataset_type == "PretrainObjectModuleDataset":
         dataset = PretrainObjectModuleDataset(cfg["data"][mode]["dataset_fn"], transform=transforms_)
     elif dataset_type == "RealToolDataset":
