@@ -2,3 +2,4 @@ data:
   test:
     dataset: ToolDataset
     dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/camera_ready/combine_val_small_v2/
+    partial_pcd_idx: [ [ 3, 4, 5 ] ]
