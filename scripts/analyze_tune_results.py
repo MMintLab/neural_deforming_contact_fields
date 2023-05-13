@@ -31,6 +31,9 @@ def analyze_tune_results(results_dirs: str):
     metrics = ["patch_chamfer_distance", "patch_percent", "chamfer_distance", "iou"]
     metrics_mode = ["min", "max", "min", "max"]
     has_var = [True, False, True, True]
+    # metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
+    # metrics_mode = ["min", "min", "max"]
+    # has_var = [True, True, True]
     # metrics = ["patch_chamfer_distance"]
     # metrics_mode = ["min"]
 

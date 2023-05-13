@@ -27,7 +27,7 @@ def perf_to_csv(dirs, names=None, exp_name=None):
 
             # Collect result on each metric for each example.
             run_res_dict = defaultdict(list)
-            for example_run_dict in run_dict:
+            for example_idx, example_run_dict in enumerate(run_dict):
                 example_metrics_dict = example_run_dict["metrics"]
 
                 for metric in metrics:
@@ -51,7 +51,7 @@ def perf_to_csv(dirs, names=None, exp_name=None):
         axs[1].set_xticks(np.arange(1, len(names) + 1), labels=names)
         axs[0].set_ylabel("Patch Chamfer Distance")
         # axs[1].set_ylabel("Patch Chamfer Distance")
-        zoom_upper = 200
+        zoom_upper = 100
         axs[0].axhline(y=-3, color="blue", linestyle="--", lw=1.0)
         axs[0].axhline(y=zoom_upper + 3, color="blue", linestyle="--", lw=1.0)
         axs[1].set_ylim([-3, zoom_upper + 3])
