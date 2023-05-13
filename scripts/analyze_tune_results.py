@@ -36,7 +36,7 @@ def analyze_tune_results(results_dirs: str):
     # Define our search space. TODO: Load this from a config file.
     search_space = {
         "contact_threshold": [0.2, 0.5, 0.8],
-        "embed_weight": [1e-4, 1e-3, 1e-1],
+        "embed_weight": [1e-5, 1e-4, 1e-3, 1e-1],
         "iter_limit": [50, 100, 300],
     }
 

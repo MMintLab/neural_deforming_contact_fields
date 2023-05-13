@@ -63,6 +63,9 @@ def tune_inference(args):
 
         # Compute stats on metrics.
         metrics_stats_dict = metrics_to_statistics(metrics_dicts)
+        metrics_stats_dict["patch_percent"] = len([m["patch_chamfer_distance"] for m in metrics_dicts if
+                                                   "patch_chamfer_distance" in m and m[
+                                                       "patch_chamfer_distance"] is not None]) / len(metrics_dicts)
         session.report(metrics_stats_dict)
 
     trainable_with_resources = tune.with_resources(eval_hyper_params, {"cpu": 16, "gpu": 1})
@@ -90,7 +93,7 @@ def tune_inference(args):
         elif search_alg == "grid":
             tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min")
             search_space["contact_threshold"] = tune.grid_search([0.2, 0.5, 0.8])
-            search_space["embed_weight"] = tune.grid_search([0.0001, 0.001, 0.1])
+            search_space["embed_weight"] = tune.grid_search([1e-5, 1e-4, 1e-3, 1e-1])
             search_space["iter_limit"] = tune.grid_search([50, 100, 300])
         else:
             tune_cfg = tune.TuneConfig(metric="patch_chamfer_distance_mean", mode="min", num_samples=10)
