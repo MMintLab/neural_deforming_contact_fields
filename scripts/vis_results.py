@@ -38,9 +38,9 @@ def vis_mesh_prediction(data_dict: dict, gen_dict: dict, gt_dict: dict):
         plt.at(4).show(pred_geom_pc, vedo_utils.draw_origin(), "Pred. PC")
 
     if "contact_patch" in gen_dict and gen_dict["contact_patch"] is not None:
-        pred_contact_patch = gen_dict["contact_patch"]
+        pred_contact_patch_orig = gen_dict["contact_patch"]
         gt_contact_patch = gt_dict["contact_patch"]
-        pred_patch_pc = Points(pred_contact_patch, c="red").legend("Predicted")
+        pred_patch_pc = Points(pred_contact_patch_orig, c="red").legend("Predicted")
         gt_patch_pc = Points(gt_contact_patch, c="blue").legend("Ground Truth")
         leg = LegendBox([pred_patch_pc, gt_patch_pc])
         plt.at(2).show(pred_patch_pc, gt_patch_pc, leg, vedo_utils.draw_origin(), "Pred. Contact Patch")

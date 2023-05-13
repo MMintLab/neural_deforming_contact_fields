@@ -87,8 +87,8 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", offset: int 
         # Load the conditioning pointcloud used.
         pc = trial_dict["partial_pointcloud"]
 
-        vis_mesh_prediction_real(pc, gen_dicts[trial_idx]["mesh"], None,
-                                 gen_dicts[trial_idx]["contact_patch"], gt_dicts[trial_idx]["contact_patch"])
+        vis_mesh_prediction_real(pc, gen_dicts[trial_idx]["mesh"], None, gen_dicts[trial_idx]["contact_patch"],
+                                 gt_dicts[trial_idx]["contact_patch"])
 
 
 if __name__ == '__main__':

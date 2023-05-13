@@ -37,10 +37,5 @@ if __name__ == '__main__':
     parser.add_argument('--offset', type=int, default=0, help='Offset to start from.')
     args = parser.parse_args()
 
-    # Seed for repeatability.
-    torch.manual_seed(10)
-    np.random.seed(10)
-    random.seed(10)
-
     _, dataset_ = load_dataset_from_config(args.dataset_cfg, dataset_mode=args.mode)
     vis_dataset(dataset_, offset=args.offset)
