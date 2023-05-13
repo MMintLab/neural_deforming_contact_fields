@@ -28,8 +28,9 @@ def analyze_tune_results(results_dirs: str):
     print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
 
     # Grid visualization of configs and their effect on performance.
-    metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
-    metrics_mode = ["min", "min", "max"]
+    metrics = ["patch_chamfer_distance", "patch_percent", "chamfer_distance", "iou"]
+    metrics_mode = ["min", "max", "min", "max"]
+    has_var = [True, False, True, True]
     # metrics = ["patch_chamfer_distance"]
     # metrics_mode = ["min"]
 
@@ -43,11 +44,15 @@ def analyze_tune_results(results_dirs: str):
     # Create grids based on embed_weight and iter_limit with a fixed contact_threshold.
     for contact_threshold in search_space["contact_threshold"]:
         metrics_dict = dict()
-        for metric in metrics:
-            metrics_dict[f"{metric}_mean"] = np.zeros(
-                (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
-            metrics_dict[f"{metric}_std"] = np.zeros(
-                (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
+        for m_idx, metric in enumerate(metrics):
+            if has_var[m_idx]:
+                metrics_dict[f"{metric}_mean"] = np.zeros(
+                    (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
+                metrics_dict[f"{metric}_std"] = np.zeros(
+                    (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
+            else:
+                metrics_dict[metric] = np.zeros(
+                    (len(search_space["embed_weight"]), len(search_space["iter_limit"])))
 
         for embed_idx, embed_weight in enumerate(search_space["embed_weight"]):
             for iter_idx, iter_limit in enumerate(search_space["iter_limit"]):
@@ -59,9 +64,12 @@ def analyze_tune_results(results_dirs: str):
 
                 result = get_matching_result(result_grids, config)
 
-                for metric in metrics:
-                    metrics_dict[f"{metric}_mean"][embed_idx, iter_idx] = result.metrics[f"{metric}_mean"]
-                    metrics_dict[f"{metric}_std"][embed_idx, iter_idx] = result.metrics[f"{metric}_std"]
+                for m_idx, metric in enumerate(metrics):
+                    if has_var[m_idx]:
+                        metrics_dict[f"{metric}_mean"][embed_idx, iter_idx] = result.metrics[f"{metric}_mean"]
+                        metrics_dict[f"{metric}_std"][embed_idx, iter_idx] = result.metrics[f"{metric}_std"]
+                    else:
+                        metrics_dict[metric][embed_idx, iter_idx] = result.metrics[metric]
 
         fig = plt.figure()
         for m_idx, metric in enumerate(metrics):
@@ -74,17 +82,22 @@ def analyze_tune_results(results_dirs: str):
             ax.set_yticklabels(search_space["embed_weight"])
             ax.set_ylabel("embed_weight")
             ax.set_xlabel("iter_limit")
+            ax.set_title(metric)
 
             # print(metrics_dict[f"{metric}_mean"])
             # print(metrics_dict[f"{metric}_std"])
 
-            grid_vis = ax.matshow(metrics_dict[f"{metric}_mean"],
+            grid_vis = ax.matshow(metrics_dict[f"{metric}_mean"] if has_var[m_idx] else metrics_dict[metric],
                                   cmap="viridis" if metrics_mode[m_idx] == "max" else "viridis_r")
             fig.colorbar(grid_vis)
 
-            for (i, j), m in np.ndenumerate(metrics_dict[f"{metric}_mean"]):
-                std = metrics_dict[f"{metric}_std"][i, j]
-                ax.text(j, i, f"{m:.3f}\n({std:.3f})", ha="center", va="center")
+            if has_var[m_idx]:
+                for (i, j), m in np.ndenumerate(metrics_dict[f"{metric}_mean"]):
+                    std = metrics_dict[f"{metric}_std"][i, j]
+                    ax.text(j, i, f"{m:.3f}\n({std:.3f})", ha="center", va="center")
+            else:
+                for (i, j), m in np.ndenumerate(metrics_dict[metric]):
+                    ax.text(j, i, f"{m:.3f}", ha="center", va="center")
 
         fig.suptitle(f"contact_threshold={contact_threshold}")
         plt.show()
