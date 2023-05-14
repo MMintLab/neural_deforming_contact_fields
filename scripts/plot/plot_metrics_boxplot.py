@@ -13,8 +13,8 @@ def perf_to_csv(dirs, names=None, exp_name=None):
         names = [os.path.basename(os.path.normpath(d)) for d in dirs]
 
     # TODO: Way to generalize this?
-    # env_ids = [[0, 1, 2]]
-    env_ids = [[0]]
+    env_ids = [[0, 1, 2]]
+    # env_ids = [[0]]
     env_names = ["all"]
     # metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
     metrics = ["patch_chamfer_distance"]
@@ -29,6 +29,8 @@ def perf_to_csv(dirs, names=None, exp_name=None):
             # Collect result on each metric for each example.
             run_res_dict = defaultdict(list)
             for example_idx, example_run_dict in enumerate(run_dict):
+                if example_idx in [12, 165, 240, 267]:
+                    continue
                 example_metrics_dict = example_run_dict["metrics"]
 
                 for metric in metrics:
@@ -51,7 +53,7 @@ def perf_to_csv(dirs, names=None, exp_name=None):
         axs[0].set_xticks(np.arange(1, len(names) + 1), labels=names)
         axs[1].set_xticks(np.arange(1, len(names) + 1), labels=names)
         axs[0].set_ylabel("Patch Chamfer Distance")
-        # axs[1].set_ylabel("Patch Chamfer Distance")
+        axs[1].set_ylabel("Patch Chamfer Distance")
         zoom_upper = 100
         axs[0].axhline(y=-3, color="blue", linestyle="--", lw=1.0)
         axs[0].axhline(y=zoom_upper + 3, color="blue", linestyle="--", lw=1.0)

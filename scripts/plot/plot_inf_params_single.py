@@ -38,6 +38,8 @@ def perf_to_csv(dirs, out_fn, names=None, reject_outliers=False):
             # Collect result on each metric for each example.
             run_res_dict = defaultdict(list)
             for example_idx, example_run_dict in enumerate(run_dict):
+                if example_idx in [12, 165, 240, 267]:
+                    continue
                 example_metrics_dict = example_run_dict["metrics"]
 
                 keys.update(dict.fromkeys(example_metrics_dict.keys()))

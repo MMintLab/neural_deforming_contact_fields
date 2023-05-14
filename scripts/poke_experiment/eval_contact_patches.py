@@ -48,6 +48,7 @@ def eval_contact_patches(gen_dir: str, mesh_fn: str, gt_pose_fn: str, out_fn: st
     mmint_utils.save_gzip_pickle(
         {"score": score}, out_fn
     )
+    print("Score: %f" % score)
 
 
 if __name__ == '__main__':
