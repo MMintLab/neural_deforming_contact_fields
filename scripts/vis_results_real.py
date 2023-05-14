@@ -30,10 +30,11 @@ def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
 
     # Show predicted mesh, if provided.
     if pred_mesh is not None:
-        pred_patch_pc = Points(pred_contact_patch, c="red").legend("Predicted")
+        pred_patch_pc = Points(pred_contact_patch, c="red", alpha=0.1).legend("Predicted")
         pred_geom_mesh = Mesh([pred_mesh.vertices, pred_mesh.faces])
         # plt.at(1).show(pred_geom_mesh, vedo_utils.draw_origin(), "Pred. Mesh", pred_patch_pc)
-        plt.at(1).show(pred_geom_mesh, Points(partial_pointcloud))
+        # plt.at(1).show(pred_geom_mesh, Points(partial_pointcloud))
+        plt.at(1).show(pred_geom_mesh, pred_patch_pc)
 
     # Show predicted pointcloud, if provided.
     if pred_pointcloud is not None:
@@ -42,15 +43,15 @@ def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
 
     if pred_contact_patch is not None:
         pred_pc = pred_contact_patch
-        pred_pc = utils.voxel_downsample_pointcloud(pred_pc, 0.0005)
-        pred_pc = utils.sample_pointcloud(pred_pc, 300)
+        # pred_pc = utils.voxel_downsample_pointcloud(pred_pc, 0.0005)
+        # pred_pc = utils.sample_pointcloud(pred_pc, 300)
         pred_patch_pc = Points(pred_pc, c="red", alpha=0.3).legend("Predicted")
         gt_patch_pc = Points(gt_contact_patch, c="blue", alpha=0.4).legend("Ground Truth")
         leg = LegendBox([pred_patch_pc, gt_patch_pc])
         # plt.at(2).show(pred_patch_pc, gt_patch_pc, leg, vedo_utils.draw_origin(), "Pred. Contact Patch")
         # plt.at(2).show(pred_patch_pc)
         pred_geom_mesh = Mesh([pred_mesh.vertices, pred_mesh.faces])
-        plt.at(2).show(gt_patch_pc, pred_patch_pc, leg)
+        plt.at(2).show(gt_patch_pc, pred_patch_pc)
 
     plt.interactive().close()
 
@@ -81,7 +82,9 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", offset: int 
     # Load predicted results.
     gen_dicts = load_pred_results(gen_dir, num_trials)
 
-    for trial_idx in trange(offset, len(dataset)):
+    # for trial_idx in trange(offset, len(dataset)):
+    for trial_idx in [5, 13, 26, 41]:
+        print(trial_idx)
         trial_dict = dataset[trial_idx]
 
         # Load the conditioning pointcloud used.
