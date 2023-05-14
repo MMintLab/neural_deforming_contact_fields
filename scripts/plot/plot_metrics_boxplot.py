@@ -13,7 +13,8 @@ def perf_to_csv(dirs, names=None, exp_name=None):
         names = [os.path.basename(os.path.normpath(d)) for d in dirs]
 
     # TODO: Way to generalize this?
-    env_ids = [[0, 1, 2]]
+    # env_ids = [[0, 1, 2]]
+    env_ids = [[0]]
     env_names = ["all"]
     # metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
     metrics = ["patch_chamfer_distance"]

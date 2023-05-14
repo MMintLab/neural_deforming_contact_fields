@@ -28,19 +28,20 @@ def analyze_tune_results(results_dirs: str):
     print("Best metric: ", best_result.metrics["patch_chamfer_distance_mean"])
 
     # Grid visualization of configs and their effect on performance.
-    metrics = ["patch_chamfer_distance", "patch_percent", "chamfer_distance", "iou"]
-    metrics_mode = ["min", "max", "min", "max"]
-    has_var = [True, False, True, True]
+    # metrics = ["patch_chamfer_distance", "patch_percent", "chamfer_distance", "iou"]
+    # metrics_mode = ["min", "max", "min", "max"]
+    # has_var = [True, False, True, True]
     # metrics = ["patch_chamfer_distance", "chamfer_distance", "iou"]
     # metrics_mode = ["min", "min", "max"]
     # has_var = [True, True, True]
-    # metrics = ["patch_chamfer_distance"]
-    # metrics_mode = ["min"]
+    metrics = ["patch_chamfer_distance", "patch_percent"]
+    metrics_mode = ["min", "max"]
+    has_var = [True, False]
 
     # Define our search space. TODO: Load this from a config file.
     search_space = {
         "contact_threshold": [0.2, 0.5, 0.8],
-        "embed_weight": [1e-5, 1e-4, 1e-3, 1e-1],
+        "embed_weight": [1e-3, 1e-1, 1.0],
         "iter_limit": [50, 100, 300],
     }
 
