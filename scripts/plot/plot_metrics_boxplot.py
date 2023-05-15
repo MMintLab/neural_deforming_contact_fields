@@ -53,7 +53,7 @@ def perf_to_csv(dirs, names=None, exp_name=None):
         axs[0].set_xticks(np.arange(1, len(names) + 1), labels=names)
         axs[1].set_xticks(np.arange(1, len(names) + 1), labels=names)
         axs[0].set_ylabel("Patch Chamfer Distance")
-        axs[1].set_ylabel("Patch Chamfer Distance")
+        # axs[1].set_ylabel("Patch Chamfer Distance")
         zoom_upper = 100
         axs[0].axhline(y=-3, color="blue", linestyle="--", lw=1.0)
         axs[0].axhline(y=zoom_upper + 3, color="blue", linestyle="--", lw=1.0)

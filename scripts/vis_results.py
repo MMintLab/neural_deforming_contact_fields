@@ -8,6 +8,21 @@ from neural_contact_fields.utils.results_utils import load_gt_results, load_pred
 from vedo import Plotter, Mesh, Points, LegendBox
 
 
+def vis_mesh_prediction_outlier(data_dict: dict, gen_dict: dict, gt_dict: dict):
+    plt = Plotter()
+
+    # Show the ground truth geometry/contact patch.
+    gt_mesh = gt_dict["mesh"]
+    gt_mesh_vedo = Mesh([gt_mesh.vertices, gt_mesh.faces], c="grey", alpha=0.2)
+
+    pred_contact_patch_orig = gen_dict["contact_patch"]
+    gt_contact_patch = gt_dict["contact_patch"]
+    pred_patch_pc = Points(pred_contact_patch_orig, c="red").legend("Predicted")
+    gt_patch_pc = Points(gt_contact_patch, c="blue").legend("Ground Truth")
+
+    plt.at(0).show(gt_mesh_vedo, pred_patch_pc, gt_patch_pc)
+
+
 def vis_mesh_prediction(data_dict: dict, gen_dict: dict, gt_dict: dict):
     plt = Plotter(shape=(2, 3))
 
@@ -74,7 +89,8 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", offset: int 
     for trial_idx in trange(offset, len(dataset)):
         trial_dict = dataset[trial_idx]
 
-        vis_mesh_prediction(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
+        # vis_mesh_prediction(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
+        vis_mesh_prediction_outlier(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
 
 
 if __name__ == '__main__':
