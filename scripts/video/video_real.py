@@ -20,7 +20,6 @@ settings.renderer_frame_alpha = 0.0
 
 def vis_mesh_prediction_real(partial_pointcloud: np.ndarray,
                              pred_mesh: trimesh.Trimesh,
-                             pred_pointcloud: np.ndarray,
                              pred_contact_patch: np.ndarray,
                              gt_contact_patch: np.ndarray,
                              out_fn: str = None
@@ -84,15 +83,13 @@ def vis_results(dataset_cfg: str, gen_dir: str, out_dir: str = None, mode: str =
     num_trials = len(dataset)
 
     # Load specific ground truth results needed for evaluation.
-    gt_contact_patches = load_gt_results_real(
-        dataset, dataset_cfg["data"][mode]["dataset_dir"], num_trials
-    )
+    gt_dicts = load_gt_results(dataset, num_trials)
 
     # Load predicted results.
-    pred_meshes, pred_pointclouds, pred_contact_patches, pred_contact_labels = load_pred_results(gen_dir, num_trials)
+    pred_dicts = load_pred_results(gen_dir, num_trials)
 
     # for trial_idx in trange(len(dataset)):
-    for trial_idx in [0, 12, 16, 28, 34]:
+    for trial_idx in [26, 41, 13, 5]:
         # print(trial_idx)
         out_fn = os.path.join(out_dir, "res_%d.mp4" % trial_idx)
 
@@ -101,8 +98,10 @@ def vis_results(dataset_cfg: str, gen_dir: str, out_dir: str = None, mode: str =
         # Load the conditioning pointcloud used.
         pc = trial_dict["partial_pointcloud"]
 
-        vis_mesh_prediction_real(pc, pred_meshes[trial_idx], pred_pointclouds[trial_idx],
-                                 pred_contact_patches[trial_idx], gt_contact_patches[trial_idx],
+        vis_mesh_prediction_real(pc,
+                                 pred_dicts[trial_idx]["mesh"],
+                                 pred_dicts[trial_idx]["contact_patch"],
+                                 gt_dicts[trial_idx]["contact_patch"],
                                  out_fn)
 
 
@@ -118,4 +117,4 @@ if __name__ == '__main__':
     np.random.seed(10)
     random.seed(10)
 
-    vis_results(args.dataset_config, args.gen_dir, args.mode)
+    vis_results(args.dataset_config, args.gen_dir, args.out_dir, args.mode)
