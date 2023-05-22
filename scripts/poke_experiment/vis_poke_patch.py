@@ -1,17 +1,21 @@
 import argparse
 import os
-from time import sleep
 
 import trimesh
 from vedo import Plotter, Mesh, Points, Video
 
 import mmint_utils
 from neural_contact_fields.utils import utils
+from neural_contact_fields.utils.model_utils import load_dataset_from_config
 from scripts.video.vedo_animator import VedoOrbiter
 
 
-def vis_poke_patch(gen_dir: str, mesh_fn: str, gt_pose_fn: str, idx: int, pitch: float = 0.0,
+def vis_poke_patch(dataset_cfg_fn: str, gen_dir: str, mesh_fn: str, gt_pose_fn: str, idx: int, pitch: float = 0.0,
                    no_animation: bool = False):
+    # Load dataset.
+    dataset_cfg, dataset = load_dataset_from_config(dataset_cfg_fn)
+    data_dict = dataset[idx]
+
     # Load mesh.
     obj_mesh = trimesh.load(mesh_fn)
 
@@ -48,6 +52,27 @@ def vis_poke_patch(gen_dir: str, mesh_fn: str, gt_pose_fn: str, idx: int, pitch:
         things_to_show[0].alpha(0.2)
         plot = Plotter(shape=(1, 1), interactive=False)
         plot.at(0).show(*things_to_show)
+        plot.interactive().close()
+
+        # Third - reconstruction, no object.
+        things_to_show[0].alpha(1.0)
+        things_to_show[1].alpha(0.0)
+        things_to_show[2].alpha(0.0)
+        plot = Plotter(shape=(1, 1), interactive=False)
+        plot.at(0).show(*things_to_show)
+        plot.interactive().close()
+
+        # Fourth - patch, no object.
+        things_to_show[0].alpha(0.2)
+        things_to_show[1].alpha(1.0)
+        things_to_show[2].alpha(0.0)
+        plot = Plotter(shape=(1, 1), interactive=False)
+        plot.at(0).show(*things_to_show)
+        plot.interactive().close()
+
+        # Fifth - partial pointcloud.
+        plot = Plotter(shape=(1, 1), interactive=False)
+        plot.at(0).show(Points(data_dict["partial_pointcloud"][:, :3], c="black"))
         plot.interactive().close()
     else:
         orbiter = VedoOrbiter(plot, things_to_show, period=5, dist=0.4, pitch=pitch, target=obj_mesh.centroid)
@@ -90,6 +115,7 @@ def vis_poke_patch(gen_dir: str, mesh_fn: str, gt_pose_fn: str, idx: int, pitch:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Evaluate contact patches.")
+    parser.add_argument("dataset_cfg", type=str, help="Dataset config file.")
     parser.add_argument("gen_dir", type=str, help="Directory with contact patches.")
     parser.add_argument("mesh_fn", type=str, help="Mesh to align to.")
     parser.add_argument("gt_pose_fn", type=str, help="Ground truth pose.")
@@ -99,4 +125,5 @@ if __name__ == '__main__':
     parser.set_defaults(no_animation=False)
     args = parser.parse_args()
 
-    vis_poke_patch(args.gen_dir, args.mesh_fn, args.gt_pose_fn, args.idx, args.pitch, args.no_animation)
+    vis_poke_patch(args.dataset_cfg, args.gen_dir, args.mesh_fn, args.gt_pose_fn, args.idx, args.pitch,
+                   args.no_animation)
