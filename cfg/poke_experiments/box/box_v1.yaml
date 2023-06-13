@@ -1,4 +1,0 @@
-data:
-  test:
-    dataset: PokeDataset
-    dataset_dir: /home/markvdm/RobotSetup/catkin_ws/src/ncf_real/out/poke_experiments/box/v1_res/

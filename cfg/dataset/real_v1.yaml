@@ -1,4 +1,0 @@
-data:
-  test:
-    dataset: RealToolDataset
-    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/press_1_16_23/

@@ -1,4 +1,0 @@
-data:
-  test:
-    dataset: ToolDataset
-    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/sim_terrain_test_v2/combined/
