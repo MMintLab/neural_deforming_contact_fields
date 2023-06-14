@@ -2,7 +2,7 @@ data:
   test:
     dataset: ToolDataset
     dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/camera_ready/combine_test_proc/
-    partial_pcd_idx: [[3, 4, 5]]
+    partial_pcd_idx: [3, 4, 5]
   transforms:
     - type: WrenchNoiseTransform
       noise: 0.5

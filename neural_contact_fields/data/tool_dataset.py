@@ -14,7 +14,7 @@ class ToolDataset(torch.utils.data.Dataset):
     Each example in this dataset is all sample points for a given trial.
     """
 
-    def __init__(self, dataset_dir: str, load_data: bool = True, partial_pcd_idx=None, transform=None, device="cpu"):
+    def __init__(self, dataset_dir: str, load_data: bool = True, partial_pcd_idcs=None, transform=None, device="cpu"):
         super().__init__()
         self.dataset_dir = dataset_dir
         self.transform = transform
@@ -25,7 +25,7 @@ class ToolDataset(torch.utils.data.Dataset):
         data_fns = sorted(
             [f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f and "contact" not in f],
             key=lambda x: int(x.split(".")[0].split("_")[-1]))
-        self.num_trials = len(data_fns)
+        self.num_trials = 10  # len(data_fns)
         self.original_num_trials = len(data_fns)  # Above value may change due to bad data examples...
 
         nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
@@ -35,10 +35,7 @@ class ToolDataset(torch.utils.data.Dataset):
         if not load_data:
             return
 
-        self.partial_pcd_idx = [[0], [1], [2], [3], [4], [5], [6], [7],
-                                [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
-                                [6, 7], [0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6],
-                                [5, 6, 7]] if partial_pcd_idx is None else partial_pcd_idx
+        self.partial_pcd_idcs = partial_pcd_idcs
 
         # Data arrays.
         self.object_idcs = []  # Object index: what tool is used in this example?
@@ -58,16 +55,13 @@ class ToolDataset(torch.utils.data.Dataset):
         self.contact_area = []  # Contact area.
 
         # Load all data.
-        for trial_idx, data_fn in enumerate(data_fns):
+        for trial_idx, data_fn in enumerate(data_fns[:10]):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
-            contact_area_dict = mmint_utils.load_gzip_pickle(
-                os.path.join(dataset_dir, "out_%d_contact_area.pkl.gzip" % trial_idx))
+            # contact_area_dict = mmint_utils.load_gzip_pickle(
+            #     os.path.join(dataset_dir, "out_%d_contact_area.pkl.gzip" % trial_idx))
 
             # Populate example info.
-            try:
-                contact_patch = example_dict["test"]["contact_patch"]
-            except:
-                contact_patch = self.surface_points[-1][self.surface_in_contact[-1]]
+            contact_patch = example_dict["test"]["contact_patch"]
             if len(contact_patch) == 0:
                 self.num_trials -= 1
                 continue
@@ -82,15 +76,12 @@ class ToolDataset(torch.utils.data.Dataset):
             self.trial_pressure.append(example_dict["train"]["pressure"])
             self.surface_points.append(example_dict["test"]["surface_points"])
             self.surface_in_contact.append(example_dict["test"]["surface_in_contact"])
-            try:
-                self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
-            except:
-                self.wrist_wrench.append(example_dict["train"]["wrist_wrench"])
+            self.wrist_wrench.append(example_dict["input"]["wrist_wrench"])
             self.partial_pointcloud.append(example_dict["input"]["pointclouds"])
 
             self.points_iou.append(example_dict["test"]["points_iou"])
             self.occ_tgt.append(example_dict["test"]["occ_tgt"])
-            self.contact_area.append(contact_area_dict["contact_area"])
+            # self.contact_area.append(contact_area_dict["contact_area"])
 
         # Load nominal geometry info.
         self.nominal_query_points = []
@@ -117,13 +108,33 @@ class ToolDataset(torch.utils.data.Dataset):
         mesh = trimesh.load(mesh_fn)
         return mesh
 
-    def _from_idx_to_pcd(self, partial_index, partial_pcds):
-        partial_pcd_idxs = self.partial_pcd_idx[partial_index]
+    def _from_idcs_to_pcd(self, partial_pcd_idxs, partial_pcds):
         combined_pcd = []
         for partial_pcd_idx_i in partial_pcd_idxs:
             if partial_pcds[partial_pcd_idx_i]['pointcloud'] is not None:
                 pcd_i = partial_pcds[partial_pcd_idx_i]['pointcloud']
                 combined_pcd.append(pcd_i)
+        return np.concatenate(combined_pcd, axis=0)
+
+    def get_partial_pointcloud(self, index):
+        if self.partial_pcd_idcs is not None:
+            combined_pcd = self._from_idcs_to_pcd(self.partial_pcd_idcs, self.partial_pointcloud[index])
+        else:
+            while True:
+                # Sample number of consecutive point clouds to combine.
+                num_consecutive = np.random.randint(1, 3)
+
+                # Sample starting index.
+                start_idx = np.random.randint(0, len(self.partial_pointcloud[index]))
+
+                # Get consecutive indices.
+                partial_pcd_idxs = np.arange(start_idx, start_idx + num_consecutive) % len(
+                    self.partial_pointcloud[index])
+
+                # Combine point clouds.
+                combined_pcd = self._from_idcs_to_pcd(partial_pcd_idxs, self.partial_pointcloud[index])
+                if len(combined_pcd) > 0:
+                    break
         return combined_pcd
 
     def __len__(self):
@@ -131,16 +142,6 @@ class ToolDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         object_index = self.object_idcs[index]
-
-        partial_index = np.random.randint(0, len(self.partial_pcd_idx), size=1)[0]
-        combined_pcd = self._from_idx_to_pcd(partial_index, self.partial_pointcloud[index])
-
-        # When selected indexes are all bad, try two more.
-        if len(combined_pcd) == 0:
-            combined_pcd = self._from_idx_to_pcd(partial_index + 1, self.partial_pointcloud[index])
-        if len(combined_pcd) == 0:
-            combined_pcd = self._from_idx_to_pcd(partial_index + 2, self.partial_pointcloud[index])
-        partial_pointcloud = np.concatenate(combined_pcd, axis=0)
 
         data_dict = {
             "env_class": self.trial_idcs[index] // (self.original_num_trials // 3),  # NOTE: assumes equal num per env.
@@ -156,7 +157,7 @@ class ToolDataset(torch.utils.data.Dataset):
             "nominal_sdf": self.nominal_sdf[object_index],
             "surface_points": self.surface_points[index],
             "surface_in_contact": self.surface_in_contact[index],
-            "partial_pointcloud": partial_pointcloud,
+            "partial_pointcloud": self.get_partial_pointcloud(index),
             "contact_patch": self.contact_patch[index],
             "points_iou": self.points_iou[index],
             "occ_tgt": self.occ_tgt[index],

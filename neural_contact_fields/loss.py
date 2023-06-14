@@ -1,8 +1,10 @@
+import pdb
 from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
 from pytorch3d.loss import chamfer_distance
+from torch.distributions import Normal
 
 
 def sdf_loss(gt_sdf: torch.Tensor, pred_sdf: torch.Tensor, clip: float = 1.0):
@@ -106,3 +108,23 @@ def hypo_weight_loss(hypo_params: OrderedDict):
         total_weights += weight.numel()
 
     return weight_sum * (1.0 / total_weights)
+
+
+def heteroscedastic_bce(logits_dist: Normal, labels: torch.Tensor, n: int = 50):
+    """
+    Heteroscedastic Binary Cross Entropy Loss. Encourage the predicted logits to match the labels.
+
+    Args:
+    - logits_dist (Normal): predicted logits distribution.
+    - labels (torch.Tensor): labels for logits.
+    """
+
+    # Sample logits.
+    logits = logits_dist.rsample([n])
+
+    # Calculate the BCE loss for each sample.
+    repeat_dims = [n] + [1 for _ in range(len(labels.shape))]
+    labels_ = labels.unsqueeze(0).repeat(repeat_dims)
+
+    bce_loss = F.binary_cross_entropy_with_logits(logits, labels_, reduction='none')
+    return bce_loss.mean(dim=0)

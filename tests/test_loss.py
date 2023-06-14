@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 import torch
+from torch.distributions import Normal
 
 import neural_contact_fields.loss as loss
 
@@ -83,6 +84,17 @@ class TestLoss(unittest.TestCase):
 
         hypo_w_loss = loss.hypo_weight_loss(hypo_weights)
         self.assertTrue(torch.allclose(hypo_w_loss, torch.tensor(1.614285714285714).float()))
+
+    def test_heteroscedastic_bce_loss(self):
+        means = torch.tensor([0.0, 3.0, -12.0, 0.0, 0.3]).float()
+        variances = torch.tensor([1.0, 4.0, 1.0, 10.0, 0.1]).float()
+        dist = Normal(means, variances)
+
+        labels = torch.tensor([0, 1, 0, 1, 1]).float()
+
+        bce_loss = loss.heteroscedastic_bce(dist, labels, n=50)
+
+        self.assertTrue(bce_loss.shape == torch.Size([5]))
 
 
 if __name__ == '__main__':
