@@ -25,7 +25,7 @@ class ToolDataset(torch.utils.data.Dataset):
         data_fns = sorted(
             [f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f and "contact" not in f],
             key=lambda x: int(x.split(".")[0].split("_")[-1]))
-        self.num_trials = 10  # len(data_fns)
+        self.num_trials = len(data_fns)
         self.original_num_trials = len(data_fns)  # Above value may change due to bad data examples...
 
         nominal_fns = sorted([f for f in os.listdir(self.dataset_dir) if "nominal" in f],
@@ -55,7 +55,7 @@ class ToolDataset(torch.utils.data.Dataset):
         self.contact_area = []  # Contact area.
 
         # Load all data.
-        for trial_idx, data_fn in enumerate(data_fns[:10]):
+        for trial_idx, data_fn in enumerate(data_fns):
             example_dict = mmint_utils.load_gzip_pickle(os.path.join(dataset_dir, data_fn))
             # contact_area_dict = mmint_utils.load_gzip_pickle(
             #     os.path.join(dataset_dir, "out_%d_contact_area.pkl.gzip" % trial_idx))
