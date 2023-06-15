@@ -21,6 +21,8 @@ class ToolDataset(torch.utils.data.Dataset):
         self.dtype = torch.float32
         self.device = device
 
+        # TODO: Parallelize this for faster loading?
+
         # Load dataset files and sort according to example number.
         data_fns = sorted(
             [f for f in os.listdir(self.dataset_dir) if "out" in f and ".pkl.gzip" in f and "contact" not in f],
