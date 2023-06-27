@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from neural_contact_fields.undcf.generation import get_surface_loss_fn
 from neural_contact_fields.utils import vedo_utils
 from neural_contact_fields.utils.infer_utils import inference_by_optimization
 

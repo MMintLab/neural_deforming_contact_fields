@@ -40,7 +40,7 @@ def create_mesh(decoder, n=256, max_batch=40 ** 3, offset=None, scale=None):
 
     head = 0
 
-    decoder.eval()
+    # decoder.eval()
     while head < num_samples:
         # print(head)
         sample_subset = samples[head: min(head + max_batch, num_samples), 0:3].cuda()

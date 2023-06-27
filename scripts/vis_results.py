@@ -89,8 +89,8 @@ def vis_results(dataset_cfg: str, gen_dir: str, mode: str = "test", offset: int 
     for trial_idx in trange(offset, len(dataset)):
         trial_dict = dataset[trial_idx]
 
-        # vis_mesh_prediction(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
-        vis_mesh_prediction_outlier(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
+        vis_mesh_prediction(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
+        # vis_mesh_prediction_outlier(trial_dict, gen_dicts[trial_idx], gt_dicts[trial_idx])
 
 
 if __name__ == '__main__':
