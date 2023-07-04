@@ -15,15 +15,21 @@ Our code also relies on the following libraries. Install each to the `ncf` envir
 * [mmint_utils](https://github.com/MMintLab/mmint_utils)
 * [pytorch-meta](https://github.com/tristandeleu/pytorch-meta)
 
-## Data
+## Data/Models
 
 Datasets contain full simulated data including geometry, contact patches and 
-force responses, generated with Isaac Gym.
+force responses, generated with Isaac Gym. Code to generate data can be found [here](https://github.com/MMintLab/ndcf_envs).
 
-* Training dataset: download [here](https://drive.google.com/file/d/1m1dpCBkz0Qwjwus-FDfhDgqk-AvqhUhv/view?usp=sharing) (115.9 MB)
-* Test dataset: download [here](https://drive.google.com/file/d/1RzXtE_fRF4_taVZzP2lA5_6XGHF4nM31/view?usp=share_link) (10.3 MB)
+* Pretrain dataset: download [here](https://www.dropbox.com/s/ygp3lz09gn1183m/nominal_0.pkl.gzip?dl=0) (1.4 MB)
+* Training dataset: download [here](https://www.dropbox.com/s/bllhkpm1f6fknrq/combine_train_proc.zip?dl=0) (26 GB)
+* Test dataset: download [here](https://www.dropbox.com/s/2yopvlgudax3t8c/combine_test_proc.zip?dl=0) (2.6 GB)
 
-Unzip dataset(s) into `out/datasets/`.
+The final model used in our experiments can be downloaded from the following places.
+
+* Pretrained object model: [here]() (0.63 MB)
+* Full model: [here](https://www.dropbox.com/s/2yopvlgudax3t8c/combine_test_proc.zip?dl=0) (1.7 GB).
+
+See `cfg/example_v1.yaml` for expected locations in order to run with the pretrained models.
 
 ## Training
 
@@ -47,10 +53,15 @@ python scripts/train_model.py cfg/example_v1.yaml
 
 To generate results:
 ```
-python scripts/generate.py cfg/example_v1.yaml -d cfg/dataset/example_gen.yaml
+python scripts/generate.py cfg/example_v1.yaml -m test -o <out dir>
+```
+
+To visualize results:
+```
+python scripts/vis_results.py cfg/example_v1.yaml -m test <out dir>
 ```
 
 To evaluate results:
 ```
-python scripts/eval_results.py cfg/dataset/example_gen.yaml <out dir from above>
+python scripts/eval_results.py cfg/example_v1.yaml -m test <out dir>
 ```
