@@ -26,8 +26,8 @@ force responses, generated with Isaac Gym. Code to generate data can be found [h
 
 The final model used in our experiments can be downloaded from the following places.
 
-* Pretrained object model: [here]() (0.63 MB)
-* Full model: [here](https://www.dropbox.com/s/2yopvlgudax3t8c/combine_test_proc.zip?dl=0) (1.7 GB).
+* Pretrained object model: [here](https://www.dropbox.com/s/81woclhrgejtb43/pretrain_v4.zip?dl=0) (0.63 GB)
+* Full model: [here](https://www.dropbox.com/s/ah2uqormcx8fcmq/model_v3.zip?dl=0) (1.7 GB).
 
 See `cfg/example_v1.yaml` for expected locations in order to run with the pretrained models.
 
