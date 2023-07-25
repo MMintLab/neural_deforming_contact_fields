@@ -17,9 +17,10 @@ def vis_dataset(dataset, base_mesh_fn: str = None, offset: int = 0):
     print("Dataset size: %d" % len(dataset))
 
     base_mesh = trimesh.load_mesh(base_mesh_fn) if base_mesh_fn is not None else None
-    base_mesh.apply_translation([0.0, 0.0, 0.036])
+    if base_mesh is not None:
+        base_mesh.apply_translation([0.0, 0.0, 0.036])
 
-    for data_idx in trange(offset, len(dataset)):
+    for data_idx in trange(offset, len(dataset)):  # [12, 165]
         data_dict = dataset[data_idx]
 
         partial_pc = data_dict["partial_pointcloud"]

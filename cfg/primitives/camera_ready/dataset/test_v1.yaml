@@ -1,5 +1,5 @@
 data:
   test:
     dataset: ToolDataset
-    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/primitives/camera_ready/combine_test_proc/
+    dataset_dir: /home/markvdm/Documents/IsaacGym/ncf_envs/out/camera_ready/combine_test_proc/
     partial_pcd_idx: [[3, 4, 5]]
