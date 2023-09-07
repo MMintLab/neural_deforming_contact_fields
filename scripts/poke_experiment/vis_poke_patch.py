@@ -6,21 +6,19 @@ from vedo import Plotter, Mesh, Points, Video
 
 import mmint_utils
 from neural_contact_fields.utils import utils
-from neural_contact_fields.utils.model_utils import load_dataset_from_config
 from scripts.video.vedo_animator import VedoOrbiter
 
 
-def vis_poke_patch(dataset_cfg_fn: str, gen_dir: str, mesh_fn: str, gt_pose_fn: str, idx: int, pitch: float = 0.0,
-                   no_animation: bool = False):
+def vis_poke_patch(gen_dir: str, idx: int, pitch: float = 0.0, no_animation: bool = False):
     # Load dataset.
-    dataset_cfg, dataset = load_dataset_from_config(dataset_cfg_fn)
-    data_dict = dataset[idx]
+    # dataset_cfg, dataset = load_dataset_from_config(dataset_cfg_fn)
+    # data_dict = dataset[idx]
 
     # Load mesh.
-    obj_mesh = trimesh.load(mesh_fn)
+    obj_mesh = trimesh.load(os.path.join(gen_dir, "nontextured.stl"))
 
     # Load ground truth pose.
-    gt_pose = mmint_utils.load_gzip_pickle(gt_pose_fn)[0]["transformation"]
+    gt_pose = mmint_utils.load_gzip_pickle(os.path.join(gen_dir, "gt_icp.pkl.gzip"))[0]["transformation"]
 
     # Apply transform to the mesh.
     obj_mesh.apply_transform(gt_pose)
@@ -72,7 +70,7 @@ def vis_poke_patch(dataset_cfg_fn: str, gen_dir: str, mesh_fn: str, gt_pose_fn: 
 
         # Fifth - partial pointcloud.
         plot = Plotter(shape=(1, 1), interactive=False)
-        plot.at(0).show(Points(data_dict["partial_pointcloud"][:, :3], c="black"))
+        # plot.at(0).show(Points(data_dict["partial_pointcloud"][:, :3], c="black"))
         plot.interactive().close()
     else:
         orbiter = VedoOrbiter(plot, things_to_show, period=5, dist=0.4, pitch=pitch, target=obj_mesh.centroid)
@@ -80,19 +78,19 @@ def vis_poke_patch(dataset_cfg_fn: str, gen_dir: str, mesh_fn: str, gt_pose_fn: 
         fps = int(1.0 / orbiter.update_period)
         num_per_spin = int(fps * orbiter.period)
 
-        video = Video(os.path.join(gen_dir, "vis_%d.mp4" % idx), backend="ffmpeg", fps=fps)
+        # video = Video(os.path.join(gen_dir, "vis_%d.mp4" % idx), backend="ffmpeg", fps=fps)
 
         for spin_idx in range(num_per_spin):
             orbiter.update_transform(orbiter.generate_transform(orbiter.update_period * spin_idx))
 
-            video.add_frame()
+            # video.add_frame()
 
         for spin_idx in range(num_per_spin):
             orbiter.update_transform(orbiter.generate_transform(orbiter.update_period * spin_idx))
             things_to_show[2].alpha(max(0.2, 1.0 - (spin_idx / (num_per_spin / 10.0)) * 0.8))
 
             # sleep(0.01)
-            video.add_frame()
+            # video.add_frame()
 
         for spin_idx in range(num_per_spin):
             orbiter.update_transform(orbiter.generate_transform(orbiter.update_period * spin_idx))
@@ -100,30 +98,27 @@ def vis_poke_patch(dataset_cfg_fn: str, gen_dir: str, mesh_fn: str, gt_pose_fn: 
             things_to_show[0].alpha(max(0.2, 1.0 - (spin_idx / (num_per_spin / 10.0)) * 0.8))
 
             # sleep(0.01)
-            video.add_frame()
+            # video.add_frame()
 
         for spin_idx in range(num_per_spin):
             orbiter.update_transform(orbiter.generate_transform(orbiter.update_period * spin_idx))
             things_to_show[2].alpha(min(1.0, 0.3 + (spin_idx / (num_per_spin / 10.0)) * 0.7))
             things_to_show[0].alpha(min(1.0, 0.2 + (spin_idx / (num_per_spin / 10.0)) * 0.8))
 
-            video.add_frame()
+            # video.add_frame()
 
-        video.close()
+        # video.close()
         plot.close()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Evaluate contact patches.")
-    parser.add_argument("dataset_cfg", type=str, help="Dataset config file.")
     parser.add_argument("gen_dir", type=str, help="Directory with contact patches.")
-    parser.add_argument("mesh_fn", type=str, help="Mesh to align to.")
-    parser.add_argument("gt_pose_fn", type=str, help="Ground truth pose.")
     parser.add_argument("idx", type=int, help="Index of example to visualize.")
     parser.add_argument("--pitch", type=float, default=0.5, help="Pitch of camera.")
     parser.add_argument("--no_animation", action="store_true", help="Don't animate.")
     parser.set_defaults(no_animation=False)
     args = parser.parse_args()
 
-    vis_poke_patch(args.dataset_cfg, args.gen_dir, args.mesh_fn, args.gt_pose_fn, args.idx, args.pitch,
+    vis_poke_patch(args.gen_dir, args.idx, args.pitch,
                    args.no_animation)
